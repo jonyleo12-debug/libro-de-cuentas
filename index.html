@@ -178,16 +178,6 @@ img { max-width: 100%; }
     <div class="tot"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small>Lo que apartaste este mes</small></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-nec">
-    <div class="budget-row">
-      <h2 id="h-nec">Gastos necesarios</h2>
-      <span><b id="nec-v">—</b> <span class="sub" id="nec-meta" style="display:inline"></span></span>
-    </div>
-    <div class="meter" id="nec-meter" role="meter" aria-labelledby="h-nec" aria-valuemin="0"><i id="nec-bar"></i></div>
-    <p class="msg" id="nec-msg"></p>
-    <div class="chips" id="nec-chips"></div>
-  </section>
-
   <section class="panel" aria-labelledby="h-nuevo">
     <h2 id="h-nuevo">Nuevo movimiento</h2>
     <form class="form" id="f">
@@ -437,8 +427,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const findInv = (name) => invs.find((c) => c.nombre.trim().toLowerCase() === name.trim().toLowerCase());
   $('f-inv').addEventListener('input', () => { const c = findInv($('f-inv').value); if (c && !$('f-tasa').value) $('f-tasa').value = c.tasa; });
   $('mes').addEventListener('change', () => { userPickedMonth = true; render(); });
-  $('nec-meta').textContent = `de ${usd.format(META_NECESARIOS)} al mes`;
-  $('nec-meter').setAttribute('aria-valuemax', String(META_NECESARIOS));
 
   const td = (text, cls) => { const el = document.createElement('td'); el.textContent = text; if (cls) el.className = cls; return el; };
   const emptyRow = (cols, text) => { const tr = document.createElement('tr'); const c = td(text, 'empty'); c.colSpan = cols; tr.appendChild(c); return tr; };
@@ -478,23 +466,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('t-in-n').textContent = `${nIn} ${nIn === 1 ? 'movimiento' : 'movimientos'}`;
     $('t-out-n').textContent = `${nOut} ${nOut === 1 ? 'movimiento' : 'movimientos'}`;
     $('t-tasa').textContent = ing > 0 ? `${pct.format(disp / ing)} de tus ingresos` : 'Ingresos menos gastos';
-
-    // Gastos necesarios budget
-    const nec = delMes.filter((r) => r.tipo === 'Gasto' && NECESARIOS.includes(r.categoria));
-    const necTot = nec.reduce((s, r) => s + r.monto, 0);
-    $('nec-v').textContent = usd.format(necTot);
-    $('nec-v').className = necTot > META_NECESARIOS ? 'c-out' : '';
-    $('nec-bar').style.width = Math.min(100, (necTot / META_NECESARIOS) * 100) + '%';
-    $('nec-meter').classList.toggle('over', necTot > META_NECESARIOS);
-    $('nec-meter').setAttribute('aria-valuenow', String(necTot));
-    $('nec-msg').textContent = necTot > META_NECESARIOS
-      ? `Te pasaste por ${usd.format(necTot - META_NECESARIOS)} en ${mesLabel(mes)}.`
-      : `Te quedan ${usd.format(META_NECESARIOS - necTot)} para comida, salidas, cerveza, taxi y gym en ${mesLabel(mes)}.`;
-    $('nec-msg').className = 'msg' + (necTot > META_NECESARIOS ? ' err' : '');
-    $('nec-chips').replaceChildren(...NECESARIOS.map((c) => {
-      const v = nec.filter((r) => r.categoria === c).reduce((s, r) => s + r.monto, 0);
-      const el = document.createElement('span'); el.className = 'chip'; el.textContent = `${c} ${usd.format(v)}`; return el;
-    }));
 
     // Month's entries
     const lista = $('lista');
