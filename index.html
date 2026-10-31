@@ -650,7 +650,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         }
         const grid = document.createElement('div'); grid.className = 'det-edit';
         const afIn = {};
-        [['fecha', 'Fecha de la audiencia', 'date'], ['hora', 'Hora', 'time'], ['tipo', 'Tipo (opcional)', 'text'], ['lugar', 'Lugar (opcional)', 'text']].forEach(([k, label, type]) => {
+        [['fecha', 'Fecha de audiencia/diligencias', 'date'], ['hora', 'Hora', 'time'], ['tipo', 'Tipo (opcional)', 'text'], ['lugar', 'Lugar (opcional)', 'text']].forEach(([k, label, type]) => {
           const l = document.createElement('label'); l.htmlFor = 'oa-' + k + '-' + c.id; l.textContent = label;
           const i = document.createElement('input'); i.type = type; i.id = 'oa-' + k + '-' + c.id; if (type === 'text') i.maxLength = 160;
           i.value = obsAud[k] !== undefined ? obsAud[k] : '';
