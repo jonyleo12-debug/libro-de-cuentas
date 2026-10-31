@@ -396,6 +396,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let openObs = null;
   let auds = [];
   let obsDraft = null;
+  let obsAud = {};
   let libroRef = null;
   const col = (name) => libroRef.collection(name);
 
@@ -664,7 +665,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ob.textContent = obsOpen ? 'Cerrar' : (c.observacion ? 'Observación •' : 'Observación');
       ob.title = c.observacion || 'Agregar una observación';
       ob.setAttribute('aria-expanded', String(obsOpen));
-      ob.addEventListener('click', () => { openObs = obsOpen ? null : c.id; obsDraft = null; render(); });
+      ob.addEventListener('click', () => { openObs = obsOpen ? null : c.id; obsDraft = null; obsAud = {}; render(); });
       act.appendChild(ob);
       tr.appendChild(act);
       const extra = [];
@@ -680,9 +681,51 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         lb.appendChild(ta);
         const bar = document.createElement('div'); bar.className = 'det-edit';
         const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar observación';
-        sv.addEventListener('click', () => { col('casos').doc(c.id).update({ observacion: ta.value.trim() }); obsDraft = null; openObs = null; render(); });
+        sv.addEventListener('click', () => {
+          col('casos').doc(c.id).update({ observacion: ta.value.trim() });
+          const f = afIn.fecha.value, h = afIn.hora.value;
+          if (f && h) {
+            crearAudiencia({ fecha: f, hora: h, dur: 60, caso: c.nombre, tipo: afIn.tipo.value.trim(), lugar: afIn.lugar.value.trim() });
+            setMsg(`Observación y audiencia de ${c.nombre} guardadas.`);
+            obsAud = {}; obsDraft = null; render();
+          } else { obsDraft = null; obsAud = {}; openObs = null; render(); }
+        });
         bar.appendChild(sv);
-        ow.append(lb, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
+        // Hearings for this case + quick add with calendar pickers
+        const nowI = new Date().toISOString();
+        const delCaso = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= nowI).sort((x, y) => x.inicio.localeCompare(y.inicio));
+        const ah = document.createElement('p'); ah.className = 'det-h'; ah.textContent = delCaso.length ? 'Próximas audiencias de este caso' : 'Agendar audiencia';
+        const box = document.createElement('div'); box.className = 'det';
+        box.appendChild(ah);
+        if (delCaso.length) {
+          const ul = document.createElement('ul'); ul.className = 'det-list';
+          delCaso.forEach((x) => {
+            const li = document.createElement('li');
+            const d = new Date(x.inicio);
+            const t = document.createElement('span');
+            t.textContent = d.toLocaleString('es-EC', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }) + (x.tipo ? ' · ' + x.tipo : '');
+            const bs = document.createElement('span'); bs.className = 'acts';
+            const ap = document.createElement('button'); ap.type = 'button'; ap.className = 'ghost'; ap.textContent = 'Apple / Outlook'; ap.addEventListener('click', () => descargarIcs(x));
+            const gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(x); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none';
+            bs.append(ap, gg); li.append(t, bs); ul.appendChild(li);
+          });
+          box.appendChild(ul);
+          const ah2 = document.createElement('p'); ah2.className = 'det-h'; ah2.textContent = 'Agendar otra audiencia'; box.appendChild(ah2);
+        }
+        const grid = document.createElement('div'); grid.className = 'det-edit';
+        const afIn = {};
+        [['fecha', 'Fecha de la audiencia', 'date'], ['hora', 'Hora', 'time'], ['tipo', 'Tipo (opcional)', 'text'], ['lugar', 'Lugar (opcional)', 'text']].forEach(([k, label, type]) => {
+          const l = document.createElement('label'); l.htmlFor = 'oa-' + k + '-' + c.id; l.textContent = label;
+          const i = document.createElement('input'); i.type = type; i.id = 'oa-' + k + '-' + c.id; if (type === 'text') i.maxLength = 160;
+          i.value = obsAud[k] !== undefined ? obsAud[k] : '';
+          i.addEventListener('input', () => { obsAud[k] = i.value; });
+          l.appendChild(i); grid.appendChild(l); afIn[k] = i;
+        });
+        box.appendChild(grid);
+        const hint = document.createElement('p'); hint.className = 'sub'; hint.style.margin = '0'; hint.style.fontSize = '13px';
+        hint.textContent = 'Si pones fecha y hora, al guardar se agenda la audiencia y aparece en tu sección Audiencias y aquí, con los botones para tu calendario.';
+        box.appendChild(hint);
+        ow.append(lb, box, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
         setTimeout(() => { const t = document.getElementById('obs-' + c.id); if (t && document.activeElement !== t && obsDraft === null) t.focus(); }, 0);
       }
       if (!open) return [tr, ...extra];
@@ -998,6 +1041,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function googleUrl(a) {
     const q = new URLSearchParams({ action: 'TEMPLATE', text: audTitulo(a), dates: `${icsDate(a.inicio)}/${icsDate(a.fin)}`, details: a.caso ? 'Caso: ' + a.caso : '', location: a.lugar || '', ctz: 'America/Guayaquil' });
     return 'https://calendar.google.com/calendar/render?' + q.toString();
+  }
+  function crearAudiencia({ fecha, hora, dur, caso, tipo, lugar }) {
+    const ini = new Date(`${fecha}T${hora}:00-05:00`);
+    const fin = new Date(ini.getTime() + Number(dur || 60) * 60000);
+    col('audiencias').add({ fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', tipo: tipo || '', lugar: lugar || '', creado: new Date().toISOString() });
   }
   $('af-fecha').value = todayStr;
   $('af').addEventListener('submit', (ev) => {
