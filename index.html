@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Libro">
+<meta name="theme-color" content="#1f6b57">
+<title>Libro de cuentas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a ledger. Month header and totals first, then the entry form, then the month's entries and the monthly history. */
+:root {
+  --bg: #f5f7f6;
+  --panel: #ffffff;
+  --fg: #17211e;
+  --muted: #5b6965;
+  --line: #d9e1de;
+  --accent: #1f6b57;
+  --accent-soft: #e3efea;
+  --in: #1f6b57;
+  --out: #a3402e;
+  --inv: #2f5d8a;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111816; --panel: #18211e; --fg: #e6ece9; --muted: #9aaaa5; --line: #2a3632;
+  --accent: #5cbf9f; --accent-soft: #1d3029; --in: #5cbf9f; --out: #ec8a76; --inv: #82b2e0; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111816; --panel: #18211e; --fg: #e6ece9; --muted: #9aaaa5; --line: #2a3632;
+  --accent: #5cbf9f; --accent-soft: #1d3029; --in: #5cbf9f; --out: #ec8a76; --inv: #82b2e0; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
+h1, h2 { font-family: var(--font-display); font-weight: 400; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(28px, 5vw, 38px); }
+h2 { font-size: 21px; }
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+.sub { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+label { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: grid; gap: 4px; }
+input, select, button { font: inherit; color: var(--fg); }
+input, select { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; text-transform: none; letter-spacing: 0; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { background: var(--accent); color: var(--bg); border: 0; border-radius: 8px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.ghost { background: none; border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.ghost.warn { color: var(--out); border-color: var(--out); }
+
+.totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.tot { background: var(--panel); padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
+.tot span { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.tot b { font-family: var(--font-display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; }
+.tot small { color: var(--muted); font-size: 12px; }
+.c-in { color: var(--in); } .c-out { color: var(--out); } .c-inv { color: var(--inv); }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; align-items: end; }
+.form .wide { grid-column: span 2; }
+@media (max-width: 520px) { .form .wide { grid-column: auto; } }
+.msg { margin: 0; font-size: 13px; color: var(--muted); min-height: 1.2em; }
+.msg.err { color: var(--out); }
+
+.callout { background: var(--accent-soft); border-radius: var(--r); padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; }
+.callout b { font-family: var(--font-display); font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums; }
+
+.tbox { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.num { text-align: right; white-space: nowrap; }
+.tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+.empty { color: var(--muted); padding: 14px 8px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+.meter { height: 12px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .3s; }
+.meter.over i { background: var(--out); }
+.budget-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.budget-row b { font-family: var(--font-display); font-weight: 400; font-size: 24px; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 13px; padding: 2px 10px; border-radius: 99px; background: var(--accent-soft); font-variant-numeric: tabular-nums; }
+.check { flex-direction: row; display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--fg); }
+.check input { width: 18px; height: 18px; }
+.acts { white-space: nowrap; }
+.acts .ghost + .ghost { margin-left: 4px; }
+.ghost.on { color: var(--accent); border-color: var(--accent); }
+.det-row td { background: var(--accent-soft); }
+.det { display: grid; gap: 10px; }
+.det-h { margin: 0; font-weight: 600; font-size: 13px; }
+.det-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.det-list li { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.det-list li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.det-edit { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px; align-items: end; }
+.side { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: end; }
+.usr { display: flex; align-items: center; gap: 8px; }
+.usr img { border-radius: 50%; width: 28px; height: 28px; object-fit: cover; }
+.usr div { display: grid; line-height: 1.2; }
+.usr b { font-weight: 600; font-size: 14px; }
+.usr-l { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.colors { display: grid; gap: 4px; }
+.swatches { display: flex; gap: 6px; }
+.swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0; }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fg); }
+.archivo { width: 72px; padding: 4px 8px; font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.chart { position: relative; min-height: 200px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--font-body); font-variant-numeric: tabular-nums; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .hit { fill: transparent; cursor: pointer; }
+.chart .hit:hover, .chart .hit.on { fill: var(--accent-soft); }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tip b { display: block; color: var(--muted); font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+.auth { min-height: 100vh; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
+.auth-card { width: 100%; max-width: 380px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 28px 24px; display: grid; gap: 14px; box-sizing: border-box; }
+.auth-card h1 { font-size: 30px; }
+.auth-card input { width: 100%; box-sizing: border-box; }
+.auth-card .btn { width: 100%; padding: 11px 16px; }
+.auth-links { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.sync { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="auth" id="auth" hidden>
+  <form class="auth-card" id="auth-form">
+    <div>
+      <h1>Libro de cuentas</h1>
+      <p class="sub" id="auth-sub">Ingresa con tu correo y contraseña.</p>
+    </div>
+    <label for="a-email">Correo<input type="email" id="a-email" autocomplete="email" required></label>
+    <label for="a-pass">Contraseña<input type="password" id="a-pass" autocomplete="current-password" minlength="6" required></label>
+    <label for="a-pass2" id="a-pass2-l" hidden>Repite la contraseña<input type="password" id="a-pass2" autocomplete="new-password" minlength="6"></label>
+    <button class="btn" type="submit" id="a-btn">Ingresar</button>
+    <p class="msg" id="a-msg" role="status"></p>
+    <div class="auth-links">
+      <button type="button" class="link" id="a-mode">Crear una cuenta nueva</button>
+      <button type="button" class="link" id="a-reset">Olvidé mi contraseña</button>
+    </div>
+  </form>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div>
+      <h1>Libro de cuentas</h1>
+      <p class="sub">Anota cada honorario, sueldo, gasto e inversión el día que ocurre. Los totales y tu promedio de honorarios se calculan solos.</p>
+    </div>
+    <div class="side">
+      <div class="usr">
+        <div><span class="usr-l">Usuario</span><b id="u-name">Cargando…</b><span class="sync" id="sync">Sincronizado</span></div>
+        <button type="button" class="ghost" id="logout">Salir</button>
+      </div>
+      <div class="colors"><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div></div>
+      <label for="mes">Mes
+        <input type="month" id="mes">
+      </label>
+    </div>
+  </header>
+
+  <section class="totals" aria-label="Totales del mes">
+    <div class="tot"><span>Ingresos</span><b class="c-in" id="t-in">—</b><small id="t-in-n"></small></div>
+    <div class="tot"><span>Gastos</span><b class="c-out" id="t-out">—</b><small id="t-out-n"></small></div>
+    <div class="tot"><span>Disponible</span><b id="t-disp">—</b><small id="t-tasa"></small></div>
+    <div class="tot"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small>Lo que apartaste este mes</small></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-nec">
+    <div class="budget-row">
+      <h2 id="h-nec">Gastos necesarios</h2>
+      <span><b id="nec-v">—</b> <span class="sub" id="nec-meta" style="display:inline"></span></span>
+    </div>
+    <div class="meter" id="nec-meter" role="meter" aria-labelledby="h-nec" aria-valuemin="0"><i id="nec-bar"></i></div>
+    <p class="msg" id="nec-msg"></p>
+    <div class="chips" id="nec-chips"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-nuevo">
+    <h2 id="h-nuevo">Nuevo movimiento</h2>
+    <form class="form" id="f">
+      <label for="f-fecha">Fecha<input type="date" id="f-fecha" required></label>
+      <label for="f-tipo">Tipo
+        <select id="f-tipo">
+          <option value="Ingreso">Ingreso</option>
+          <option value="Gasto" selected>Gasto</option>
+          <option value="Inversión">Inversión / ahorro</option>
+        </select>
+      </label>
+      <label for="f-cat">Categoría<select id="f-cat"></select></label>
+      <label for="f-monto">Monto (USD)<input type="number" id="f-monto" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required></label>
+      <label for="f-caso" class="caso-f" hidden>Caso / cliente<input type="text" id="f-caso" list="casos-list" maxlength="80" placeholder="Ej.: García – divorcio"></label>
+      <datalist id="casos-list"></datalist>
+      <label for="f-inv" class="inv-f" hidden>Nombre de la inversión<input type="text" id="f-inv" list="inv-list" maxlength="80" placeholder="Ej.: Póliza Banco Pichincha"></label>
+      <datalist id="inv-list"></datalist>
+      <label for="f-tasa" class="inv-f" hidden>Tasa anual (%)<input type="number" id="f-tasa" min="0" max="100" step="0.01" inputmode="decimal" placeholder="Ej.: 7,5"></label>
+      <label for="f-total" class="caso-f" hidden>Total del caso (USD)<input type="number" id="f-total" min="0" step="0.01" inputmode="decimal" placeholder="Lo que debe pagar en total"></label>
+      <label for="f-archivo" class="caso-f" hidden>Archivo<input type="text" id="f-archivo" maxlength="20" placeholder="N.º de archivo"></label>
+      <label for="f-causa" class="caso-f" hidden>Número de causa<input type="text" id="f-causa" maxlength="60" placeholder="Ej.: 16281-2026-0189"></label>
+      <label for="f-cedula" class="caso-f" hidden>Cédula<input type="text" id="f-cedula" maxlength="20" inputmode="numeric" placeholder="10 dígitos"></label>
+      <label for="f-telefono" class="caso-f" hidden>Teléfono<input type="tel" id="f-telefono" maxlength="20" placeholder="09…"></label>
+      <label for="f-correo" class="caso-f" hidden>Correo<input type="email" id="f-correo" maxlength="120" placeholder="cliente@correo.com"></label>
+      <label for="f-desc" class="wide">Detalle<input type="text" id="f-desc" maxlength="120" placeholder="Ej.: Caso García, divorcio – 1.ª cuota"></label>
+      <label class="check" for="f-fijo"><input type="checkbox" id="f-fijo"> Repetir cada mes</label>
+      <button class="btn" id="f-btn" type="submit">Agregar</button>
+    </form>
+    <p class="msg" id="f-msg" role="status"></p>
+  </section>
+
+  <div class="grid2">
+    <section class="panel" aria-labelledby="h-mov">
+      <h2 id="h-mov">Movimientos del mes</h2>
+      <div class="tbox">
+        <table>
+          <thead><tr><th>Fecha</th><th>Detalle</th><th class="num">Monto</th><th></th></tr></thead>
+          <tbody id="lista"><tr><td colspan="4" class="empty">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-hist">
+      <h2 id="h-hist">Historial por mes</h2>
+      <div class="legend"><span><i class="sw" style="background:var(--in)"></i>Ingresos</span><span><i class="sw" style="background:var(--out)"></i>Gastos</span><span class="sub" style="margin:0">Últimos 12 meses</span></div>
+      <div class="chart" id="chart"></div>
+      <div class="tbox">
+        <table>
+          <thead><tr><th>Mes</th><th class="num">Ingresos</th><th class="num">Honorarios</th><th class="num">Gastos</th><th class="num">Disponible</th></tr></thead>
+          <tbody id="hist"><tr><td colspan="5" class="empty">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+
+
+  <div class="callout" id="prom">
+    <span>Promedio de honorarios por casos</span>
+    <b id="prom-v">—</b>
+    <span class="sub" id="prom-n" style="margin:0">Se calcula cuando registres tu primer honorario.</span>
+  </div>
+
+  <section class="panel" aria-labelledby="h-cobrar">
+    <div class="budget-row">
+      <h2 id="h-cobrar">Por cobrar</h2>
+      <span><b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
+    </div>
+    <p class="sub" style="margin:0">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
+    <div class="tbox">
+      <table>
+        <thead><tr><th>Archivo</th><th>Caso</th><th class="num">Total</th><th class="num">Pagado</th><th class="num">Falta</th><th></th></tr></thead>
+        <tbody id="casos"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-inv">
+    <div class="budget-row">
+      <h2 id="h-inv">Mis inversiones</h2>
+      <span><b class="c-inv" id="inv-v">—</b> <span class="sub" style="display:inline">invertido</span></span>
+    </div>
+    <p class="sub" style="margin:0">Al anotar una inversión, ponle nombre y su tasa anual. El rendimiento es una estimación con interés simple sobre lo que has depositado.</p>
+    <div class="tbox">
+      <table>
+        <thead><tr><th>Inversión</th><th class="num">Invertido</th><th class="num">Tasa anual</th><th class="num">Rinde al mes</th><th class="num">Rinde al año</th><th></th></tr></thead>
+        <tbody id="invs"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody>
+        <tfoot><tr><td><b>Total</b></td><td class="num" id="inv-tot">—</td><td></td><td class="num c-in" id="inv-mes">—</td><td class="num c-in" id="inv-anio">—</td><td></td></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-fijos">
+    <h2 id="h-fijos">Fijos de cada mes</h2>
+    <p class="sub" style="margin:0">Estos movimientos se anotan solos en todos los meses desde que los agregas. Para sumar otro, marca "Repetir cada mes" al agregarlo.</p>
+    <div class="tbox">
+      <table>
+        <thead><tr><th>Día</th><th>Detalle</th><th class="num">Monto</th><th></th></tr></thead>
+        <tbody id="fijos"><tr><td colspan="4" class="empty">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-resp">
+    <h2 id="h-resp">Respaldo</h2>
+    <p class="sub" style="margin:0">Descarga una copia de todo tu libro, o carga una copia guardada. Cargar una copia agrega o reemplaza los movimientos con el mismo identificador y no borra nada.</p>
+    <div class="det-edit">
+      <button type="button" class="btn" id="exp">Descargar respaldo</button>
+      <label for="imp">Cargar respaldo (.json)<input type="file" id="imp" accept="application/json,.json"></label>
+    </div>
+    <p class="msg" id="resp-msg" role="status"></p>
+  </section>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, onSnapshotsInSync } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+// ⚙️ Configuración de Firebase (pega aquí la de tu proyecto)
+const firebaseConfig = {
+  apiKey: 'AIzaSyBAUecPj0ZMgmy6tGhb0EtvhxS5cSW_HXM',
+  authDomain: 'libro-de-cuentas-ce78b.firebaseapp.com',
+  projectId: 'libro-de-cuentas-ce78b',
+  storageBucket: 'libro-de-cuentas-ce78b.firebasestorage.app',
+  messagingSenderId: '271170465387',
+  appId: '1:271170465387:web:33af737039382851244b2e',
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+auth.languageCode = 'es';
+const fs = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+
+// Small wrapper so the book code can read and write the same way everywhere.
+// Writes are not awaited on the server: they save on the device at once and sync when there is internet.
+const pending = new Set();
+const track = (p) => { pending.add(p); setSync(); p.catch((e) => { console.error(e); window.dispatchEvent(new CustomEvent('libro-write-error')); }).finally(() => { pending.delete(p); setSync(); }); return Promise.resolve(); };
+function setSync() { const el = document.getElementById('sync'); if (el) el.textContent = pending.size ? (navigator.onLine ? 'Guardando…' : 'Sin internet: se guardará al conectarte') : 'Sincronizado'; }
+window.addEventListener('online', setSync); window.addEventListener('offline', setSync);
+const wrapDoc = (r) => ({
+  id: r.id,
+  set: (d) => track(setDoc(r, d, { merge: true })),
+  update: (d) => track(updateDoc(r, d)),
+  delete: () => track(deleteDoc(r)),
+  onSnapshot: (next, err) => onSnapshot(r, (s) => next({ id: s.id, exists: s.exists(), data: () => s.data() }), err),
+  collection: (name) => wrapCol(collection(r, name)),
+});
+const wrapCol = (c) => ({
+  doc: (id) => wrapDoc(id ? doc(c, id) : doc(c)),
+  add: async (d) => { const r = doc(c); track(setDoc(r, d)); return wrapDoc(r); },
+  onSnapshot: (next, err) => onSnapshot(c, (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
+});
+const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
+
+(() => {
+  const META_NECESARIOS = 160;
+  const NECESARIOS = ['Comida', 'Salidas', 'Cerveza', 'Taxi', 'Gym'];
+  const CATS = {
+    'Ingreso': ['Honorarios por casos', 'Sueldo', 'Intereses de inversiones', 'Otro ingreso'],
+    'Gasto': [...NECESARIOS, 'Aporte IESS', 'Oficina', 'Suscripciones', 'Vivienda', 'Salud', 'Ropa y personal', 'Otro gasto'],
+    'Inversión': ['Fondo de emergencia', 'Póliza de acumulación', 'Fondo de inversión', 'ETF / bolsa', 'Otra inversión'],
+  };
+  const usd = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' });
+  const pct = new Intl.NumberFormat('es-EC', { style: 'percent', maximumFractionDigits: 0 });
+  const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, '0');
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  const thisMonth = todayStr.slice(0, 7);
+  const mesLabel = (m) => `${MESES[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
+  const prevMonth = (m) => { let y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)) - 1; if (mo < 1) { mo = 12; y--; } return `${y}-${pad(mo)}`; };
+  const lastDay = (m) => new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 0).getDate();
+
+  let rows = [];
+  let fijos = [];
+  let casos = [];
+  let invs = [];
+  let openCaso = null;
+  let libroRef = null;
+  const col = (name) => libroRef.collection(name);
+
+  // Color del libro: each choice has a light and a dark version
+  const COLORS = {
+    verde:   { name: 'Verde',   light: ['#1f6b57', '#e3efea'], dark: ['#5cbf9f', '#1d3029'] },
+    azul:    { name: 'Azul',    light: ['#2456a6', '#e4ebf7'], dark: ['#7aa7ef', '#1c2638'] },
+    morado:  { name: 'Morado',  light: ['#6a3fa0', '#eee6f6'], dark: ['#b592e6', '#2a2236'] },
+    rojo:     { name: 'Rojo',     light: ['#c0262d', '#fbe4e4'], dark: ['#f2777b', '#3a1f21'] },
+    rosado:   { name: 'Rosado',   light: ['#c2367e', '#fbe4f0'], dark: ['#f08cc0', '#3a2030'] },
+    amarillo: { name: 'Amarillo', light: ['#9a7200', '#fbf1d0'], dark: ['#f2c94c', '#38301a'] },
+  };
+  let colorKey = 'verde';
+  try { const k = localStorage.getItem('libro-color'); if (k && COLORS[k]) colorKey = k; } catch (e) {}
+  const isDark = () => { const t = document.documentElement.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  function applyColor() {
+    const c = COLORS[colorKey][isDark() ? 'dark' : 'light'];
+    const st = document.documentElement.style;
+    st.setProperty('--accent', c[0]); st.setProperty('--in', c[0]); st.setProperty('--accent-soft', c[1]);
+    document.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.color === colorKey)));
+    try { localStorage.setItem('libro-color', colorKey); } catch (e) {}
+  }
+  const sw = document.getElementById('colores');
+  Object.entries(COLORS).forEach(([k, c]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'swatch'; b.dataset.color = k; b.title = c.name; b.setAttribute('aria-label', 'Color ' + c.name);
+    b.style.background = c.light[0];
+    b.addEventListener('click', async () => {
+      colorKey = k; applyColor();
+      if (libroRef) { try { await libroRef.set({ color: k }); } catch (e) {} }
+    });
+    sw.appendChild(b);
+  });
+  applyColor();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyColor);
+  new MutationObserver(applyColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  let drafts = {};
+  let archDrafts = {};
+  let db = null;
+  let userPickedMonth = false;
+  let armed = null;
+
+  $('f-fecha').value = todayStr;
+  $('mes').value = thisMonth;
+
+  const HON = 'Honorarios por casos';
+  const toggleCaso = () => {
+    const on = $('f-tipo').value === 'Ingreso' && $('f-cat').value === HON;
+    document.querySelectorAll('.caso-f').forEach((el) => { el.hidden = !on; });
+    const inv = $('f-tipo').value === 'Inversión';
+    document.querySelectorAll('.inv-f').forEach((el) => { el.hidden = !inv; });
+  };
+  const fillCats = () => { $('f-cat').replaceChildren(...CATS[$('f-tipo').value].map((c) => new Option(c))); toggleCaso(); };
+  fillCats();
+  $('f-tipo').addEventListener('change', fillCats);
+  $('f-cat').addEventListener('change', toggleCaso);
+  const findCaso = (name) => casos.find((c) => c.nombre.trim().toLowerCase() === name.trim().toLowerCase());
+  const CF = ['archivo', 'causa', 'cedula', 'telefono', 'correo'];
+  $('f-caso').addEventListener('input', () => {
+    const c = findCaso($('f-caso').value); if (!c) return;
+    if (!$('f-total').value) $('f-total').value = c.total;
+    CF.forEach((k) => { if (!$('f-' + k).value && c[k]) $('f-' + k).value = c[k]; });
+  });
+  const findInv = (name) => invs.find((c) => c.nombre.trim().toLowerCase() === name.trim().toLowerCase());
+  $('f-inv').addEventListener('input', () => { const c = findInv($('f-inv').value); if (c && !$('f-tasa').value) $('f-tasa').value = c.tasa; });
+  $('mes').addEventListener('change', () => { userPickedMonth = true; render(); });
+  $('nec-meta').textContent = `de ${usd.format(META_NECESARIOS)} al mes`;
+  $('nec-meter').setAttribute('aria-valuemax', String(META_NECESARIOS));
+
+  const td = (text, cls) => { const el = document.createElement('td'); el.textContent = text; if (cls) el.className = cls; return el; };
+  const emptyRow = (cols, text) => { const tr = document.createElement('tr'); const c = td(text, 'empty'); c.colSpan = cols; tr.appendChild(c); return tr; };
+  const colorOf = (t) => t === 'Ingreso' ? 'c-in' : t === 'Gasto' ? 'c-out' : 'c-inv';
+  const signOf = (t) => t === 'Ingreso' ? '+' : t === 'Gasto' ? '−' : '';
+
+  function monthsBetween(a, b) {
+    const out = [];
+    let y = Number(a.slice(0, 4)), m = Number(a.slice(5, 7));
+    const end = Number(b.slice(0, 4)) * 12 + Number(b.slice(5, 7));
+    while (y * 12 + m <= end) { out.push(`${y}-${pad(m)}`); m++; if (m > 12) { m = 1; y++; } }
+    return out;
+  }
+
+  // Real entries plus the fixed items that apply to month m
+  function entriesFor(m) {
+    const real = rows.filter((r) => r.fecha.slice(0, 7) === m);
+    const fx = fijos.filter((f) => f.desde <= m && (!f.hasta || m <= f.hasta)).map((f) => ({
+      id: 'fijo:' + f.id, fijo: true, fecha: `${m}-${pad(Math.min(f.dia, lastDay(m)))}`,
+      tipo: f.tipo, categoria: f.categoria, descripcion: f.descripcion, monto: f.monto,
+    }));
+    return [...real, ...fx];
+  }
+  const sum = (list, tipo) => list.filter((r) => r.tipo === tipo).reduce((s, r) => s + r.monto, 0);
+
+  function render() {
+    const mes = $('mes').value || thisMonth;
+    const delMes = entriesFor(mes).sort((a, b) => b.fecha.localeCompare(a.fecha));
+    const ing = sum(delMes, 'Ingreso'), gas = sum(delMes, 'Gasto'), inv = sum(delMes, 'Inversión');
+    const disp = ing - gas;
+    $('t-in').textContent = usd.format(ing);
+    $('t-out').textContent = usd.format(gas);
+    $('t-disp').textContent = usd.format(disp);
+    $('t-disp').className = disp < 0 ? 'c-out' : '';
+    $('t-inv').textContent = usd.format(inv);
+    const nIn = delMes.filter((r) => r.tipo === 'Ingreso').length, nOut = delMes.filter((r) => r.tipo === 'Gasto').length;
+    $('t-in-n').textContent = `${nIn} ${nIn === 1 ? 'movimiento' : 'movimientos'}`;
+    $('t-out-n').textContent = `${nOut} ${nOut === 1 ? 'movimiento' : 'movimientos'}`;
+    $('t-tasa').textContent = ing > 0 ? `${pct.format(disp / ing)} de tus ingresos` : 'Ingresos menos gastos';
+
+    // Gastos necesarios budget
+    const nec = delMes.filter((r) => r.tipo === 'Gasto' && NECESARIOS.includes(r.categoria));
+    const necTot = nec.reduce((s, r) => s + r.monto, 0);
+    $('nec-v').textContent = usd.format(necTot);
+    $('nec-v').className = necTot > META_NECESARIOS ? 'c-out' : '';
+    $('nec-bar').style.width = Math.min(100, (necTot / META_NECESARIOS) * 100) + '%';
+    $('nec-meter').classList.toggle('over', necTot > META_NECESARIOS);
+    $('nec-meter').setAttribute('aria-valuenow', String(necTot));
+    $('nec-msg').textContent = necTot > META_NECESARIOS
+      ? `Te pasaste por ${usd.format(necTot - META_NECESARIOS)} en ${mesLabel(mes)}.`
+      : `Te quedan ${usd.format(META_NECESARIOS - necTot)} para comida, salidas, cerveza, taxi y gym en ${mesLabel(mes)}.`;
+    $('nec-msg').className = 'msg' + (necTot > META_NECESARIOS ? ' err' : '');
+    $('nec-chips').replaceChildren(...NECESARIOS.map((c) => {
+      const v = nec.filter((r) => r.categoria === c).reduce((s, r) => s + r.monto, 0);
+      const el = document.createElement('span'); el.className = 'chip'; el.textContent = `${c} ${usd.format(v)}`; return el;
+    }));
+
+    // Month's entries
+    const lista = $('lista');
+    if (!delMes.length) lista.replaceChildren(emptyRow(4, `Sin movimientos en ${mesLabel(mes)}. Agrega el primero arriba.`));
+    else lista.replaceChildren(...delMes.map((r) => {
+      const tr = document.createElement('tr');
+      tr.appendChild(td(`${r.fecha.slice(8, 10)} ${MESES[Number(r.fecha.slice(5, 7)) - 1]}`));
+      const det = document.createElement('td');
+      const tag = document.createElement('span');
+      tag.className = 'tag ' + colorOf(r.tipo);
+      tag.textContent = r.categoria;
+      det.appendChild(tag);
+      const caso = r.casoId ? casos.find((c) => c.id === r.casoId) : null;
+      const txt = [caso ? caso.nombre : '', r.descripcion, r.fijo ? 'fijo mensual' : ''].filter(Boolean).join(' · ');
+      if (txt) { const d = document.createElement('div'); d.textContent = txt; d.style.marginTop = '2px'; det.appendChild(d); }
+      tr.appendChild(det);
+      tr.appendChild(td(signOf(r.tipo) + usd.format(r.monto), 'num ' + colorOf(r.tipo)));
+      const act = document.createElement('td'); act.className = 'num';
+      if (!r.fijo) act.appendChild(delBtn(r.id, () => col('movimientos').doc(r.id).delete()));
+      tr.appendChild(act);
+      return tr;
+    }));
+
+    // Inversiones
+    const pctAnual = new Intl.NumberFormat('es-EC', { maximumFractionDigits: 2 });
+    const hastaHoy = (r) => r.fecha <= todayStr;
+    const depositos = (id) => [...rows, ...fijos.flatMap((f) => f.inversionId === id ? monthsBetween(f.desde, f.hasta && f.hasta < thisMonth ? f.hasta : thisMonth).map((m) => ({ fecha: `${m}-${pad(Math.min(f.dia, lastDay(m)))}`, monto: f.monto, inversionId: id })) : [])]
+      .filter((r) => r.inversionId === id && hastaHoy(r)).reduce((s, r) => s + r.monto, 0);
+    const iv = invs.map((x) => { const d = depositos(x.id); return { ...x, dep: d, mes: d * x.tasa / 100 / 12, anio: d * x.tasa / 100 }; }).sort((a, b) => b.dep - a.dep);
+    const tot = iv.reduce((a, x) => ({ dep: a.dep + x.dep, mes: a.mes + x.mes, anio: a.anio + x.anio }), { dep: 0, mes: 0, anio: 0 });
+    $('inv-v').textContent = usd.format(tot.dep);
+    $('inv-tot').textContent = usd.format(tot.dep);
+    $('inv-mes').textContent = usd.format(tot.mes);
+    $('inv-anio').textContent = usd.format(tot.anio);
+    $('inv-list').replaceChildren(...invs.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
+    const ibody = $('invs');
+    if (!iv.length) ibody.replaceChildren(emptyRow(6, 'Aún no tienes inversiones. Anota una con tipo "Inversión / ahorro".'));
+    else ibody.replaceChildren(...iv.map((x) => {
+      const tr = document.createElement('tr');
+      const n = document.createElement('td'); n.textContent = x.nombre;
+      const sm = document.createElement('div'); sm.className = 'sub'; sm.style.margin = '0'; sm.style.fontSize = '12px'; sm.textContent = x.categoria; n.appendChild(sm);
+      tr.appendChild(n);
+      tr.appendChild(td(usd.format(x.dep), 'num c-inv'));
+      const tc = td(pctAnual.format(x.tasa) + ' %', 'num');
+      tr.appendChild(tc);
+      tr.appendChild(td(usd.format(x.mes), 'num c-in'));
+      tr.appendChild(td(usd.format(x.anio), 'num c-in'));
+      const act = document.createElement('td'); act.className = 'num';
+      const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'ghost'; ed.textContent = 'Tasa';
+      ed.style.marginRight = '4px';
+      ed.addEventListener('click', () => {
+        const inp = document.createElement('input'); inp.type = 'number'; inp.step = '0.01'; inp.min = '0'; inp.max = '100'; inp.value = x.tasa; inp.style.width = '80px'; inp.setAttribute('aria-label', 'Tasa anual de ' + x.nombre);
+        tc.replaceChildren(inp); inp.focus();
+        const save = async () => { const v = parseFloat(inp.value); if (v >= 0 && v !== x.tasa) { try { await col('inversiones').doc(x.id).update({ tasa: v }); } catch (e) { setMsg('No se pudo cambiar la tasa.', true); } } render(); };
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') render(); });
+        inp.addEventListener('blur', save, { once: true });
+      });
+      act.appendChild(ed);
+      act.appendChild(delBtn('inv:' + x.id, () => col('inversiones').doc(x.id).delete(), 'Quitar', '¿Quitar?'));
+      tr.appendChild(act);
+      return tr;
+    }));
+
+    // Cuentas por cobrar
+    const pagos = (id) => rows.filter((r) => r.casoId === id).reduce((s, r) => s + r.monto, 0);
+    const cs = casos.map((c) => { const p = pagos(c.id); return { ...c, pagado: p, falta: Math.max(0, c.total - p) }; })
+      .sort((a, b) => (b.falta > 0) - (a.falta > 0) || b.falta - a.falta || a.nombre.localeCompare(b.nombre));
+    const porCobrar = cs.reduce((s, c) => s + c.falta, 0);
+    const pend = cs.filter((c) => c.falta > 0).length;
+    $('cob-v').textContent = usd.format(porCobrar);
+    $('cob-n').textContent = `en ${pend} ${pend === 1 ? 'caso' : 'casos'}`;
+    $('casos-list').replaceChildren(...casos.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
+    const cbody = $('casos');
+    if (!cs.length) cbody.replaceChildren(emptyRow(6, 'Aún no tienes casos. Anota un honorario con su caso y total.'));
+    else cbody.replaceChildren(...cs.flatMap((c) => {
+      const tr = document.createElement('tr');
+      const ar = document.createElement('td');
+      const ai = document.createElement('input'); ai.type = 'text'; ai.className = 'archivo'; ai.id = 'arch-' + c.id; ai.maxLength = 20;
+      ai.placeholder = 'N.º'; ai.setAttribute('aria-label', 'Número de archivo de ' + c.nombre);
+      ai.value = archDrafts[c.id] !== undefined ? archDrafts[c.id] : c.archivo;
+      ai.addEventListener('input', () => { archDrafts[c.id] = ai.value; });
+      ai.addEventListener('keydown', (e) => { if (e.key === 'Enter') ai.blur(); });
+      ai.addEventListener('change', async () => {
+        const v = ai.value.trim();
+        try { await col('casos').doc(c.id).update({ archivo: v }); delete archDrafts[c.id]; }
+        catch (e) { setMsg('No se pudo guardar el número de archivo.', true); }
+      });
+      ar.appendChild(ai); tr.appendChild(ar);
+      const n = document.createElement('td'); n.textContent = c.nombre;
+      if (c.falta <= 0) { const t = document.createElement('span'); t.className = 'tag c-in'; t.style.marginLeft = '6px'; t.textContent = 'Pagado'; n.appendChild(t); }
+      tr.appendChild(n);
+      tr.appendChild(td(usd.format(c.total), 'num'));
+      tr.appendChild(td(usd.format(c.pagado), 'num c-in'));
+      tr.appendChild(td(usd.format(c.falta), 'num' + (c.falta > 0 ? ' c-out' : '')));
+      const act = document.createElement('td'); act.className = 'num acts';
+      const open = openCaso === c.id;
+      const det = document.createElement('button'); det.type = 'button'; det.className = 'ghost' + (open ? ' on' : '');
+      det.textContent = open ? 'Cerrar' : 'Detalle'; det.setAttribute('aria-expanded', String(open));
+      det.addEventListener('click', () => { openCaso = open ? null : c.id; drafts = {}; render(); });
+      act.appendChild(det);
+      act.appendChild(delBtn('caso:' + c.id, () => col('casos').doc(c.id).delete(), 'Quitar', '¿Quitar?'));
+      tr.appendChild(act);
+      if (!open) return [tr];
+
+      // Detail row: payments and editable total
+      const dr = document.createElement('tr'); dr.className = 'det-row';
+      const cell = document.createElement('td'); cell.colSpan = 6;
+      const wrap = document.createElement('div'); wrap.className = 'det';
+      const ps = rows.filter((r) => r.casoId === c.id).sort((a, b) => a.fecha.localeCompare(b.fecha));
+      const h = document.createElement('p'); h.className = 'det-h'; h.textContent = ps.length ? `Pagos recibidos (${ps.length})` : 'Aún no hay pagos registrados para este caso.';
+      wrap.appendChild(h);
+      if (ps.length) {
+        const ul = document.createElement('ul'); ul.className = 'det-list';
+        ps.forEach((r) => {
+          const li = document.createElement('li');
+          const d = document.createElement('span'); d.textContent = `${r.fecha.slice(8, 10)} ${MESES[Number(r.fecha.slice(5, 7)) - 1]} ${r.fecha.slice(0, 4)}` + (r.descripcion ? ` · ${r.descripcion}` : '');
+          const m = document.createElement('span'); m.className = 'c-in'; m.textContent = usd.format(r.monto);
+          li.append(d, m); ul.appendChild(li);
+        });
+        wrap.appendChild(ul);
+      }
+      const ed = document.createElement('div'); ed.className = 'det-edit';
+      const FIELDS = [['total', 'Total del caso (USD)', 'number'], ['causa', 'Número de causa', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
+      const inputs = {};
+      FIELDS.forEach(([k, label, type]) => {
+        const lb = document.createElement('label'); lb.htmlFor = 'det-' + k; lb.textContent = label;
+        const inp = document.createElement('input'); inp.type = type; inp.id = 'det-' + k;
+        if (type === 'number') { inp.min = '0'; inp.step = '0.01'; inp.inputMode = 'decimal'; }
+        else inp.maxLength = 120;
+        inp.value = drafts[k] !== undefined ? drafts[k] : String(c[k] ?? '');
+        inp.addEventListener('input', () => { drafts[k] = inp.value; });
+        lb.appendChild(inp); ed.appendChild(lb); inputs[k] = inp;
+      });
+      const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar datos';
+      sv.addEventListener('click', async () => {
+        const v = Math.round(parseFloat(inputs.total.value) * 100) / 100;
+        if (!(v >= 0)) { setMsg('El total debe ser un número.', true); return; }
+        const upd = { total: v };
+        ['causa', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
+        try { await col('casos').doc(c.id).update(upd); drafts = {}; setMsg(`Datos de ${c.nombre} guardados.`); }
+        catch (e) { setMsg('No se pudieron guardar los datos. Intenta de nuevo.', true); }
+      });
+      ed.appendChild(sv);
+      wrap.appendChild(ed);
+      if (c.pagado > c.total) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
+      cell.appendChild(wrap); dr.appendChild(cell);
+      return [tr, dr];
+    }));
+
+    // Fixed items
+    const activos = fijos.filter((f) => !f.hasta || f.hasta >= thisMonth).sort((a, b) => a.dia - b.dia);
+    const fx = $('fijos');
+    if (!activos.length) fx.replaceChildren(emptyRow(4, 'Aún no tienes fijos. Marca "Repetir cada mes" al agregar un movimiento.'));
+    else fx.replaceChildren(...activos.map((f) => {
+      const tr = document.createElement('tr');
+      tr.appendChild(td(String(f.dia)));
+      const det = document.createElement('td');
+      const tag = document.createElement('span'); tag.className = 'tag ' + colorOf(f.tipo); tag.textContent = f.categoria; det.appendChild(tag);
+      if (f.descripcion) { const d = document.createElement('div'); d.textContent = f.descripcion; d.style.marginTop = '2px'; det.appendChild(d); }
+      tr.appendChild(det);
+      tr.appendChild(td(signOf(f.tipo) + usd.format(f.monto), 'num ' + colorOf(f.tipo)));
+      const act = document.createElement('td'); act.className = 'num';
+      act.appendChild(delBtn('fx:' + f.id, () => quitarFijo(f), 'Quitar', '¿Quitar?'));
+      tr.appendChild(act);
+      return tr;
+    }));
+
+    // History + fee average
+    const hist = $('hist');
+    const starts = [...rows.map((r) => r.fecha.slice(0, 7)), ...fijos.map((f) => f.desde)].sort();
+    if (!starts.length) {
+      hist.replaceChildren(emptyRow(5, 'Aquí verás cada mes cuando tengas movimientos.'));
+      drawChart([]);
+    } else {
+      const ends = [...rows.map((r) => r.fecha.slice(0, 7)), thisMonth, mes].sort();
+      const lista = monthsBetween(starts[0], ends[ends.length - 1]).reverse();
+      drawChart(lista.slice(0, 12).reverse().map((m) => { const rs = entriesFor(m); return { m, i: sum(rs, 'Ingreso'), g: sum(rs, 'Gasto') }; }));
+      hist.replaceChildren(...lista.map((m) => {
+        const rs = entriesFor(m);
+        const i = sum(rs, 'Ingreso'), g = sum(rs, 'Gasto');
+        const h = rs.filter((r) => r.categoria === 'Honorarios por casos').reduce((s, r) => s + r.monto, 0);
+        const tr = document.createElement('tr');
+        tr.appendChild(td(mesLabel(m)));
+        tr.appendChild(td(usd.format(i), 'num'));
+        tr.appendChild(td(usd.format(h), 'num'));
+        tr.appendChild(td(usd.format(g), 'num'));
+        tr.appendChild(td(usd.format(i - g), 'num' + (i - g < 0 ? ' c-out' : '')));
+        return tr;
+      }));
+    }
+    const hon = rows.filter((r) => r.categoria === 'Honorarios por casos');
+    if (hon.length) {
+      const first = hon.map((r) => r.fecha.slice(0, 7)).sort()[0];
+      const n = monthsBetween(first, thisMonth > first ? thisMonth : first).length;
+      const total = hon.reduce((s, r) => s + r.monto, 0);
+      $('prom-v').textContent = usd.format(total / n) + ' al mes';
+      $('prom-n').textContent = `${usd.format(total)} en ${n} ${n === 1 ? 'mes' : 'meses'}, contando los meses sin cobros.`;
+    } else {
+      $('prom-v').textContent = '—';
+      $('prom-n').textContent = 'Se calcula cuando registres tu primer honorario.';
+    }
+  }
+
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const svgEl = (tag, attrs) => { const el = document.createElementNS(SVGNS, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el; };
+  const compact = new Intl.NumberFormat('es-EC', { notation: 'compact', maximumFractionDigits: 1 });
+  function niceMax(v) { if (v <= 0) return 100; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+
+  function drawChart(data) {
+    const box = $('chart');
+    if (!data.length) { box.replaceChildren(); const p = document.createElement('p'); p.className = 'msg'; p.textContent = 'El gráfico aparece cuando tengas tu primer mes.'; box.appendChild(p); return; }
+    const W = Math.max(280, box.clientWidth || 420), H = 200;
+    const top = Math.max(...data.map((d) => Math.max(d.i, d.g)));
+    const max = niceMax(top);
+    const ticks = [0, max / 2, max];
+    const left = 8 + Math.max(...ticks.map((t) => ('$' + compact.format(t)).length)) * 6.5;
+    const m = { t: 8, r: 4, b: 22, l: left };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const band = iw / data.length;
+    const bw = Math.min(24, Math.max(4, (band - 10) / 2));
+    const y = (v) => m.t + ih - (v / max) * ih;
+    const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Ingresos y gastos por mes' });
+    ticks.forEach((t) => {
+      svg.appendChild(svgEl('line', { class: 'grid', x1: m.l, x2: W - m.r, y1: y(t), y2: y(t) }));
+      const tx = svgEl('text', { x: m.l - 6, y: y(t) + 4, 'text-anchor': 'end' }); tx.textContent = '$' + compact.format(t); svg.appendChild(tx);
+    });
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true;
+    const every = Math.ceil(data.length / Math.max(1, Math.floor(iw / 44)));
+    data.forEach((d, k) => {
+      const x0 = m.l + k * band;
+      const hit = svgEl('rect', { class: 'hit', x: x0, y: m.t, width: band, height: ih, rx: 4 });
+      svg.appendChild(hit);
+      const cx = x0 + band / 2;
+      [[d.i, 'var(--in)', cx - bw - 1], [d.g, 'var(--out)', cx + 1]].forEach(([v, c, x]) => {
+        const h = Math.max(v > 0 ? 1.5 : 0, (v / max) * ih);
+        svg.appendChild(svgEl('rect', { x, y: m.t + ih - h, width: bw, height: h, rx: Math.min(3, bw / 2), style: `fill:${c};pointer-events:none` }));
+      });
+      if (k % every === 0 || k === data.length - 1) {
+        const lb = svgEl('text', { x: cx, y: H - 6, 'text-anchor': 'middle' }); lb.textContent = MESES[Number(d.m.slice(5, 7)) - 1]; svg.appendChild(lb);
+      }
+      const show = () => {
+        svg.querySelectorAll('.hit.on').forEach((e) => e.classList.remove('on')); hit.classList.add('on');
+        tip.replaceChildren();
+        const t = document.createElement('b'); t.textContent = mesLabel(d.m); tip.appendChild(t);
+        [['Ingresos', d.i], ['Gastos', d.g], ['Disponible', d.i - d.g]].forEach(([n, v]) => { const r = document.createElement('div'); r.textContent = `${n}: ${usd.format(v)}`; tip.appendChild(r); });
+        tip.hidden = false;
+        const px = (cx / W) * box.clientWidth;
+        tip.style.top = '0px';
+        tip.style.left = Math.max(0, Math.min(box.clientWidth - tip.offsetWidth, px - tip.offsetWidth / 2)) + 'px';
+      };
+      hit.addEventListener('pointerenter', show);
+      hit.addEventListener('click', show);
+    });
+    svg.addEventListener('pointerleave', () => { tip.hidden = true; svg.querySelectorAll('.hit.on').forEach((e) => e.classList.remove('on')); });
+    box.replaceChildren(svg, tip);
+  }
+  let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(render, 150); });
+
+  function delBtn(key, action, label = 'Borrar', confirmLabel = '¿Borrar?') {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ghost' + (armed === key ? ' warn' : '');
+    b.textContent = armed === key ? confirmLabel : label;
+    b.addEventListener('click', async () => {
+      if (armed !== key) { armed = key; render(); setTimeout(() => { if (armed === key) { armed = null; render(); } }, 4000); return; }
+      armed = null;
+      try { await action(); } catch (e) { setMsg('No se pudo completar. Revisa tu conexión e intenta de nuevo.', true); }
+    });
+    return b;
+  }
+
+  // Stop a fixed item from this month on, keeping it in past months
+  async function quitarFijo(f) {
+    const ref = col('fijos').doc(f.id);
+    const hasta = prevMonth(thisMonth);
+    if (f.desde > hasta) await ref.delete();
+    else await ref.update({ hasta });
+  }
+
+  function setMsg(text, err) { const m = $('f-msg'); m.textContent = text; m.className = 'msg' + (err ? ' err' : ''); }
+
+  $('f').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    if (!db) { setMsg('No hay conexión con tu libro. Abre la página con tu cuenta de Claude para guardar.', true); return; }
+    const monto = Math.round(parseFloat($('f-monto').value) * 100) / 100;
+    const fecha = $('f-fecha').value;
+    if (!fecha || !(monto > 0)) { setMsg('Pon una fecha y un monto mayor que cero.', true); return; }
+    const base = { tipo: $('f-tipo').value, categoria: $('f-cat').value, descripcion: $('f-desc').value.trim(), monto, creado: new Date().toISOString() };
+    const repetir = $('f-fijo').checked;
+    const esHon = base.tipo === 'Ingreso' && base.categoria === HON;
+    const casoNombre = $('f-caso').value.trim();
+    const totalTxt = $('f-total').value;
+    const total = totalTxt === '' ? null : Math.round(parseFloat(totalTxt) * 100) / 100;
+    if (esHon && casoNombre && total !== null && !(total >= 0)) { setMsg('El total del caso debe ser un número.', true); return; }
+    const esInv = base.tipo === 'Inversión';
+    const invNombre = $('f-inv').value.trim();
+    const tasaTxt = $('f-tasa').value;
+    const tasa = tasaTxt === '' ? null : parseFloat(tasaTxt);
+    if (esInv && invNombre && tasa !== null && !(tasa >= 0 && tasa <= 100)) { setMsg('La tasa anual debe estar entre 0 y 100.', true); return; }
+    $('f-btn').disabled = true;
+    try {
+      if (esInv && invNombre) {
+        const ex = findInv(invNombre);
+        if (ex) {
+          if (tasa !== null && tasa !== ex.tasa) await col('inversiones').doc(ex.id).update({ tasa });
+          base.inversionId = ex.id;
+        } else {
+          const ref = await col('inversiones').add({ nombre: invNombre, categoria: base.categoria, tasa: tasa ?? 0, creado: new Date().toISOString() });
+          base.inversionId = ref.id;
+        }
+      }
+      if (esHon && casoNombre && !repetir) {
+        const existente = findCaso(casoNombre);
+        if (existente) {
+          const upd = {};
+          if (total !== null && total !== existente.total) upd.total = total;
+          CF.forEach((k) => { const v = $('f-' + k).value.trim(); if (v && v !== existente[k]) upd[k] = v; });
+          if (Object.keys(upd).length) await col('casos').doc(existente.id).update(upd);
+          base.casoId = existente.id;
+        } else {
+          const nuevo = { nombre: casoNombre, total: total ?? monto, creado: new Date().toISOString() };
+          CF.forEach((k) => { nuevo[k] = $('f-' + k).value.trim(); });
+          const ref = await col('casos').add(nuevo);
+          base.casoId = ref.id;
+        }
+      }
+      if (repetir) {
+        await col('fijos').add({ ...base, dia: Number(fecha.slice(8, 10)), desde: fecha.slice(0, 7) });
+        setMsg(`Guardado como fijo mensual: ${base.categoria}, ${usd.format(monto)}.`);
+      } else {
+        await col('movimientos').add({ ...base, fecha });
+        setMsg(`Guardado: ${base.categoria}, ${usd.format(monto)}.`);
+      }
+      $('f-monto').value = ''; $('f-desc').value = ''; $('f-fijo').checked = false; $('f-caso').value = ''; $('f-total').value = ''; CF.forEach((k) => { $('f-' + k).value = ''; }); $('f-inv').value = ''; $('f-tasa').value = '';
+      if ($('mes').value !== fecha.slice(0, 7)) { $('mes').value = fecha.slice(0, 7); userPickedMonth = true; render(); }
+    } catch (e) {
+      setMsg(e && e.code === 'quota_exceeded' ? 'El libro está lleno. Borra movimientos antiguos para seguir.' : 'No se pudo guardar. Intenta de nuevo.', true);
+    } finally { $('f-btn').disabled = false; }
+  });
+
+  render();
+
+  // Sign-in screen
+  let creating = false;
+  const authMsg = (t, err) => { const m = $('a-msg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); };
+  const ERR = {
+    'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+    'auth/wrong-password': 'Correo o contraseña incorrectos.',
+    'auth/user-not-found': 'No existe una cuenta con ese correo.',
+    'auth/email-already-in-use': 'Ya existe una cuenta con ese correo. Ingresa con tu contraseña.',
+    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+    'auth/invalid-email': 'Ese correo no es válido.',
+    'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos.',
+    'auth/network-request-failed': 'Sin conexión a internet. Necesitas internet para ingresar la primera vez.',
+  };
+  const setMode = (c) => {
+    creating = c;
+    $('a-btn').textContent = c ? 'Crear cuenta' : 'Ingresar';
+    $('a-mode').textContent = c ? 'Ya tengo una cuenta' : 'Crear una cuenta nueva';
+    $('auth-sub').textContent = c ? 'Crea tu cuenta con tu correo y una contraseña.' : 'Ingresa con tu correo y contraseña.';
+    $('a-pass2-l').hidden = !c; $('a-pass2').required = c;
+    $('a-pass').autocomplete = c ? 'new-password' : 'current-password';
+    authMsg('');
+  };
+  $('a-mode').addEventListener('click', () => setMode(!creating));
+  $('a-reset').addEventListener('click', async () => {
+    const email = $('a-email').value.trim();
+    if (!email) { authMsg('Escribe tu correo arriba y vuelve a tocar "Olvidé mi contraseña".', true); return; }
+    try { await sendPasswordResetEmail(auth, email); authMsg('Te enviamos un correo para cambiar tu contraseña.'); }
+    catch (e) { authMsg(ERR[e.code] || 'No se pudo enviar el correo.', true); }
+  });
+  $('auth-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = $('a-email').value.trim(), pass = $('a-pass').value;
+    if (creating && pass !== $('a-pass2').value) { authMsg('Las contraseñas no coinciden.', true); return; }
+    $('a-btn').disabled = true; authMsg(creating ? 'Creando tu cuenta…' : 'Ingresando…');
+    try {
+      if (creating) await createUserWithEmailAndPassword(auth, email, pass);
+      else await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) { authMsg(ERR[e.code] || 'No se pudo ingresar. Intenta de nuevo.', true); }
+    finally { $('a-btn').disabled = false; }
+  });
+  $('logout').addEventListener('click', async () => { await signOut(auth); location.reload(); });
+  window.addEventListener('libro-write-error', () => setMsg('No se pudo guardar un cambio. Revisa tu conexión y vuelve a intentarlo.', true));
+
+  let started = false;
+  onAuthStateChanged(auth, (u) => {
+    if (!u) { $('app').hidden = true; $('auth').hidden = false; return; }
+    $('auth').hidden = true; $('app').hidden = false;
+    if (started) return;
+    started = true;
+    startBook(u);
+  });
+
+  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos'];
+  const raw = {};
+  $('exp').addEventListener('click', () => {
+    const data = { app: 'libro-de-cuentas', version: 1, exportado: new Date().toISOString(), color: colorKey };
+    COLS.forEach((c) => { data[c] = raw[c] || {}; });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `libro-de-cuentas-${todayStr}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    $('resp-msg').textContent = 'Respaldo descargado.';
+  });
+  $('imp').addEventListener('change', async () => {
+    const f = $('imp').files[0]; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      let n = 0;
+      COLS.forEach((c) => { const obj = data[c] || {}; Object.entries(obj).forEach(([id, d]) => { if (d && typeof d === 'object' && /^[A-Za-z0-9_-]{1,100}$/.test(id)) { col(c).doc(id).set(d); n++; } }); });
+      if (data.color && COLORS[data.color]) { colorKey = data.color; applyColor(); libroRef.set({ color: data.color }); }
+      $('resp-msg').textContent = `Se cargaron ${n} registros.`; $('resp-msg').className = 'msg';
+    } catch (e) { $('resp-msg').textContent = 'Ese archivo no es un respaldo válido.'; $('resp-msg').className = 'msg err'; }
+    $('imp').value = '';
+  });
+
+  function startBook(u) {
+    $('u-name').textContent = u.email || 'Tu cuenta';
+    db = fireDb;
+    libroRef = db.doc('users/' + u.uid);
+    libroRef.onSnapshot((snap) => {
+      const c = snap.exists ? String((snap.data() || {}).color || '') : '';
+      if (COLORS[c]) { colorKey = c; applyColor(); }
+    }, () => {});
+    const lost = () => setMsg('Se perdió la conexión con tu libro. Recarga la página.', true);
+    const pickMonth = () => {
+      if (userPickedMonth) return;
+      const all = [...rows.map((r) => r.fecha.slice(0, 7)), ...fijos.map((f) => f.desde)];
+      if (all.length && !all.some((m) => m <= thisMonth)) $('mes').value = all.sort()[0];
+    };
+    col('movimientos').onSnapshot((snap) => {
+      raw['movimientos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      rows = snap.docs.map((d) => {
+        const x = d.data() || {};
+        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
+      }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
+      pickMonth(); render();
+    }, lost);
+    col('fijos').onSnapshot((snap) => {
+      raw['fijos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      fijos = snap.docs.map((d) => {
+        const x = d.data() || {};
+        return { id: d.id, tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, dia: Math.max(1, Math.min(31, Number(x.dia) || 1)), desde: String(x.desde || ''), hasta: x.hasta ? String(x.hasta) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
+      }).filter((f) => /^\d{4}-\d{2}$/.test(f.desde));
+      pickMonth(); render();
+    }, lost);
+    col('inversiones').onSnapshot((snap) => {
+      raw['inversiones'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      invs = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), categoria: String(x.categoria || ''), tasa: Number(x.tasa) || 0 }; });
+      render();
+    }, lost);
+    col('casos').onSnapshot((snap) => {
+      raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || '') }; });
+      render();
+    }, lost);
+  }
+})();
+</script>
+</body>
+</html>
