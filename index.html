@@ -254,7 +254,7 @@ img { max-width: 100%; }
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="h-inv">
+  <section class="panel" id="sec-inv" aria-labelledby="h-inv">
     <div class="budget-row">
       <h2 id="h-inv">Mis inversiones</h2>
       <span><b class="c-inv" id="inv-v">—</b> <span class="sub" style="display:inline">invertido</span></span>
@@ -269,7 +269,7 @@ img { max-width: 100%; }
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="h-fijos">
+  <section class="panel" id="sec-fijos" aria-labelledby="h-fijos">
     <h2 id="h-fijos">Fijos de cada mes</h2>
     <p class="sub" style="margin:0">Estos movimientos se anotan solos en todos los meses desde que los agregas. Para sumar otro, marca "Repetir cada mes" al agregarlo.</p>
     <div class="tbox">
@@ -501,6 +501,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('inv-mes').textContent = usd.format(tot.mes);
     $('inv-anio').textContent = usd.format(tot.anio);
     $('inv-list').replaceChildren(...invs.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
+    $('sec-inv').hidden = !iv.length;
     const ibody = $('invs');
     if (!iv.length) ibody.replaceChildren(emptyRow(6, 'Aún no tienes inversiones. Anota una con tipo "Inversión / ahorro".'));
     else ibody.replaceChildren(...iv.map((x) => {
@@ -684,6 +685,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
     // Fixed items
     const activos = fijos.filter((f) => !f.hasta || f.hasta >= thisMonth).sort((a, b) => a.dia - b.dia);
+    $('sec-fijos').hidden = !activos.length;
     const fx = $('fijos');
     if (!activos.length) fx.replaceChildren(emptyRow(4, 'Aún no tienes fijos. Marca "Repetir cada mes" al agregar un movimiento.'));
     else fx.replaceChildren(...activos.map((f) => {
