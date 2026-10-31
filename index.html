@@ -264,32 +264,6 @@ img { max-width: 100%; }
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="h-aud">
-    <div class="budget-row">
-      <h2 id="h-aud">Audiencias</h2>
-      <span class="sub" style="display:inline" id="aud-n"></span>
-    </div>
-    <form class="form" id="af">
-      <label for="af-fecha">Fecha<input type="date" id="af-fecha" required></label>
-      <label for="af-hora">Hora<input type="time" id="af-hora" value="09:00" required></label>
-      <label for="af-dur">Duración
-        <select id="af-dur"><option value="30">30 min</option><option value="60" selected>1 hora</option><option value="120">2 horas</option><option value="180">3 horas</option></select>
-      </label>
-      <label for="af-caso">Caso / cliente<input type="text" id="af-caso" list="casos-list" maxlength="80" placeholder="Ej.: JOHANA CALLES"></label>
-      <label for="af-tipo" class="wide">Tipo de audiencia<input type="text" id="af-tipo" maxlength="120" placeholder="Ej.: Audiencia preliminar"></label>
-      <label for="af-lugar" class="wide">Lugar<input type="text" id="af-lugar" maxlength="160" placeholder="Ej.: Unidad Judicial Civil, sala 3"></label>
-      <button class="btn" type="submit">Agregar audiencia</button>
-    </form>
-    <p class="msg" id="af-msg" role="status"></p>
-    <div class="tbox">
-      <table>
-        <thead><tr><th>Fecha</th><th>Audiencia</th><th></th></tr></thead>
-        <tbody id="auds"><tr><td colspan="3" class="empty">Cargando…</td></tr></tbody>
-      </table>
-    </div>
-    <p class="sub" style="margin:0;font-size:13px">Toca <b>Apple / Outlook</b> para agregarla a tu calendario del iPhone o Mac (con aviso 1 día antes y 1 hora antes), o <b>Google</b> para Google Calendar.</p>
-  </section>
-
   <section class="panel" aria-labelledby="h-inv">
     <div class="budget-row">
       <h2 id="h-inv">Mis inversiones</h2>
@@ -584,44 +558,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       return tr;
     }));
 
-    // Audiencias
-    const nowIso = new Date().toISOString();
-    const audSorted = auds.slice().sort((a, b) => a.inicio.localeCompare(b.inicio));
-    const prox = audSorted.filter((a) => a.fin >= nowIso);
-    const pas = audSorted.filter((a) => a.fin < nowIso).reverse().slice(0, 5);
-    $('aud-n').textContent = prox.length ? `${prox.length} ${prox.length === 1 ? 'próxima' : 'próximas'}` : '';
-    const abody = $('auds');
-    if (!auds.length) abody.replaceChildren(emptyRow(3, 'Aún no tienes audiencias. Agrega la primera arriba.'));
-    else abody.replaceChildren(...[...prox, ...pas].map((a) => {
-      const tr = document.createElement('tr');
-      const past = a.fin < nowIso;
-      if (past) tr.style.opacity = '.55';
-      const d = new Date(a.inicio);
-      const dias = Math.round((new Date(a.fecha + 'T00:00:00') - new Date(todayStr + 'T00:00:00')) / 86400000);
-      const fc = document.createElement('td');
-      const f1 = document.createElement('div'); f1.textContent = d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Guayaquil' }); f1.style.fontWeight = '600';
-      const f2 = document.createElement('div'); f2.className = 'sub'; f2.style.margin = '0'; f2.style.fontSize = '13px';
-      f2.textContent = d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }) + (past ? ' · pasada' : dias === 0 ? ' · hoy' : dias === 1 ? ' · mañana' : ` · en ${dias} días`);
-      if (!past && dias <= 1) f2.classList.add('c-out');
-      fc.append(f1, f2); tr.appendChild(fc);
-      const dc = document.createElement('td');
-      const t1 = document.createElement('div'); t1.textContent = a.tipo || 'Audiencia'; t1.style.fontWeight = '600';
-      dc.appendChild(t1);
-      const sub = [a.caso, a.lugar].filter(Boolean).join(' · ');
-      if (sub) { const t2 = document.createElement('div'); t2.className = 'sub'; t2.style.margin = '0'; t2.style.fontSize = '13px'; t2.textContent = sub; dc.appendChild(t2); }
-      tr.appendChild(dc);
-      const act = document.createElement('td'); act.className = 'num acts';
-      if (!past) {
-        const ap = document.createElement('button'); ap.type = 'button'; ap.className = 'ghost'; ap.textContent = 'Apple / Outlook';
-        ap.addEventListener('click', () => descargarIcs(a));
-        const gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(a); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none';
-        act.append(ap, gg);
-      }
-      act.appendChild(delBtn('aud:' + a.id, () => col('audiencias').doc(a.id).delete(), 'Quitar', '¿Quitar?'));
-      tr.appendChild(act);
-      return tr;
-    }));
-
     // Cuentas por cobrar
     const pagos = (id) => rows.filter((r) => r.casoId === id).reduce((s, r) => s + r.monto, 0);
     const cs = casos.map((c) => { const p = pagos(c.id); return { ...c, pagado: p, falta: Math.max(0, c.total - p) }; })
@@ -707,7 +643,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             const bs = document.createElement('span'); bs.className = 'acts';
             const ap = document.createElement('button'); ap.type = 'button'; ap.className = 'ghost'; ap.textContent = 'Apple / Outlook'; ap.addEventListener('click', () => descargarIcs(x));
             const gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(x); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none';
-            bs.append(ap, gg); li.append(t, bs); ul.appendChild(li);
+            bs.append(ap, gg, delBtn('aud:' + x.id, () => col('audiencias').doc(x.id).delete(), 'Quitar', '¿Quitar?')); li.append(t, bs); ul.appendChild(li);
           });
           box.appendChild(ul);
           const ah2 = document.createElement('p'); ah2.className = 'det-h'; ah2.textContent = 'Agendar otra audiencia'; box.appendChild(ah2);
@@ -723,7 +659,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         });
         box.appendChild(grid);
         const hint = document.createElement('p'); hint.className = 'sub'; hint.style.margin = '0'; hint.style.fontSize = '13px';
-        hint.textContent = 'Si pones fecha y hora, al guardar se agenda la audiencia y aparece en tu sección Audiencias y aquí, con los botones para tu calendario.';
+        hint.textContent = 'Si pones fecha y hora, al guardar se agenda la audiencia y aparece aquí con los botones para pasarla a tu calendario.';
         box.appendChild(hint);
         ow.append(lb, box, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
         setTimeout(() => { const t = document.getElementById('obs-' + c.id); if (t && document.activeElement !== t && obsDraft === null) t.focus(); }, 0);
@@ -1047,19 +983,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const fin = new Date(ini.getTime() + Number(dur || 60) * 60000);
     col('audiencias').add({ fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', tipo: tipo || '', lugar: lugar || '', creado: new Date().toISOString() });
   }
-  $('af-fecha').value = todayStr;
-  $('af').addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    const fecha = $('af-fecha').value, hora = $('af-hora').value;
-    if (!fecha || !hora) { $('af-msg').textContent = 'Pon la fecha y la hora.'; $('af-msg').className = 'msg err'; return; }
-    const ini = new Date(`${fecha}T${hora}:00-05:00`);
-    const fin = new Date(ini.getTime() + Number($('af-dur').value) * 60000);
-    const data = { fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: $('af-caso').value.trim(), tipo: $('af-tipo').value.trim(), lugar: $('af-lugar').value.trim(), creado: new Date().toISOString() };
-    col('audiencias').add(data);
-    $('af-msg').textContent = 'Audiencia guardada. Toca "Apple / Outlook" o "Google" para pasarla a tu calendario.'; $('af-msg').className = 'msg';
-    $('af-caso').value = ''; $('af-tipo').value = ''; $('af-lugar').value = '';
-  });
-
   const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias'];
   const raw = {};
   $('exp').addEventListener('click', () => {
