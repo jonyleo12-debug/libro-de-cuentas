@@ -630,7 +630,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         // Hearings for this case + quick add with calendar pickers
         const nowI = new Date().toISOString();
         const delCaso = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= nowI).sort((x, y) => x.inicio.localeCompare(y.inicio));
-        const ah = document.createElement('p'); ah.className = 'det-h'; ah.textContent = delCaso.length ? 'Próximas audiencias de este caso' : 'Agendar audiencia';
+        const ah = document.createElement('p'); ah.className = 'det-h'; ah.textContent = delCaso.length ? 'Próximas audiencias/diligencias de este caso' : 'Agendar audiencia/diligencia';
         const box = document.createElement('div'); box.className = 'det';
         box.appendChild(ah);
         if (delCaso.length) {
@@ -646,7 +646,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             bs.append(ap, gg, delBtn('aud:' + x.id, () => col('audiencias').doc(x.id).delete(), 'Quitar', '¿Quitar?')); li.append(t, bs); ul.appendChild(li);
           });
           box.appendChild(ul);
-          const ah2 = document.createElement('p'); ah2.className = 'det-h'; ah2.textContent = 'Agendar otra audiencia'; box.appendChild(ah2);
+          const ah2 = document.createElement('p'); ah2.className = 'det-h'; ah2.textContent = 'Agendar otra audiencia/diligencia'; box.appendChild(ah2);
         }
         const grid = document.createElement('div'); grid.className = 'det-edit';
         const afIn = {};
@@ -659,7 +659,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         });
         box.appendChild(grid);
         const hint = document.createElement('p'); hint.className = 'sub'; hint.style.margin = '0'; hint.style.fontSize = '13px';
-        hint.textContent = 'Si pones fecha y hora, al guardar se agenda la audiencia y aparece aquí con los botones para pasarla a tu calendario.';
+        hint.textContent = 'Si pones fecha y hora, al guardar se agenda la audiencia o diligencia y aparece aquí con los botones para pasarla a tu calendario.';
         box.appendChild(hint);
         ow.append(lb, box, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
         setTimeout(() => { const t = document.getElementById('obs-' + c.id); if (t && document.activeElement !== t && obsDraft === null) t.focus(); }, 0);
