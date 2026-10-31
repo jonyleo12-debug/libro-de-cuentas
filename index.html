@@ -105,6 +105,8 @@ td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fg); }
 .archivo { width: 72px; padding: 4px 8px; font-variant-numeric: tabular-nums; }
 .obs { width: 100%; box-sizing: border-box; font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; resize: vertical; text-transform: none; letter-spacing: 0; }
+a.ghost { display: inline-block; }
+.acts a.ghost, .acts .ghost + a.ghost { margin-left: 4px; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; align-items: center; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
@@ -262,6 +264,32 @@ img { max-width: 100%; }
     </div>
   </section>
 
+  <section class="panel" aria-labelledby="h-aud">
+    <div class="budget-row">
+      <h2 id="h-aud">Audiencias</h2>
+      <span class="sub" style="display:inline" id="aud-n"></span>
+    </div>
+    <form class="form" id="af">
+      <label for="af-fecha">Fecha<input type="date" id="af-fecha" required></label>
+      <label for="af-hora">Hora<input type="time" id="af-hora" value="09:00" required></label>
+      <label for="af-dur">Duración
+        <select id="af-dur"><option value="30">30 min</option><option value="60" selected>1 hora</option><option value="120">2 horas</option><option value="180">3 horas</option></select>
+      </label>
+      <label for="af-caso">Caso / cliente<input type="text" id="af-caso" list="casos-list" maxlength="80" placeholder="Ej.: JOHANA CALLES"></label>
+      <label for="af-tipo" class="wide">Tipo de audiencia<input type="text" id="af-tipo" maxlength="120" placeholder="Ej.: Audiencia preliminar"></label>
+      <label for="af-lugar" class="wide">Lugar<input type="text" id="af-lugar" maxlength="160" placeholder="Ej.: Unidad Judicial Civil, sala 3"></label>
+      <button class="btn" type="submit">Agregar audiencia</button>
+    </form>
+    <p class="msg" id="af-msg" role="status"></p>
+    <div class="tbox">
+      <table>
+        <thead><tr><th>Fecha</th><th>Audiencia</th><th></th></tr></thead>
+        <tbody id="auds"><tr><td colspan="3" class="empty">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin:0;font-size:13px">Toca <b>Apple / Outlook</b> para agregarla a tu calendario del iPhone o Mac (con aviso 1 día antes y 1 hora antes), o <b>Google</b> para Google Calendar.</p>
+  </section>
+
   <section class="panel" aria-labelledby="h-inv">
     <div class="budget-row">
       <h2 id="h-inv">Mis inversiones</h2>
@@ -366,6 +394,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let invs = [];
   let openCaso = null;
   let openObs = null;
+  let auds = [];
   let obsDraft = null;
   let libroRef = null;
   const col = (name) => libroRef.collection(name);
@@ -550,6 +579,44 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       act.appendChild(ed);
       act.appendChild(delBtn('inv:' + x.id, () => col('inversiones').doc(x.id).delete(), 'Quitar', '¿Quitar?'));
+      tr.appendChild(act);
+      return tr;
+    }));
+
+    // Audiencias
+    const nowIso = new Date().toISOString();
+    const audSorted = auds.slice().sort((a, b) => a.inicio.localeCompare(b.inicio));
+    const prox = audSorted.filter((a) => a.fin >= nowIso);
+    const pas = audSorted.filter((a) => a.fin < nowIso).reverse().slice(0, 5);
+    $('aud-n').textContent = prox.length ? `${prox.length} ${prox.length === 1 ? 'próxima' : 'próximas'}` : '';
+    const abody = $('auds');
+    if (!auds.length) abody.replaceChildren(emptyRow(3, 'Aún no tienes audiencias. Agrega la primera arriba.'));
+    else abody.replaceChildren(...[...prox, ...pas].map((a) => {
+      const tr = document.createElement('tr');
+      const past = a.fin < nowIso;
+      if (past) tr.style.opacity = '.55';
+      const d = new Date(a.inicio);
+      const dias = Math.round((new Date(a.fecha + 'T00:00:00') - new Date(todayStr + 'T00:00:00')) / 86400000);
+      const fc = document.createElement('td');
+      const f1 = document.createElement('div'); f1.textContent = d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Guayaquil' }); f1.style.fontWeight = '600';
+      const f2 = document.createElement('div'); f2.className = 'sub'; f2.style.margin = '0'; f2.style.fontSize = '13px';
+      f2.textContent = d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }) + (past ? ' · pasada' : dias === 0 ? ' · hoy' : dias === 1 ? ' · mañana' : ` · en ${dias} días`);
+      if (!past && dias <= 1) f2.classList.add('c-out');
+      fc.append(f1, f2); tr.appendChild(fc);
+      const dc = document.createElement('td');
+      const t1 = document.createElement('div'); t1.textContent = a.tipo || 'Audiencia'; t1.style.fontWeight = '600';
+      dc.appendChild(t1);
+      const sub = [a.caso, a.lugar].filter(Boolean).join(' · ');
+      if (sub) { const t2 = document.createElement('div'); t2.className = 'sub'; t2.style.margin = '0'; t2.style.fontSize = '13px'; t2.textContent = sub; dc.appendChild(t2); }
+      tr.appendChild(dc);
+      const act = document.createElement('td'); act.className = 'num acts';
+      if (!past) {
+        const ap = document.createElement('button'); ap.type = 'button'; ap.className = 'ghost'; ap.textContent = 'Apple / Outlook';
+        ap.addEventListener('click', () => descargarIcs(a));
+        const gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(a); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none';
+        act.append(ap, gg);
+      }
+      act.appendChild(delBtn('aud:' + a.id, () => col('audiencias').doc(a.id).delete(), 'Quitar', '¿Quitar?'));
       tr.appendChild(act);
       return tr;
     }));
@@ -910,7 +977,42 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     startBook(u);
   });
 
-  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos'];
+  // Calendar helpers (Ecuador continental: UTC-5, sin horario de verano)
+  const icsDate = (iso) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const icsEsc = (t) => String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const audTitulo = (a) => [a.tipo || 'Audiencia', a.caso].filter(Boolean).join(' – ');
+  function descargarIcs(a) {
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Libro de cuentas//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT', `UID:${a.id}@libro-de-cuentas`, `DTSTAMP:${icsDate(new Date().toISOString())}`,
+      `DTSTART:${icsDate(a.inicio)}`, `DTEND:${icsDate(a.fin)}`, `SUMMARY:${icsEsc(audTitulo(a))}`,
+      a.lugar ? `LOCATION:${icsEsc(a.lugar)}` : '', `DESCRIPTION:${icsEsc([a.caso && 'Caso: ' + a.caso, a.tipo].filter(Boolean).join('\n'))}`,
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Audiencia mañana', 'TRIGGER:-P1D', 'END:VALARM',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Audiencia en 1 hora', 'TRIGGER:-PT1H', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) { location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics); return; }
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'audiencia-' + a.fecha + '.ics';
+    document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+  }
+  function googleUrl(a) {
+    const q = new URLSearchParams({ action: 'TEMPLATE', text: audTitulo(a), dates: `${icsDate(a.inicio)}/${icsDate(a.fin)}`, details: a.caso ? 'Caso: ' + a.caso : '', location: a.lugar || '', ctz: 'America/Guayaquil' });
+    return 'https://calendar.google.com/calendar/render?' + q.toString();
+  }
+  $('af-fecha').value = todayStr;
+  $('af').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const fecha = $('af-fecha').value, hora = $('af-hora').value;
+    if (!fecha || !hora) { $('af-msg').textContent = 'Pon la fecha y la hora.'; $('af-msg').className = 'msg err'; return; }
+    const ini = new Date(`${fecha}T${hora}:00-05:00`);
+    const fin = new Date(ini.getTime() + Number($('af-dur').value) * 60000);
+    const data = { fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: $('af-caso').value.trim(), tipo: $('af-tipo').value.trim(), lugar: $('af-lugar').value.trim(), creado: new Date().toISOString() };
+    col('audiencias').add(data);
+    $('af-msg').textContent = 'Audiencia guardada. Toca "Apple / Outlook" o "Google" para pasarla a tu calendario.'; $('af-msg').className = 'msg';
+    $('af-caso').value = ''; $('af-tipo').value = ''; $('af-lugar').value = '';
+  });
+
+  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias'];
   const raw = {};
   $('exp').addEventListener('click', () => {
     const data = { app: 'libro-de-cuentas', version: 1, exportado: new Date().toISOString(), color: colorKey };
@@ -965,6 +1067,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     col('inversiones').onSnapshot((snap) => {
       raw['inversiones'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       invs = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), categoria: String(x.categoria || ''), tasa: Number(x.tasa) || 0 }; });
+      render();
+    }, lost);
+    col('audiencias').onSnapshot((snap) => {
+      raw['audiencias'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || '') }; }).filter((a) => a.inicio);
       render();
     }, lost);
     col('casos').onSnapshot((snap) => {
