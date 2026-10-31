@@ -240,7 +240,7 @@ img { max-width: 100%; }
     <span class="sub" id="prom-n" style="margin:0">Se calcula cuando registres tu primer honorario.</span>
   </div>
 
-  <section class="panel" aria-labelledby="h-cobrar">
+  <section class="panel" id="sec-casos" aria-labelledby="h-cobrar">
     <div class="budget-row">
       <h2 id="h-cobrar">Casos</h2>
       <span><span class="sub" style="display:inline">Por cobrar</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
@@ -539,6 +539,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('cob-v').textContent = usd.format(porCobrar);
     $('cob-n').textContent = `en ${pend} ${pend === 1 ? 'caso' : 'casos'}`;
     $('casos-list').replaceChildren(...casos.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
+    $('sec-casos').hidden = !cs.length;
     const cbody = $('casos');
     if (!cs.length) cbody.replaceChildren(emptyRow(6, 'Aún no tienes casos. Anota un honorario con su caso y total.'));
     else cbody.replaceChildren(...cs.flatMap((c) => {
