@@ -154,7 +154,7 @@ img { max-width: 100%; }
   --ink: #0f1012; --ink-fg: #f5f5f7; --sh-hi: #292a2f; --sh-lo: #121315; }
 
 body { font-size: 15px; letter-spacing: -.005em; }
-.fondo { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; display: block; }
+.fondo { position: fixed; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); z-index: -1; pointer-events: none; display: block; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fondo { opacity: .06; } }
 :root[data-theme="dark"] .fondo { opacity: .06; }
 .wrap { gap: 30px; padding-block: 32px 64px; }
@@ -290,6 +290,16 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .agenda .det-nota + .det-nota { color: var(--muted); font-weight: 400; }
 .agenda .det-list { color: var(--ink); }
 .det-list li.aud-edit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; margin: 6px 0; }
+@keyframes ola1 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-14px, 10px) rotate(-1.2deg); } }
+@keyframes ola2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(12px, -12px) scale(1.025); } }
+@keyframes ola3 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(10px, 14px) rotate(1.4deg); } }
+.fondo path { transform-box: fill-box; transform-origin: center; will-change: transform; }
+.fondo path:nth-of-type(1) { animation: ola1 22s ease-in-out infinite; }
+.fondo path:nth-of-type(2) { animation: ola2 26s ease-in-out infinite; }
+.fondo path:nth-of-type(3) { animation: ola3 24s ease-in-out infinite; }
+.fondo path:nth-of-type(4) { animation: ola2 30s ease-in-out infinite reverse; }
+.fondo path:nth-of-type(5) { animation: ola1 20s ease-in-out infinite reverse; }
+@media (prefers-reduced-motion: reduce) { .fondo path { animation: none !important; } }
 .panel.plegable { position: relative; }
 .panel.plegable > :first-child { padding-right: 44px; }
 .plegar { position: absolute; top: 22px; right: 22px; width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 99px; background: var(--panel); box-shadow: var(--raise-sm); color: var(--muted); cursor: pointer; transition: transform .2s, color .2s; }
