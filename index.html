@@ -313,6 +313,12 @@ body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none 
 .panel.plegada > :first-child .seg { display: none; }
 .panel.plegada { gap: 0; align-self: start; }
 .usuarios { display: grid; gap: 4px; min-width: 230px; }
+.usuarios:empty { display: none; }
+.swatch-mas { display: grid; place-items: center; background: var(--panel) !important; color: var(--muted); font-size: 18px; line-height: 1; font-weight: 400; }
+.swatch-mas:hover { color: var(--ink); }
+.usr-col-l { display: grid; gap: 8px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.usr-col-l .swatch.sel { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+.usr-col-l .swatch:disabled { opacity: .25; cursor: not-allowed; }
 .usr-fila { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 12px; background: transparent; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .usr-fila:hover { background: rgba(127,127,127,.12); }
 .usr-fila .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
@@ -514,7 +520,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
           </button>
         </div>
         <div class="color-pop" id="color-pop" hidden><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div>
-          <span class="usr-l" style="margin-top:6px">Usuarios</span><div id="usuarios" class="usuarios"></div></div>
+          <span class="usr-l" id="usuarios-l" style="margin-top:6px" hidden>Usuarios</span><div id="usuarios" class="usuarios"></div></div>
       </div>
       <p class="sub">Anota cada honorario, sueldo, gasto e inversión el día que ocurre. Los totales y tu promedio de honorarios se calculan solos.</p>
     </div>
@@ -1864,24 +1870,46 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const ROLES = { asistente: 'Asistente · solo Casos' };
   function renderUsuarios() {
     const box = $('usuarios'); if (!box) return;
-    box.replaceChildren(...Object.entries(COLORS).map(([k, c]) => {
-      const m = miembros.find((x) => x.color === k);
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'usr-fila' + (m ? '' : ' libre');
+    $('usuarios-l').hidden = !miembros.length;
+    box.replaceChildren(...miembros.map((m) => {
+      const c = COLORS[m.color] || COLORS.azul;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'usr-fila';
       const d = document.createElement('span'); d.className = 'dot'; d.style.background = c.light[0];
       const t = document.createElement('span'); t.className = 'usr-t';
-      if (m) { const n = document.createElement('b'); n.textContent = m.nombre || m.email; const sm = document.createElement('small'); sm.textContent = (ROLES[m.rol] || m.rol) + ' · usuario: ' + usuarioDe(m.email); t.append(n, sm); }
-      else t.textContent = '+ Añadir usuario';
-      b.append(d, t);
-      b.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(k, m); });
+      const n = document.createElement('b'); n.textContent = m.nombre || usuarioDe(m.email);
+      const sm = document.createElement('small'); sm.textContent = (ROLES[m.rol] || m.rol) + ' · usuario: ' + usuarioDe(m.email);
+      t.append(n, sm); b.append(d, t);
+      b.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(m.color, m); });
+      return b;
+    }));
+    let mas = $('swatch-mas');
+    if (!mas) {
+      mas = document.createElement('button'); mas.type = 'button'; mas.id = 'swatch-mas'; mas.className = 'swatch swatch-mas';
+      mas.title = 'Añadir usuario'; mas.setAttribute('aria-label', 'Añadir usuario'); mas.textContent = '+';
+      mas.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(null, null); });
+      $('colores').appendChild(mas);
+    }
+    mas.hidden = !!invitado || miembros.length >= Object.keys(COLORS).length;
+  }
+  function pintarColoresUsr() {
+    const box = $('usr-colores');
+    box.replaceChildren(...Object.entries(COLORS).map(([k, c]) => {
+      const ocupado = miembros.find((m) => m.color === k);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'swatch' + (k === usrColor ? ' sel' : '');
+      b.style.background = c.light[0]; b.disabled = !!ocupado; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(k === usrColor));
+      b.title = ocupado ? `${c.name}: ya lo usa ${ocupado.nombre || usuarioDe(ocupado.email)}` : c.name; b.setAttribute('aria-label', b.title);
+      b.addEventListener('click', () => { usrColor = k; pintarColoresUsr(); });
       return b;
     }));
   }
   let usrColor = null, usrActual = null;
   const dlg = $('dlg-usr');
   function abrirUsuario(k, m) {
-    usrColor = k; usrActual = m || null;
+    usrActual = m || null;
+    usrColor = k || (Object.keys(COLORS).find((x) => !miembros.some((mm) => mm.color === x)) || 'azul');
     $('usr-msg').textContent = ''; $('usr-msg').className = 'msg';
-    $('usr-tit').textContent = m ? (m.nombre || m.email) : 'Añadir usuario · ' + COLORS[k].name;
+    $('usr-tit').textContent = m ? (m.nombre || usuarioDe(m.email)) : 'Añadir usuario';
+    $('usr-col-l').hidden = !!m; if (!m) pintarColoresUsr();
     $('usr-sub').textContent = m ? `Rol: ${ROLES[m.rol] || m.rol}. Entra con el usuario "${usuarioDe(m.email)}".` : 'Esta persona entrará con el usuario y la contraseña que pongas aquí, y solo verá lo que permite su rol.';
     ['usr-nombre', 'usr-email', 'usr-pass'].forEach((id) => { const el = $(id); el.value = ''; el.closest('label').hidden = !!m; el.required = !m; });
     $('usr-rol').closest('label').hidden = !!m;
@@ -2043,6 +2071,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <label>Nombre<input type="text" id="usr-nombre" maxlength="60" required placeholder="Ej.: María"></label>
     <label>Usuario<input type="text" id="usr-email" maxlength="30" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ej.: maria"></label>
     <label>Contraseña<input type="text" id="usr-pass" minlength="6" maxlength="60" required autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>
+    <div class="usr-col-l" id="usr-col-l"><span>Color</span><div class="swatches" id="usr-colores" role="radiogroup" aria-label="Color del usuario"></div></div>
     <label>Rol<select id="usr-rol"><option value="asistente">Asistente: solo la tabla de Casos</option></select></label>
     <p class="msg" id="usr-msg" role="status"></p>
     <div class="det-acts"><button type="button" class="ghost" id="usr-cancel">Cancelar</button><button type="submit" class="btn" id="usr-ok">Crear usuario</button></div>
