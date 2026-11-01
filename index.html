@@ -301,6 +301,9 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .fondo path:nth-of-type(5) { animation: ola1 13s ease-in-out infinite reverse; }
 @media (prefers-reduced-motion: reduce) { .fondo path { animation: none !important; } }
 .panel.plegable { position: relative; }
+.plegar { touch-action: none; }
+.arrastrando { position: relative; z-index: 5; transform: scale(1.01); box-shadow: 0 24px 50px -20px rgba(0,0,0,.35); opacity: .96; transition: transform .15s, box-shadow .15s; border-radius: var(--r); }
+body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none !important; }
 .panel.plegable > :first-child { padding-right: 44px; }
 .plegar { position: absolute; top: 22px; right: 22px; width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 99px; background: var(--panel); box-shadow: var(--raise-sm); color: var(--muted); cursor: pointer; transition: transform .2s, color .2s; }
 .plegar:hover { color: var(--ink); }
@@ -746,6 +749,43 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const dia = Math.min(Number(($('f-fecha').value || todayStr).slice(8, 10)) || 1, ult);
     $('f-fecha').value = `${ms}-${String(dia).padStart(2, '0')}`;
   };
+  // Reorder blocks below Nuevo movimiento by long-pressing a collapse button
+  const appEl = document.getElementById('app');
+  const nuevoEl = document.querySelector('#app section[aria-labelledby="h-nuevo"]');
+  const claveBloque = (el) => el.classList.contains('grid2') ? 'b-grid' : el.id === 'prom' ? 'b-prom' : (el.querySelector('h2') || {}).id || '';
+  const bloques = () => { const arr = [...appEl.children]; return arr.slice(arr.indexOf(nuevoEl) + 1).filter((el) => claveBloque(el)); };
+  const bloqueDe = (sec) => { let el = sec; while (el.parentElement && el.parentElement !== appEl) el = el.parentElement; return el; };
+  try { const orden = JSON.parse(localStorage.getItem('libro-orden') || '[]');
+    if (Array.isArray(orden) && orden.length) { const m = Object.fromEntries(bloques().map((el) => [claveBloque(el), el])); let ref = nuevoEl;
+      orden.forEach((k) => { const el = m[k]; if (el) { ref.after(el); ref = el; delete m[k]; } }); } } catch (e) {}
+  function iniciarArrastre(e, sec, btn) {
+    if (e.button !== 0) return;
+    const x0 = e.clientX, y0 = e.clientY; let activo = false, raf = 0, py = y0;
+    const blq = bloqueDe(sec);
+    const timer = setTimeout(() => {
+      activo = true; btn.dataset.movido = '1'; blq.classList.add('arrastrando'); document.body.classList.add('moviendo');
+      try { btn.setPointerCapture(e.pointerId); } catch (er) {}
+    }, 350);
+    const mover = (ev) => {
+      py = ev.clientY;
+      if (!activo) { if (Math.abs(ev.clientX - x0) > 6 || Math.abs(ev.clientY - y0) > 6) fin(); return; }
+      ev.preventDefault();
+      const otros = bloques().filter((el) => el !== blq && el.offsetParent);
+      let antes = null;
+      for (const el of otros) { const r = el.getBoundingClientRect(); if (py < r.top + r.height / 2) { antes = el; break; } }
+      if (antes) { if (blq.nextElementSibling !== antes) antes.before(blq); }
+      else { const ult = otros[otros.length - 1]; if (ult && ult.nextElementSibling !== blq) ult.after(blq); }
+      if (!raf) { const paso = () => { const v = window.innerHeight; const d = py < 80 ? -(80 - py) / 4 : py > v - 80 ? (py - (v - 80)) / 4 : 0; if (d && activo) { window.scrollBy(0, d); raf = requestAnimationFrame(paso); } else raf = 0; }; raf = requestAnimationFrame(paso); }
+    };
+    const fin = () => {
+      clearTimeout(timer); window.removeEventListener('pointermove', mover); window.removeEventListener('pointerup', fin); window.removeEventListener('pointercancel', fin);
+      if (raf) cancelAnimationFrame(raf);
+      if (activo) { activo = false; blq.classList.remove('arrastrando'); document.body.classList.remove('moviendo');
+        try { localStorage.setItem('libro-orden', JSON.stringify(bloques().map(claveBloque))); } catch (er) {}
+        setTimeout(() => { delete btn.dataset.movido; }, 300); }
+    };
+    window.addEventListener('pointermove', mover, { passive: false }); window.addEventListener('pointerup', fin); window.addEventListener('pointercancel', fin);
+  }
   // Collapse button on every section except Nuevo movimiento
   { let plegadas = {}; try { plegadas = JSON.parse(localStorage.getItem('libro-plegadas') || '{}') || {}; } catch (e) {}
     document.querySelectorAll('#app section.panel').forEach((sec) => {
@@ -755,7 +795,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       const poner = (on) => { sec.classList.toggle('plegada', on); b.setAttribute('aria-expanded', String(!on)); b.setAttribute('aria-label', (on ? 'Mostrar ' : 'Contraer ') + h.textContent); b.title = on ? 'Mostrar' : 'Contraer'; };
       poner(!!plegadas[key]);
-      b.addEventListener('click', () => { const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} });
+      b.addEventListener('pointerdown', (e) => iniciarArrastre(e, sec, b));
+      b.addEventListener('click', (e) => { if (b.dataset.movido) { delete b.dataset.movido; e.preventDefault(); return; } const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} });
       sec.appendChild(b);
     });
   }
