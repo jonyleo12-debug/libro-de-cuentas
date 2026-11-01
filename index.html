@@ -341,6 +341,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .th-lupa.on, .th-lupa:hover { background: #fff; color: var(--t1, var(--fg)); }
 .busca-caso { margin-left: 8px; width: 170px; max-width: 45vw; padding: 5px 12px; border-radius: 99px; border: 0; font-size: 13px; text-transform: none; letter-spacing: 0; vertical-align: middle; background: rgba(255,255,255,.92); color: #1b1b1d; box-shadow: none; }
 .det-dos { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.gcal-line { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -942,15 +943,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const bar = document.createElement('div'); bar.className = 'det-edit';
         const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar agenda';
         sv.addEventListener('click', () => {
-          const hechos = [];
+          const hechos = [], datos = [];
           ['audiencia', 'diligencia'].forEach((cl) => {
             const g = afIn[cl], f = g.fecha.value, h = g.hora.value;
-            if (f && h) { crearAudiencia({ fecha: f, hora: h, dur: 60, caso: c.nombre, tipo: g.tipo.value.trim(), lugar: g.lugar.value.trim(), clase: cl }); hechos.push(cl); }
+            if (f && h) { datos.push({ fecha: f, hora: h, dur: 60, caso: c.nombre, tipo: g.tipo.value.trim(), lugar: g.lugar.value.trim(), clase: cl }); hechos.push(cl); }
           });
-          if (hechos.length) {
-            setMsg(`${hechos.map((h) => h[0].toUpperCase() + h.slice(1)).join(' y ')} de ${c.nombre} agendada.`);
+          if (!hechos.length) { setMsg('Pon fecha y hora en audiencia o diligencia para agendar.', true); return; }
+          const hacer = (g) => {
+            datos.forEach((d) => crearAudiencia(d, g));
+            setMsg(`${hechos.map((h) => h[0].toUpperCase() + h.slice(1)).join(' y ')} de ${c.nombre} agendada${g ? ' y enviada a Google Calendar' : ''}.`);
             obsAud = {}; render();
-          } else setMsg('Pon fecha y hora en audiencia o diligencia para agendar.', true);
+          };
+          if (gcalOn && GCAL_CLIENT_ID) ensureToken(() => hacer(true)); else hacer(false);
         });
         bar.appendChild(sv);
         // Hearings for this case + quick add with calendar pickers
@@ -968,8 +972,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             t.append(k, d.toLocaleString('es-EC', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }) + (x.tipo ? ' · ' + x.tipo : '') + (x.lugar ? ' · ' + x.lugar : ''));
             const bs = document.createElement('span'); bs.className = 'acts';
             const ap = document.createElement('button'); ap.type = 'button'; ap.className = 'ghost'; ap.textContent = 'Apple / Outlook'; ap.addEventListener('click', () => descargarIcs(x));
-            const gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(x); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none';
-            bs.append(ap, gg, delBtn('aud:' + x.id, () => col('audiencias').doc(x.id).delete(), 'Quitar', '¿Quitar?')); li.append(t, bs); ul.appendChild(li);
+            let gg;
+            if (x.gcalId) { gg = document.createElement('span'); gg.className = 'tag c-in estado'; gg.textContent = 'En Google ✓'; }
+            else if (gcalOn && GCAL_CLIENT_ID) { gg = document.createElement('button'); gg.type = 'button'; gg.className = 'ghost'; gg.textContent = 'Enviar a Google';
+              gg.addEventListener('click', () => ensureToken(async () => { try { const id = await gcalCrear(x); await col('audiencias').doc(x.id).update({ gcalId: id }); setMsg('Enviada a Google Calendar.'); } catch (e) { setMsg('No se pudo enviar a Google Calendar.', true); } })); }
+            else { gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(x); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none'; }
+            const quitar = () => {
+              col('audiencias').doc(x.id).delete();
+              if (x.gcalId && gcalOn && GCAL_CLIENT_ID) ensureToken(() => gcalFetch('/' + encodeURIComponent(x.gcalId), { method: 'DELETE' }).catch(() => setMsg('Se quitó de la app; bórrala también en Google Calendar.', true)));
+            };
+            bs.append(ap, gg, delBtn('aud:' + x.id, quitar, 'Quitar', '¿Quitar?')); li.append(t, bs); ul.appendChild(li);
           });
           box.appendChild(ul);
         }
@@ -990,7 +1002,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           g.appendChild(grid); box.appendChild(g);
         });
         const hint = document.createElement('p'); hint.className = 'sub'; hint.style.margin = '0'; hint.style.fontSize = '13px';
-        hint.textContent = 'Si pones fecha y hora en una o en las dos, al guardar se agendan y aparecen aquí con los botones para pasarlas a tu calendario.';
+        hint.textContent = gcalOn && GCAL_CLIENT_ID ? 'Al guardar se agendan aquí y se agregan solas a tu Google Calendar, con avisos 1 día y 1 hora antes.' : 'Si pones fecha y hora en una o en las dos, al guardar se agendan y aparecen aquí con los botones para pasarlas a tu calendario.';
+        if (GCAL_CLIENT_ID) {
+          const gl = document.createElement('div'); gl.className = 'gcal-line';
+          const gt = document.createElement('span'); gt.textContent = gcalOn ? 'Google Calendar: conectado' : 'Google Calendar: sin conectar';
+          const gb = document.createElement('button'); gb.type = 'button'; gb.className = 'ghost'; gb.textContent = gcalOn ? 'Desconectar' : 'Conectar Google Calendar';
+          gb.addEventListener('click', () => (gcalOn ? gcalDesconectar() : gcalConectar()));
+          gl.append(gt, gb); box.appendChild(gl);
+        }
         box.appendChild(hint);
         ow.append(box, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
       }
@@ -1429,10 +1448,57 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const q = new URLSearchParams({ action: 'TEMPLATE', text: audTitulo(a), dates: `${icsDate(a.inicio)}/${icsDate(a.fin)}`, details: a.caso ? 'Caso: ' + a.caso : '', location: a.lugar || '', ctz: 'America/Guayaquil' });
     return 'https://calendar.google.com/calendar/render?' + q.toString();
   }
-  function crearAudiencia({ fecha, hora, dur, caso, tipo, lugar, clase }) {
+  async function crearAudiencia({ fecha, hora, dur, caso, tipo, lugar, clase }, conGoogle = false) {
     const ini = new Date(`${fecha}T${hora}:00-05:00`);
     const fin = new Date(ini.getTime() + Number(dur || 60) * 60000);
-    col('audiencias').add({ fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', tipo: tipo || '', lugar: lugar || '', clase: clase === 'diligencia' ? 'diligencia' : 'audiencia', creado: new Date().toISOString() });
+    const a = { fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', tipo: tipo || '', lugar: lugar || '', clase: clase === 'diligencia' ? 'diligencia' : 'audiencia', creado: new Date().toISOString() };
+    const ref = await col('audiencias').add(a);
+    if (conGoogle) { try { const id = await gcalCrear(a); ref.update({ gcalId: id }); } catch (e) { console.error(e); setMsg('Se agendó en la app, pero no se pudo enviar a Google Calendar.', true); } }
+  }
+  // Google Calendar sync (Google Identity Services token flow, no server)
+  const GCAL_CLIENT_ID = '';
+  let gcalOn = false, gcalToken = null, gcalExp = 0, gcalClient = null;
+  try { const t = JSON.parse(sessionStorage.getItem('libro-gtoken') || 'null'); if (t && t.exp > Date.now()) { gcalToken = t.tok; gcalExp = t.exp; } } catch (e) {}
+  function cargarGis() {
+    return new Promise((ok, mal) => {
+      if (window.google && google.accounts && google.accounts.oauth2) return ok();
+      const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = () => ok(); sc.onerror = mal; document.head.appendChild(sc);
+    });
+  }
+  if (GCAL_CLIENT_ID) cargarGis().catch(() => {});
+  function ensureToken(cb) {
+    if (gcalToken && Date.now() < gcalExp - 60000) { cb(); return; }
+    if (!(window.google && google.accounts && google.accounts.oauth2)) { setMsg('Google todavía está cargando. Intenta de nuevo en unos segundos.', true); return; }
+    if (!gcalClient) gcalClient = google.accounts.oauth2.initTokenClient({ client_id: GCAL_CLIENT_ID, scope: 'https://www.googleapis.com/auth/calendar.events', callback: () => {} });
+    gcalClient.callback = (r) => {
+      if (r.error || !r.access_token) { setMsg('No se pudo conectar con Google Calendar.', true); return; }
+      gcalToken = r.access_token; gcalExp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+      try { sessionStorage.setItem('libro-gtoken', JSON.stringify({ tok: gcalToken, exp: gcalExp })); } catch (e) {}
+      cb();
+    };
+    gcalClient.requestAccessToken({ prompt: '' });
+  }
+  async function gcalFetch(path, opts = {}) {
+    const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events' + path, { ...opts, headers: { Authorization: 'Bearer ' + gcalToken, 'Content-Type': 'application/json' } });
+    if (r.status === 401) { gcalToken = null; throw new Error('token'); }
+    if (!r.ok && r.status !== 410 && r.status !== 404) throw new Error('gcal ' + r.status);
+    return r.status === 204 || opts.method === 'DELETE' ? null : r.json();
+  }
+  async function gcalCrear(a) {
+    const ev = await gcalFetch('', { method: 'POST', body: JSON.stringify({
+      summary: audTitulo(a), location: a.lugar || undefined, description: [a.caso && 'Caso: ' + a.caso, 'Agendado desde Libro de cuentas'].filter(Boolean).join('\n'),
+      start: { dateTime: a.inicio, timeZone: 'America/Guayaquil' }, end: { dateTime: a.fin, timeZone: 'America/Guayaquil' },
+      reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 1440 }, { method: 'popup', minutes: 60 }] },
+    }) });
+    return ev.id;
+  }
+  function gcalConectar() {
+    ensureToken(() => { gcalOn = true; if (libroRef) libroRef.set({ gcal: true }); setMsg('Google Calendar conectado. Las nuevas audiencias y diligencias se agregarán solas.'); render(); });
+  }
+  function gcalDesconectar() {
+    gcalOn = false; if (libroRef) libroRef.set({ gcal: false });
+    try { if (gcalToken && window.google) google.accounts.oauth2.revoke(gcalToken, () => {}); sessionStorage.removeItem('libro-gtoken'); } catch (e) {}
+    gcalToken = null; setMsg('Google Calendar desconectado.'); render();
   }
   const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias'];
   const raw = {};
@@ -1507,6 +1573,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const c = snap.exists ? String((snap.data() || {}).color || '') : '';
       if (COLORS[c]) { colorKey = c; applyColor(); }
       ultimaDescarga = snap.exists ? String((snap.data() || {}).ultimaDescarga || '') : '';
+      { const g = snap.exists && (snap.data() || {}).gcal === true; if (g !== gcalOn) { gcalOn = g; render(); } }
       drawAviso();
     }, () => {});
     const lost = () => setMsg('Se perdió la conexión con tu libro. Recarga la página.', true);
@@ -1543,7 +1610,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }, lost);
     col('audiencias').onSnapshot((snap) => {
       raw['audiencias'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || ''), clase: String(x.clase || '') }; }).filter((a) => a.inicio);
+      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || ''), clase: String(x.clase || ''), gcalId: x.gcalId ? String(x.gcalId) : '' }; }).filter((a) => a.inicio);
       render();
     }, lost);
     col('casos').onSnapshot((snap) => {
