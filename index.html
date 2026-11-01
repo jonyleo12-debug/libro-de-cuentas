@@ -755,9 +755,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const claveBloque = (el) => el.classList.contains('grid2') ? 'b-grid' : el.id === 'prom' ? 'b-prom' : (el.querySelector('h2') || {}).id || '';
   const bloques = () => { const arr = [...appEl.children]; return arr.slice(arr.indexOf(nuevoEl) + 1).filter((el) => claveBloque(el)); };
   const bloqueDe = (sec) => { let el = sec; while (el.parentElement && el.parentElement !== appEl) el = el.parentElement; return el; };
-  try { const orden = JSON.parse(localStorage.getItem('libro-orden') || '[]');
-    if (Array.isArray(orden) && orden.length) { const m = Object.fromEntries(bloques().map((el) => [claveBloque(el), el])); let ref = nuevoEl;
-      orden.forEach((k) => { const el = m[k]; if (el) { ref.after(el); ref = el; delete m[k]; } }); } } catch (e) {}
+  function aplicarOrden(orden) {
+    if (!Array.isArray(orden) || !orden.length) return;
+    const m = Object.fromEntries(bloques().map((el) => [claveBloque(el), el])); let ref = nuevoEl;
+    orden.forEach((k) => { const el = m[k]; if (el) { ref.after(el); ref = el; delete m[k]; } });
+  }
+  try { aplicarOrden(JSON.parse(localStorage.getItem('libro-orden') || '[]')); } catch (e) {}
+  const guardarVista = (campo, valor) => { if (libroRef) libroRef.set({ [campo]: valor }).catch(() => {}); };
   function iniciarArrastre(e, sec, btn) {
     if (e.button !== 0) return;
     const x0 = e.clientX, y0 = e.clientY; let activo = false, raf = 0, py = y0;
@@ -781,22 +785,26 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       clearTimeout(timer); window.removeEventListener('pointermove', mover); window.removeEventListener('pointerup', fin); window.removeEventListener('pointercancel', fin);
       if (raf) cancelAnimationFrame(raf);
       if (activo) { activo = false; blq.classList.remove('arrastrando'); document.body.classList.remove('moviendo');
-        try { localStorage.setItem('libro-orden', JSON.stringify(bloques().map(claveBloque))); } catch (er) {}
+        const ord = bloques().map(claveBloque);
+        try { localStorage.setItem('libro-orden', JSON.stringify(ord)); } catch (er) {}
+        guardarVista('orden', ord);
         setTimeout(() => { delete btn.dataset.movido; }, 300); }
     };
     window.addEventListener('pointermove', mover, { passive: false }); window.addEventListener('pointerup', fin); window.addEventListener('pointercancel', fin);
   }
   // Collapse button on every section except Nuevo movimiento
-  { let plegadas = {}; try { plegadas = JSON.parse(localStorage.getItem('libro-plegadas') || '{}') || {}; } catch (e) {}
+  const ponerPlegada = {};
+  let plegadas = {};
+  { try { plegadas = JSON.parse(localStorage.getItem('libro-plegadas') || '{}') || {}; } catch (e) {}
     document.querySelectorAll('#app section.panel').forEach((sec) => {
       const h = sec.querySelector('h2'); if (!h || h.id === 'h-nuevo') return;
       const key = h.id; sec.classList.add('plegable');
       const b = document.createElement('button'); b.type = 'button'; b.className = 'plegar';
       b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       const poner = (on) => { sec.classList.toggle('plegada', on); b.setAttribute('aria-expanded', String(!on)); b.setAttribute('aria-label', (on ? 'Mostrar ' : 'Contraer ') + h.textContent); b.title = on ? 'Mostrar' : 'Contraer'; };
-      poner(!!plegadas[key]);
+      poner(!!plegadas[key]); ponerPlegada[key] = poner;
       b.addEventListener('pointerdown', (e) => iniciarArrastre(e, sec, b));
-      b.addEventListener('click', (e) => { if (b.dataset.movido) { delete b.dataset.movido; e.preventDefault(); return; } const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} });
+      b.addEventListener('click', (e) => { if (b.dataset.movido) { delete b.dataset.movido; e.preventDefault(); return; } const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} guardarVista('plegadas', { ...plegadas }); });
       sec.appendChild(b);
     });
   }
@@ -1749,6 +1757,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       let c = snap.exists ? String((snap.data() || {}).color || '') : '';
       if (c === 'amarillo') { c = 'tomate'; libroRef.set({ color: c }).catch(() => {}); }
       if (COLORS[c]) { colorKey = c; applyColor(); }
+      { const dv = snap.exists ? (snap.data() || {}) : {};
+        if (Array.isArray(dv.orden) && !document.body.classList.contains('moviendo')) { aplicarOrden(dv.orden.map(String)); try { localStorage.setItem('libro-orden', JSON.stringify(dv.orden)); } catch (e) {} }
+        if (!Array.isArray(dv.orden)) { try { const lo = JSON.parse(localStorage.getItem('libro-orden') || 'null'); if (Array.isArray(lo) && lo.length) guardarVista('orden', lo); } catch (e) {} }
+        if (!dv.plegadas && Object.keys(plegadas).length) guardarVista('plegadas', { ...plegadas });
+        if (dv.plegadas && typeof dv.plegadas === 'object') { plegadas = { ...dv.plegadas }; Object.entries(ponerPlegada).forEach(([k, f]) => f(!!plegadas[k])); try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} } }
       ultimaDescarga = snap.exists ? String((snap.data() || {}).ultimaDescarga || '') : '';
       { const g = snap.exists && (snap.data() || {}).gcal === true; if (g !== gcalOn) { gcalOn = g; render(); } }
       drawAviso();
