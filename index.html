@@ -298,6 +298,10 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .pie { align-content: start; }
 .pie svg { aspect-ratio: 1; }
 .seg .periodo { border-right: 0; margin-right: 6px; font-weight: 600; }
+.hero::after { transition: transform .25s ease; transform-origin: 100% 0; }
+.hero:has(.hero-color:hover)::after, .hero:has(.hero-color[aria-expanded="true"])::after, .hero:has(.hero-color:focus-visible)::after { transform: scale(1.18); }
+@media (hover: none) { .hero::after { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .hero::after { transition: none; } }
 </style>
 </head>
 <body>
@@ -339,7 +343,6 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
           </div>
           <input type="month" id="mes" class="mes-oculto" tabindex="-1" aria-label="Mes">
           <button type="button" class="hero-color" id="hero-color" aria-label="Cambiar color" aria-expanded="false" aria-controls="color-pop">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A4.6 4.6 0 0 0 22 9.8C22 5.9 17.5 3 12 3Zm-5.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
           </button>
         </div>
         <div class="color-pop" id="color-pop" hidden><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div></div>
