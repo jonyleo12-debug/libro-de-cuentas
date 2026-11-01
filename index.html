@@ -374,6 +374,67 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .busca-caso { margin-left: 8px; width: 170px; max-width: 45vw; padding: 5px 12px; border-radius: 99px; border: 0; font-size: 13px; text-transform: none; letter-spacing: 0; vertical-align: middle; background: rgba(255,255,255,.92); color: #1b1b1d; box-shadow: none; }
 .det-dos { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
 .gcal-line { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+
+/* Phone layout: tables become cards so nothing needs side scrolling */
+@media (max-width: 640px) {
+  .tbox { overflow-x: visible; }
+  #hist th, section[aria-labelledby="h-hist"] th { letter-spacing: 0; font-size: 10px; padding: 6px 4px; }
+  section[aria-labelledby="h-hist"] td { font-size: 13px; padding: 9px 4px; }
+  section[aria-labelledby="h-hist"] td:first-child, section[aria-labelledby="h-hist"] th:first-child { padding-left: 0; }
+
+  #sec-casos table, #sec-casos thead, #sec-casos tbody, #sec-casos thead tr, #sec-casos tbody tr, #sec-casos td, #sec-casos th { display: block; }
+  #sec-casos .tbox thead tr { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 16px; }
+  #sec-casos .tbox th { padding: 0 !important; }
+  #sec-casos .tbox th.num { text-align: left; }
+  #sec-casos .tbox th:last-child { flex-basis: 100%; }
+  #sec-casos .busca-caso { margin: 8px 0 0; width: 100%; max-width: none; }
+  #casos tr:not(.det-row) { display: grid !important; grid-template-columns: 1fr 1fr 1fr; grid-template-areas: "arch caso caso" "tot pag fal" "acts acts acts"; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  #casos tr:not(.det-row) > td { padding: 0 !important; border: 0 !important; background: transparent !important; text-align: left; min-width: 0; }
+  #casos tr:not(.det-row) > td:nth-child(1) { grid-area: arch; }
+  #casos tr:not(.det-row) > td:nth-child(2) { grid-area: caso; }
+  #casos tr:not(.det-row) > td:nth-child(3) { grid-area: tot; }
+  #casos tr:not(.det-row) > td:nth-child(4) { grid-area: pag; }
+  #casos tr:not(.det-row) > td:nth-child(5) { grid-area: fal; align-self: end; padding-bottom: 6px !important; }
+  #casos tr:not(.det-row) > td:nth-child(6) { grid-area: acts; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+  #casos tr:not(.det-row) > td:nth-child(3)::before, #casos tr:not(.det-row) > td:nth-child(4)::before, #casos tr:not(.det-row) > td:nth-child(5)::before { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  #casos tr:not(.det-row) > td:nth-child(3)::before { content: 'Total'; }
+  #casos tr:not(.det-row) > td:nth-child(4)::before { content: 'Pagado'; }
+  #casos tr:not(.det-row) > td:nth-child(5)::before { content: 'Falta'; }
+  #casos .monto-in { width: 100%; text-align: left; }
+  #casos tr:not(.det-row) > td:nth-child(6) > * { flex: 1 1 0; }
+  #casos .det-row > td { display: block; padding: 12px !important; }
+  #casos .det-row td .estados { justify-content: flex-start; }
+  #casos .det { grid-template-columns: minmax(0, 1fr); }
+  #casos .det-list li { flex-wrap: wrap; }
+  #casos .det-list li .acts { display: flex; flex-wrap: wrap !important; justify-content: flex-start; min-width: 0; max-width: 100%; white-space: normal; }
+  #casos .gcal-line { flex-wrap: wrap; }
+
+  #sec-inv table, #sec-inv tbody, #sec-inv tfoot, #sec-inv tr, #sec-inv td { display: block; }
+  #sec-inv thead { display: none; }
+  #sec-inv tbody tr, #sec-inv tfoot tr { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  #sec-inv tbody td, #sec-inv tfoot td { padding: 0 !important; border: 0 !important; text-align: left; background: transparent !important; }
+  #sec-inv tbody td:first-child, #sec-inv tfoot td:first-child { grid-column: 1 / -1; font-weight: 600; }
+  #sec-inv tbody td:last-child { grid-column: 1 / -1; }
+  #sec-inv tfoot td:empty { display: none; }
+  #sec-inv tbody td:nth-child(2)::before, #sec-inv tfoot td:nth-child(2)::before { content: 'Invertido'; }
+  #sec-inv tbody td:nth-child(3)::before { content: 'Tasa anual'; }
+  #sec-inv tbody td:nth-child(4)::before, #sec-inv tfoot td:nth-child(4)::before { content: 'Rinde al mes'; }
+  #sec-inv tbody td:nth-child(5)::before, #sec-inv tfoot td:nth-child(5)::before { content: 'Rinde al año'; }
+  #sec-inv td:nth-child(n+2):nth-child(-n+5)::before { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; margin-bottom: 2px; }
+  #sec-inv tbody td .empty, #sec-inv tbody td.empty { grid-column: 1 / -1; }
+  #lista, section[aria-labelledby="h-mov"] table, section[aria-labelledby="h-mov"] tbody { display: block; }
+  section[aria-labelledby="h-mov"] thead { display: none; }
+  #lista tr { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "fec det mon" "fec det act"; gap: 4px 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  #lista td { padding: 0 !important; border: 0 !important; min-width: 0; }
+  #lista td:nth-child(1) { grid-area: fec; } #lista td:nth-child(2) { grid-area: det; } #lista td:nth-child(3) { grid-area: mon; text-align: right; } #lista td:nth-child(4) { grid-area: act; justify-self: end; }
+  #lista td.empty, #lista td[colspan] { grid-column: 1 / -1; grid-row: 1 / -1; }
+  #sec-fijos table, #fijos { display: block; }
+  #sec-fijos thead { display: none; }
+  #fijos tr { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "fec det mon" "fec det act"; gap: 4px 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  #fijos td { padding: 0 !important; border: 0 !important; min-width: 0; background: transparent !important; }
+  #fijos td:nth-child(1) { grid-area: fec; } #fijos td:nth-child(2) { grid-area: det; } #fijos td:nth-child(3) { grid-area: mon; text-align: right; } #fijos td:nth-child(4) { grid-area: act; justify-self: end; }
+  #fijos td[colspan] { grid-column: 1 / -1; grid-row: 1 / -1; }
+}
 </style>
 </head>
 <body>
