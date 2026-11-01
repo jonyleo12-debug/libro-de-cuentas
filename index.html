@@ -913,7 +913,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'sub'; aj.style.margin = '0'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; wrap.appendChild(aj); }
       const ed = document.createElement('div'); ed.className = 'det-edit';
-      const FIELDS = [['total', 'Total del caso (USD)', 'number'], ['causa', 'Número de causa', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
+      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['causa', 'Número de causa', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
       const inputs = {};
       FIELDS.forEach(([k, label, type]) => {
         const lb = document.createElement('label'); lb.htmlFor = 'det-' + k; lb.textContent = label;
@@ -928,19 +928,27 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           inp = document.createElement('input'); inp.type = type; inp.id = 'det-' + k;
           if (type === 'number') { inp.min = '0'; inp.step = '0.01'; inp.inputMode = 'decimal'; }
           else inp.maxLength = 120;
-          inp.value = drafts[k] !== undefined ? drafts[k] : String(c[k] ?? '');
+          inp.value = drafts[k] !== undefined ? drafts[k] : (k === 'abono' ? '' : k === 'fpago' ? todayStr : String(c[k] ?? ''));
+          if (k === 'abono') inp.placeholder = '0,00';
         }
         inp.addEventListener('input', () => { drafts[k] = inp.value; });
         lb.appendChild(inp); ed.appendChild(lb); inputs[k] = inp;
       });
       const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar datos';
       sv.addEventListener('click', async () => {
-        const v = Math.round(parseFloat(inputs.total.value) * 100) / 100;
-        if (!(v >= 0)) { setMsg('El total debe ser un número.', true); return; }
-        const upd = { total: v };
+        const raw = inputs.abono.value.trim();
+        const v = raw ? Math.round(parseFloat(raw.replace(',', '.')) * 100) / 100 : 0;
+        if (!(v >= 0)) { setMsg('El valor abonado debe ser un número.', true); return; }
+        const fp = inputs.fpago.value;
+        if (v > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(fp)) { setMsg('Elige la fecha en que pagó.', true); return; }
+        const upd = {};
         ['causa', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
         upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
-        try { await col('casos').doc(c.id).update(upd); drafts = {}; setMsg(`Datos de ${c.nombre} guardados.`); }
+        try {
+          await col('casos').doc(c.id).update(upd);
+          if (v > 0) await col('movimientos').add({ fecha: fp, tipo: 'Ingreso', categoria: 'Honorarios por casos', descripcion: 'Abono', monto: v, casoId: c.id, creado: new Date().toISOString() });
+          drafts = {}; setMsg(v > 0 ? `Abono de ${usd.format(v)} registrado para ${c.nombre}.` : `Datos de ${c.nombre} guardados.`);
+        }
         catch (e) { setMsg('No se pudieron guardar los datos. Intenta de nuevo.', true); }
       });
       ed.appendChild(sv);
