@@ -340,6 +340,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .th-lupa { margin-left: 6px; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; border: 0; padding: 0; cursor: pointer; vertical-align: middle; background: rgba(255,255,255,.14); color: #fff; }
 .th-lupa.on, .th-lupa:hover { background: #fff; color: var(--t1, var(--fg)); }
 .busca-caso { margin-left: 8px; width: 170px; max-width: 45vw; padding: 5px 12px; border-radius: 99px; border: 0; font-size: 13px; text-transform: none; letter-spacing: 0; vertical-align: middle; background: rgba(255,255,255,.92); color: #1b1b1d; box-shadow: none; }
+.det-dos { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
 </style>
 </head>
 <body>
@@ -926,8 +927,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       act.appendChild(det);
       const obsOpen = openObs === c.id;
       const ob = document.createElement('button'); ob.type = 'button'; ob.className = 'ghost' + (obsOpen ? ' on' : '');
-      ob.textContent = obsOpen ? 'Cerrar' : (c.observacion ? 'Observación •' : 'Observación');
-      ob.title = c.observacion || 'Agregar una observación';
+      { const tieneAg = auds.some((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= new Date().toISOString());
+        ob.textContent = obsOpen ? 'Cerrar' : (tieneAg ? 'Agenda •' : 'Agenda');
+        ob.title = 'Agendar audiencias y diligencias'; }
       ob.setAttribute('aria-expanded', String(obsOpen));
       ob.addEventListener('click', () => { openObs = obsOpen ? null : c.id; obsDraft = null; obsAud = {}; render(); });
       act.appendChild(ob);
@@ -937,25 +939,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const orow = document.createElement('tr'); orow.className = 'det-row';
         const oc = document.createElement('td'); oc.colSpan = 6;
         const ow = document.createElement('div'); ow.className = 'det';
-        const lb = document.createElement('label'); lb.htmlFor = 'obs-' + c.id; lb.textContent = 'Observación de ' + c.nombre;
-        const ta = document.createElement('textarea'); ta.id = 'obs-' + c.id; ta.rows = 4; ta.maxLength = 2000; ta.className = 'obs';
-        ta.placeholder = 'Ej.: Audiencia el 15 de noviembre. Cliente pagará el saldo en diciembre.';
-        ta.value = obsDraft !== null ? obsDraft : c.observacion;
-        ta.addEventListener('input', () => { obsDraft = ta.value; });
-        lb.appendChild(ta);
         const bar = document.createElement('div'); bar.className = 'det-edit';
-        const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar observación';
+        const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar agenda';
         sv.addEventListener('click', () => {
-          col('casos').doc(c.id).update({ observacion: ta.value.trim() });
           const hechos = [];
           ['audiencia', 'diligencia'].forEach((cl) => {
             const g = afIn[cl], f = g.fecha.value, h = g.hora.value;
             if (f && h) { crearAudiencia({ fecha: f, hora: h, dur: 60, caso: c.nombre, tipo: g.tipo.value.trim(), lugar: g.lugar.value.trim(), clase: cl }); hechos.push(cl); }
           });
           if (hechos.length) {
-            setMsg(`Observación y ${hechos.join(' y ')} de ${c.nombre} guardadas.`);
-            obsAud = {}; obsDraft = null; render();
-          } else { obsDraft = null; obsAud = {}; openObs = null; render(); }
+            setMsg(`${hechos.map((h) => h[0].toUpperCase() + h.slice(1)).join(' y ')} de ${c.nombre} agendada.`);
+            obsAud = {}; render();
+          } else setMsg('Pon fecha y hora en audiencia o diligencia para agendar.', true);
         });
         bar.appendChild(sv);
         // Hearings for this case + quick add with calendar pickers
@@ -997,8 +992,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const hint = document.createElement('p'); hint.className = 'sub'; hint.style.margin = '0'; hint.style.fontSize = '13px';
         hint.textContent = 'Si pones fecha y hora en una o en las dos, al guardar se agendan y aparecen aquí con los botones para pasarlas a tu calendario.';
         box.appendChild(hint);
-        ow.append(lb, box, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
-        setTimeout(() => { const t = document.getElementById('obs-' + c.id); if (t && document.activeElement !== t && obsDraft === null) t.focus(); }, 0);
+        ow.append(box, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
       }
       if (!open) return [tr, ...extra];
 
@@ -1021,17 +1015,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'sub'; aj.style.margin = '0'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; wrap.appendChild(aj); }
       const ed = document.createElement('div'); ed.className = 'det-edit';
-      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Mi parte (%)', 'number'], ['causa', 'Número de causa', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
+      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Mi parte (%)', 'number'], ['causa', 'Números de causa', 'text'], ['observacion', 'Observación', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
       const inputs = {};
       FIELDS.forEach(([k, label, type]) => {
         const lb = document.createElement('label'); lb.htmlFor = 'det-' + k; lb.textContent = label;
         let inp;
-        if (k === 'causa') {
-          lb.textContent = 'Números de causa (uno por línea)'; lb.style.gridColumn = '1 / -1';
-          inp = document.createElement('textarea'); inp.id = 'det-' + k; inp.className = 'obs'; inp.maxLength = 1000;
-          inp.placeholder = 'Ej.: 16281-2026-0189\n16201-2025-00931';
-          const val = drafts[k] !== undefined ? drafts[k] : String(c.causa || '').split(/\s+\/\s+/).join('\n').trim();
-          inp.value = val; inp.rows = Math.max(2, val.split('\n').length + 1);
+        if (k === 'causa' || k === 'observacion') {
+          lb.textContent = k === 'causa' ? 'Números de causa (uno por línea)' : 'Observación';
+          inp = document.createElement('textarea'); inp.id = 'det-' + k; inp.className = 'obs'; inp.maxLength = k === 'causa' ? 1000 : 2000;
+          inp.placeholder = k === 'causa' ? 'Ej.: 16281-2026-0189\n16201-2025-00931' : 'Ej.: Cliente pagará el saldo en diciembre.';
+          const val = drafts[k] !== undefined ? drafts[k] : (k === 'causa' ? String(c.causa || '').split(/\s+\/\s+/).join('\n').trim() : c.observacion);
+          inp.value = val; inp.rows = Math.max(3, val.split('\n').length + 1);
         } else {
           inp = document.createElement('input'); inp.type = type; inp.id = 'det-' + k;
           if (type === 'number') { inp.min = '0'; inp.step = '0.01'; inp.inputMode = 'decimal'; }
@@ -1041,7 +1035,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           if (k === 'parte') { inp.min = '0'; inp.max = '100'; inp.step = '1'; inp.value = drafts[k] !== undefined ? drafts[k] : String(c.parte); }
         }
         inp.addEventListener('input', () => { drafts[k] = inp.value; });
-        lb.appendChild(inp); ed.appendChild(lb); inputs[k] = inp;
+        lb.appendChild(inp); inputs[k] = inp;
+        if (k === 'causa' || k === 'observacion') {
+          let dos = ed.querySelector('.det-dos'); if (!dos) { dos = document.createElement('div'); dos.className = 'det-dos'; ed.appendChild(dos); }
+          dos.appendChild(lb);
+        } else ed.appendChild(lb);
       });
       if (ps.length || c.ajuste) {
         const eb = delBtn('abonos:' + c.id, async () => {
@@ -1061,7 +1059,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         if (v > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(fp)) { setMsg('Elige la fecha en que pagó.', true); return; }
         const upd = {};
         { const pv = parseFloat(String(inputs.parte.value).replace(',', '.')); if (!(pv >= 0 && pv <= 100)) { setMsg('Mi parte debe estar entre 0 y 100.', true); return; } upd.parte = Math.round(pv * 100) / 100; }
-        ['causa', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
+        ['causa', 'observacion', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
         upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
         try {
           await col('casos').doc(c.id).update(upd);
