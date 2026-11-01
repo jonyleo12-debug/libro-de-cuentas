@@ -659,10 +659,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     morado:  { name: 'Morado',  light: ['#6a3fa0', '#eee6f6'], dark: ['#b592e6', '#2a2236'] },
     rosado:   { name: 'Rosado',   light: ['#c2367e', '#fbe4f0'], dark: ['#f08cc0', '#3a2030'] },
     verde:   { name: 'Verde',   light: ['#1f6b57', '#e3efea'], dark: ['#5cbf9f', '#1d3029'] },
-    amarillo: { name: 'Amarillo', light: ['#9a7200', '#fbf1d0'], dark: ['#f2c94c', '#38301a'] },
+    tomate:   { name: 'Tomate',   light: ['#e0561f', '#fde8de'], dark: ['#ff8a5c', '#3a2419'] },
   };
   let colorKey = 'azul';
-  try { const k = localStorage.getItem('libro-color'); if (k && COLORS[k]) colorKey = k; } catch (e) {}
+  try { let k = localStorage.getItem('libro-color'); if (k === 'amarillo') k = 'tomate'; if (k && COLORS[k]) colorKey = k; } catch (e) {}
   const isDark = () => { const t = document.documentElement.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
   function applyColor() {
     const c = COLORS[colorKey][isDark() ? 'dark' : 'light'];
@@ -1705,7 +1705,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     db = fireDb;
     libroRef = db.doc('users/' + u.uid);
     libroRef.onSnapshot((snap) => {
-      const c = snap.exists ? String((snap.data() || {}).color || '') : '';
+      let c = snap.exists ? String((snap.data() || {}).color || '') : '';
+      if (c === 'amarillo') { c = 'tomate'; libroRef.set({ color: c }).catch(() => {}); }
       if (COLORS[c]) { colorKey = c; applyColor(); }
       ultimaDescarga = snap.exists ? String((snap.data() || {}).ultimaDescarga || '') : '';
       { const g = snap.exists && (snap.data() || {}).gcal === true; if (g !== gcalOn) { gcalOn = g; render(); } }
