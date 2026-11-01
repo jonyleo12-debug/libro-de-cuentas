@@ -260,7 +260,12 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @media (max-width: 520px) { .hero-box { justify-self: stretch; } .hero { padding-left: 24px; padding-right: 72px; } .hero h1 { font-size: clamp(20px, 6.2vw, 28px); } .hero-nav { font-size: 24px; padding: 2px 6px; } }
 @media (prefers-reduced-motion: reduce) { .hero-color svg { transition: none; } }
 .tag.c-pend, #casos .tag.c-in { background: var(--panel); box-shadow: var(--raise-sm); }
-#casos .estado { display: block; width: fit-content; margin: 8px 0 0 auto; }
+#casos .estados { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 8px; }
+#casos .estado { display: inline-block; }
+#casos .estado-libre { background: var(--panel); box-shadow: var(--raise-sm); color: var(--fg); font: inherit; font-size: 12px; font-weight: 500; line-height: 1.5; padding: 2px 10px; border: 0; border-radius: 99px; min-width: 0; max-width: 100%; text-align: center; }
+#casos .estado-libre::placeholder { color: var(--muted); font-weight: 400; }
+#casos .estado-libre:placeholder-shown { opacity: .55; }
+#casos .estado-libre:focus { opacity: 1; }
 </style>
 </head>
 <body>
@@ -740,8 +745,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       ar.appendChild(ai); tr.appendChild(ar);
       const n = document.createElement('td'); n.textContent = c.nombre;
-      if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; n.appendChild(t); }
-      else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend estado'; t.textContent = 'Pendiente'; n.appendChild(t); }
+      const est = document.createElement('div'); est.className = 'estados';
+      const ei = document.createElement('input'); ei.type = 'text'; ei.className = 'tag estado-libre'; ei.id = 'et-' + c.id; ei.maxLength = 40;
+      ei.placeholder = '+ estado'; ei.setAttribute('aria-label', 'Estado personalizado de ' + c.nombre);
+      const ek = 'et-' + c.id;
+      ei.value = archDrafts[ek] !== undefined ? archDrafts[ek] : c.etiqueta;
+      const fit = () => { ei.style.width = Math.max(ei.value.length, ei.placeholder.length) + 3 + 'ch'; };
+      fit();
+      ei.addEventListener('input', () => { archDrafts[ek] = ei.value; fit(); });
+      ei.addEventListener('keydown', (e) => { if (e.key === 'Enter') ei.blur(); });
+      ei.addEventListener('change', async () => {
+        try { await col('casos').doc(c.id).update({ etiqueta: ei.value.trim() }); delete archDrafts[ek]; }
+        catch (e) { setMsg('No se pudo guardar el estado.', true); }
+      });
+      est.appendChild(ei);
+      if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; est.appendChild(t); }
+      else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend estado'; t.textContent = 'Pendiente'; est.appendChild(t); }
+      n.appendChild(est);
       tr.appendChild(n);
       const moneyCell = (key, val, label, cls, save) => {
         const cell = document.createElement('td'); cell.className = 'num';
@@ -1231,7 +1251,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }, lost);
     col('casos').onSnapshot((snap) => {
       raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0 }; });
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || '') }; });
       render();
     }, lost);
   }
