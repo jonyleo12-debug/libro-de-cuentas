@@ -54,6 +54,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tot span { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .tot b { font-family: var(--font-display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; }
 .tot small { color: var(--muted); font-size: 12px; }
+.tot small.c-in { color: var(--in); font-weight: 600; font-size: 13px; }
 .c-in { color: var(--in); } .c-out { color: var(--out); } .c-inv { color: var(--inv); }
 
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; min-width: 0; }
@@ -393,7 +394,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <div class="tot"><span>Ingresos</span><b class="c-in" id="t-in">—</b><small id="t-in-n"></small></div>
     <div class="tot"><span>Gastos</span><b class="c-out" id="t-out">—</b><small id="t-out-n"></small></div>
     <div class="tot"><span>Disponible</span><b id="t-disp">—</b><small id="t-tasa"></small></div>
-    <div class="tot"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small>Lo que apartaste este mes</small></div>
+    <div class="tot"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small id="t-inv-rinde" class="c-in" hidden></small><small>Lo que apartaste este mes</small></div>
   </section>
 
   <section class="panel" aria-labelledby="h-nuevo">
@@ -770,6 +771,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('inv-tot').textContent = usd.format(tot.dep);
     $('inv-mes').textContent = usd.format(tot.mes);
     $('inv-anio').textContent = usd.format(tot.anio);
+    $('t-inv-rinde').hidden = !(tot.mes > 0); $('t-inv-rinde').textContent = `+${usd.format(tot.mes)} de rendimiento al mes`;
     $('inv-list').replaceChildren(...invs.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
     $('sec-inv').hidden = !iv.length;
     const ibody = $('invs');
