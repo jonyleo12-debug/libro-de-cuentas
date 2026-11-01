@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Libro">
-<meta name="theme-color" content="#1f6b57">
+<meta name="theme-color" content="#eeeeef">
 <title>Libro de cuentas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Public+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: a ledger. Month header and totals first, then the entry form, then the month's entries and the monthly history. */
 :root {
@@ -131,6 +131,75 @@ img { max-width: 100%; }
 .auth-links { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .link { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .sync { font-size: 12px; color: var(--muted); }
+/* Theme: soft white surfaces with raised shadows, a black pill header, and the chosen color as the accent. */
+:root {
+  --bg: #eeeeef; --panel: #f7f7f8; --fg: #1b1b1d; --muted: #77777d; --line: #e2e2e5;
+  --ink: #1d1d1f; --ink-fg: #f5f5f7;
+  --sh-hi: #ffffff; --sh-lo: #d3d3d8;
+  --raise: 10px 10px 24px var(--sh-lo), -10px -10px 24px var(--sh-hi);
+  --raise-sm: 4px 4px 10px var(--sh-lo), -4px -4px 10px var(--sh-hi);
+  --press: inset 3px 3px 7px var(--sh-lo), inset -3px -3px 7px var(--sh-hi);
+  --font-display: "Outfit", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 24px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1b1c1f; --panel: #212226; --fg: #ececee; --muted: #9a9aa2; --line: #2e3035;
+  --ink: #0f1012; --ink-fg: #f5f5f7; --sh-hi: #292a2f; --sh-lo: #121315; } }
+:root[data-theme="dark"] {
+  --bg: #1b1c1f; --panel: #212226; --fg: #ececee; --muted: #9a9aa2; --line: #2e3035;
+  --ink: #0f1012; --ink-fg: #f5f5f7; --sh-hi: #292a2f; --sh-lo: #121315; }
+
+body { font-size: 15px; letter-spacing: -.005em; }
+.wrap { gap: 30px; padding-block: 32px 64px; }
+h1, h2 { font-weight: 400; letter-spacing: -.01em; }
+h2 { font-size: 22px; }
+.hero-wrap { display: grid; gap: 14px; min-width: 0; }
+.hero { position: relative; overflow: hidden; background: linear-gradient(145deg, #2c2c2f, #141416); color: var(--ink-fg); border-radius: 999px; padding: 20px 40px 22px; justify-self: start; box-shadow: var(--raise); display: grid; gap: 2px; }
+.hero::after { content: ""; position: absolute; right: -44px; top: -54px; width: 116px; height: 116px; border-radius: 50%; background: var(--accent); opacity: .9; }
+.hero > * { position: relative; z-index: 1; }
+.hero-k { font-size: 10px; letter-spacing: .38em; text-transform: uppercase; opacity: .7; }
+.hero h1 { font-weight: 300; font-size: clamp(26px, 5vw, 36px); line-height: 1.15; padding-right: 64px; }
+label, th, .usr-l, .tot span { letter-spacing: .14em; font-size: 11px; font-weight: 500; }
+input, select, .obs { background: var(--bg); border: 0; border-radius: 14px; padding: 10px 14px; box-shadow: var(--press); }
+input[type="checkbox"] { box-shadow: none; accent-color: var(--accent); }
+.btn { background: var(--ink); color: var(--ink-fg); border-radius: 999px; padding: 11px 22px; font-weight: 500; letter-spacing: .02em; box-shadow: var(--raise-sm); transition: transform .15s, box-shadow .15s; }
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: none; box-shadow: var(--press); }
+.ghost { background: var(--panel); border: 0; border-radius: 999px; padding: 5px 13px; font-size: 12.5px; box-shadow: var(--raise-sm); transition: box-shadow .15s, color .15s; }
+.ghost:hover { color: var(--fg); }
+.ghost:active { box-shadow: var(--press); }
+.ghost.warn { border: 0; }
+.ghost.on { background: var(--accent); color: #fff; border: 0; }
+.acts .ghost + .ghost, .acts a.ghost, .acts .ghost + a.ghost { margin-left: 6px; }
+
+.totals { gap: 18px; background: none; border: 0; border-radius: 0; overflow: visible; }
+.tot { background: var(--panel); border-radius: 22px; padding: 18px 20px; box-shadow: var(--raise); gap: 4px; }
+.tot b { font-family: var(--font-display); font-weight: 300; font-size: 30px; letter-spacing: -.02em; }
+.panel { border: 0; border-radius: var(--r); padding: 26px; box-shadow: var(--raise); gap: 18px; }
+.callout { border-radius: 22px; padding: 18px 22px; box-shadow: var(--raise); background: var(--panel); border-left: 6px solid var(--accent); }
+.callout b { font-weight: 500; }
+.budget-row b { font-family: var(--font-display); font-weight: 300; font-size: 28px; letter-spacing: -.02em; }
+th { color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 11px 10px; border-bottom: 1px solid var(--line); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr { transition: background .15s; }
+tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.tag { border: 0; background: color-mix(in srgb, currentColor 12%, transparent); padding: 2px 10px; font-weight: 500; }
+.det-row td, .det-row:hover td { background: var(--bg); box-shadow: inset 0 2px 8px var(--sh-lo); }
+.chip { background: var(--bg); box-shadow: var(--raise-sm); padding: 3px 12px; }
+.meter { background: var(--bg); box-shadow: var(--press); }
+.swatch { border: 3px solid var(--panel); box-shadow: var(--raise-sm); width: 26px; height: 26px; }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fg), var(--raise-sm); }
+.usr { background: var(--panel); border-radius: 999px; padding: 6px 8px 6px 16px; box-shadow: var(--raise-sm); gap: 12px; }
+.tip { border: 0; border-radius: 12px; box-shadow: var(--raise-sm); }
+.auth-card { border: 0; border-radius: 28px; padding: 34px 28px; box-shadow: var(--raise); }
+.auth-card h1 { font-weight: 300; font-size: 32px; }
+@media (max-width: 520px) {
+  .panel { padding: 20px 16px; }
+  .hero { padding: 18px 30px; justify-self: stretch; }
+}
+@media (prefers-reduced-motion: reduce) { .btn, .ghost, tbody tr { transition: none; } }
 </style>
 </head>
 <body>
@@ -155,8 +224,11 @@ img { max-width: 100%; }
 
 <div class="wrap" id="app" hidden>
   <header class="top">
-    <div>
-      <h1>Libro de cuentas</h1>
+    <div class="hero-wrap">
+      <div class="hero">
+        <span class="hero-k">Libro de cuentas</span>
+        <h1 id="hero-mes">Mis finanzas</h1>
+      </div>
       <p class="sub">Anota cada honorario, sueldo, gasto e inversión el día que ocurre. Los totales y tu promedio de honorarios se calculan solos.</p>
     </div>
     <div class="side">
@@ -454,6 +526,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
   function render() {
     const mes = $('mes').value || thisMonth;
+    { const [yy, mm] = mes.split('-').map(Number); const n = new Date(yy, mm - 1, 1).toLocaleDateString('es-EC', { month: 'long' }); $('hero-mes').textContent = `${n.charAt(0).toUpperCase()}${n.slice(1)}, ${yy}`; }
     const delMes = entriesFor(mes).sort((a, b) => b.fecha.localeCompare(a.fecha));
     const ing = sum(delMes, 'Ingreso'), gas = sum(delMes, 'Gasto'), inv = sum(delMes, 'Inversión');
     const disp = ing - gas;
