@@ -312,6 +312,26 @@ body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none 
 .panel.plegada > :not(:first-child):not(.plegar) { display: none !important; }
 .panel.plegada > :first-child .seg { display: none; }
 .panel.plegada { gap: 0; align-self: start; }
+.usuarios { display: grid; gap: 4px; min-width: 230px; }
+.usr-fila { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 12px; background: transparent; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.usr-fila:hover { background: rgba(127,127,127,.12); }
+.usr-fila .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.usr-fila .usr-t { display: grid; line-height: 1.25; min-width: 0; }
+.usr-fila .usr-t small { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.usr-fila.libre .usr-t { color: var(--muted); }
+.dlg-usr { border: 0; border-radius: 22px; padding: 22px; width: min(420px, calc(100vw - 32px)); box-sizing: border-box; background: var(--panel); color: var(--fg); box-shadow: 0 30px 80px -20px rgba(0,0,0,.4); }
+.dlg-usr::backdrop { background: rgba(10,12,20,.35); backdrop-filter: blur(3px); }
+.dlg-usr form { display: grid; gap: 12px; }
+.dlg-usr h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+.dlg-usr label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.btn.peligro { background: #c0262d; color: #fff; }
+.casos-tit { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nuevo-caso-btn { margin-left: 0; font-size: 13px; padding: 6px 12px; vertical-align: middle; font-family: var(--font-body); }
+.nuevo-caso { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 10px; align-items: end; }
+.nuevo-caso label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+body.invitado .totals, body.invitado section[aria-labelledby="h-nuevo"], body.invitado .grid2, body.invitado #prom, body.invitado #sec-inv, body.invitado #sec-fijos, body.invitado section[aria-labelledby="h-resp"], body.invitado #aviso-resp, body.invitado #hero-color, body.invitado .hero-nav, body.invitado .hero-caret { display: none !important; }
+body.invitado #sec-casos { display: grid !important; }
+body.invitado .hero-mes-btn { pointer-events: none; }
 .det-acts { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
 .det-acts .btn { width: auto; padding-left: 28px; padding-right: 28px; }
 .agenda .det-h { color: inherit; }
@@ -493,7 +513,8 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
           <button type="button" class="hero-color" id="hero-color" aria-label="Cambiar color" aria-expanded="false" aria-controls="color-pop">
           </button>
         </div>
-        <div class="color-pop" id="color-pop" hidden><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div></div>
+        <div class="color-pop" id="color-pop" hidden><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div>
+          <span class="usr-l" style="margin-top:6px">Usuarios</span><div id="usuarios" class="usuarios"></div></div>
       </div>
       <p class="sub">Anota cada honorario, sueldo, gasto e inversión el día que ocurre. Los totales y tu promedio de honorarios se calculan solos.</p>
     </div>
@@ -578,10 +599,16 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 
   <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar">
     <div class="budget-row">
-      <h2 id="h-cobrar">Casos</h2>
+      <div class="casos-tit"><h2 id="h-cobrar">Casos</h2><button type="button" class="ghost nuevo-caso-btn" id="nuevo-caso-btn">+ Nuevo caso</button></div>
       <span><span class="sub" style="display:inline">Por cobrar</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
     </div>
-    <p class="sub" style="margin:0">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
+    <form class="nuevo-caso" id="nuevo-caso" hidden>
+      <label>Nombre del cliente<input type="text" id="nc-nombre" maxlength="120" required></label>
+      <label>N.º de archivo<input type="text" id="nc-archivo" maxlength="20"></label>
+      <label>Total (USD)<input type="number" id="nc-total" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+      <button type="submit" class="btn">Crear caso</button>
+    </form>
+    <p class="sub" style="margin:0" id="casos-ayuda">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
     <div class="tbox">
       <table>
         <thead><tr><th><span class="th-f">Archivo<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="archivo" aria-label="Ordenar o filtrar por Archivo"><option value="asc">Menor a mayor</option><option value="desc">Mayor a menor</option></select></span></th><th><span class="th-f">Caso<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="caso" aria-label="Ordenar o filtrar por Caso"><option value="">Todos</option><option value="az">A → Z</option><option value="za">Z → A</option><optgroup label="Estado" data-fijo="1"><option value="pagados">Pagado</option><option value="pendientes">Pendiente</option><option value="saldo">Con saldo por cobrar</option><option value="audiencia">Audiencia</option><option value="diligencia">Diligencia</option></optgroup></select></span><button type="button" class="th-lupa" id="lupa-btn" aria-label="Buscar caso por nombre" aria-expanded="false"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button><input type="search" id="busca-caso" class="busca-caso" placeholder="Buscar nombre…" aria-label="Buscar caso por nombre" hidden></th><th class="num"><span class="th-f">Total<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="total" aria-label="Ordenar o filtrar por Total"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Pagado<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="pagado" aria-label="Ordenar o filtrar por Pagado"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Falta<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="falta" aria-label="Ordenar o filtrar por Falta"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><button type="button" class="ghost arch-btn" id="ver-arch" aria-pressed="false" title="Ver procesos archivados"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg><span id="ver-arch-t">Archivados</span></button></th></tr></thead>
@@ -633,9 +660,9 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 </div>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, onSnapshotsInSync } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, onSnapshotsInSync, getDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // ⚙️ Configuración de Firebase (pega aquí la de tu proyecto)
 const firebaseConfig = {
@@ -670,6 +697,7 @@ const wrapCol = (c) => ({
   doc: (id) => wrapDoc(id ? doc(c, id) : doc(c)),
   add: async (d) => { const r = doc(c); track(setDoc(r, d)); return wrapDoc(r); },
   onSnapshot: (next, err) => onSnapshot(c, (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
+  onSnapshotDeCasos: (next, err) => onSnapshot(query(c, where('casoId', '>', '')), (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
 });
 const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
@@ -714,6 +742,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const esDelCaso = (x, c) => x.casoId ? x.casoId === c.id : x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase();
   const claseDe = (a) => a.clase === 'diligencia' || (!a.clase && /dilig/i.test(a.tipo || '')) ? 'diligencia' : 'audiencia';
   let libroRef = null;
+  let invitado = null; // { owner, rol, color, nombre, ownerEmail } when signed in as someone else's assistant
+  let miembros = [];
   const col = (name) => libroRef.collection(name);
 
   // Color del libro: each choice has a light and a dark version
@@ -741,12 +771,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     b.type = 'button'; b.className = 'swatch'; b.dataset.color = k; b.title = c.name; b.setAttribute('aria-label', 'Color ' + c.name);
     b.style.background = c.light[0];
     b.addEventListener('click', async () => {
+      if (invitado) return;
       colorKey = k; applyColor();
       if (libroRef) { try { await libroRef.set({ color: k }); } catch (e) {} }
     });
     sw.appendChild(b);
   });
   applyColor();
+  setTimeout(() => { try { renderUsuarios(); } catch (e) {} }, 0);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyColor);
   new MutationObserver(applyColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   let drafts = {};
@@ -822,7 +854,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     orden.forEach((k) => { const el = m[k]; if (el) { ref.after(el); ref = el; delete m[k]; } });
   }
   try { aplicarOrden(JSON.parse(localStorage.getItem('libro-orden') || '[]')); } catch (e) {}
-  const guardarVista = (campo, valor) => { if (libroRef) libroRef.set({ [campo]: valor }).catch(() => {}); };
+  const guardarVista = (campo, valor) => { if (libroRef && !invitado) libroRef.set({ [campo]: valor }).catch(() => {}); };
   function iniciarArrastre(e, sec, btn) {
     if (e.button !== 0) return;
     const x0 = e.clientX, y0 = e.clientY; let activo = false, raf = 0, py = y0;
@@ -1038,9 +1070,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('cob-v').textContent = usd.format(porCobrar);
     $('cob-n').textContent = `en ${pend} ${pend === 1 ? 'caso' : 'casos'}`;
     $('casos-list').replaceChildren(...casos.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
-    $('sec-casos').hidden = !cs.length;
+    $('sec-casos').hidden = !cs.length && !invitado;
     const cbody = $('casos');
-    if (!cs.length) cbody.replaceChildren(emptyRow(6, 'Aún no tienes casos. Anota un honorario con su caso y total.'));
+    if (!cs.length) cbody.replaceChildren(emptyRow(6, invitado ? 'Todavía no hay casos. Crea uno con "+ Nuevo caso".' : 'Aún no tienes casos. Anota un honorario con su caso y total.'));
     else if (!csView.length) cbody.replaceChildren(emptyRow(6, casoBusca ? `No hay casos que coincidan con "${casoBusca}".` : verArch && !casoFiltro ? 'No tienes procesos archivados. Archiva uno desde su Detalle.' : 'No hay casos con ese estado.'));
     else cbody.replaceChildren(...csView.flatMap((c) => {
       const tr = document.createElement('tr');
@@ -1188,7 +1220,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             let gg;
             if (x.gcalId) { gg = document.createElement('span'); gg.className = 'tag c-in estado'; gg.textContent = 'En Google ✓'; }
             else if (GCAL_CLIENT_ID) { gg = document.createElement('button'); gg.type = 'button'; gg.className = 'ghost'; gg.textContent = 'Enviar a Google';
-              gg.addEventListener('click', () => ensureToken(async () => { try { if (!gcalOn) { gcalOn = true; if (libroRef) libroRef.set({ gcal: true }); } const id = await gcalCrear(x); await col('audiencias').doc(x.id).update({ gcalId: id }); setMsg('Enviada a Google Calendar.'); } catch (e) { setMsg('No se pudo enviar a Google Calendar.', true); } })); }
+              gg.addEventListener('click', () => ensureToken(async () => { try { if (!gcalOn) guardarGcal(true); const id = await gcalCrear(x); await col('audiencias').doc(x.id).update({ gcalId: id }); setMsg('Enviada a Google Calendar.'); } catch (e) { setMsg('No se pudo enviar a Google Calendar.', true); } })); }
             else { gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(x); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none'; }
             const quitar = () => {
               col('audiencias').doc(x.id).delete();
@@ -1651,7 +1683,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('auth').hidden = true; $('app').hidden = false;
     if (started) return;
     started = true;
-    startBook(u);
+    (async () => {
+      let acc = null;
+      try { const s2 = await getDoc(doc(fs, 'accesos/' + u.uid)); if (s2.exists()) acc = s2.data(); } catch (e) {}
+      if (acc && acc.owner && acc.rol === 'asistente') startInvitado(u, acc); else startBook(u);
+    })();
   });
 
   // Calendar helpers (Ecuador continental: UTC-5, sin horario de verano)
@@ -1737,11 +1773,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       setMsg(mal ? 'Se guardó, pero algunos eventos de Google Calendar no se pudieron actualizar.' : `También se actualizó${lista.length > 1 ? 'ron' : ''} ${lista.length} ${lista.length > 1 ? 'eventos' : 'evento'} en Google Calendar.`, !!mal);
     });
   }
+  function guardarGcal(v) {
+    gcalOn = v;
+    if (invitado) { try { localStorage.setItem('libro-gcal-inv', v ? '1' : ''); } catch (e) {} }
+    else if (libroRef) libroRef.set({ gcal: v });
+  }
   function gcalConectar() {
-    ensureToken(() => { gcalOn = true; if (libroRef) libroRef.set({ gcal: true }); setMsg('Google Calendar conectado. Las nuevas audiencias y diligencias se agregarán solas.'); render(); });
+    ensureToken(() => { guardarGcal(true); setMsg('Google Calendar conectado. Las nuevas audiencias y diligencias se agregarán solas.'); render(); });
   }
   function gcalDesconectar() {
-    gcalOn = false; if (libroRef) libroRef.set({ gcal: false });
+    guardarGcal(false);
     try { if (gcalToken && window.google) google.accounts.oauth2.revoke(gcalToken, () => {}); sessionStorage.removeItem('libro-gtoken'); } catch (e) {}
     gcalToken = null; setMsg('Google Calendar desconectado.'); render();
   }
@@ -1810,6 +1851,124 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('imp').value = '';
   });
 
+  // Users: each color can hold one person with a role (for now: asistente = only the Casos table)
+  const ROLES = { asistente: 'Asistente · solo Casos' };
+  function renderUsuarios() {
+    const box = $('usuarios'); if (!box) return;
+    box.replaceChildren(...Object.entries(COLORS).map(([k, c]) => {
+      const m = miembros.find((x) => x.color === k);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'usr-fila' + (m ? '' : ' libre');
+      const d = document.createElement('span'); d.className = 'dot'; d.style.background = c.light[0];
+      const t = document.createElement('span'); t.className = 'usr-t';
+      if (m) { const n = document.createElement('b'); n.textContent = m.nombre || m.email; const sm = document.createElement('small'); sm.textContent = (ROLES[m.rol] || m.rol) + ' · ' + m.email; t.append(n, sm); }
+      else t.textContent = '+ Añadir usuario';
+      b.append(d, t);
+      b.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(k, m); });
+      return b;
+    }));
+  }
+  let usrColor = null, usrActual = null;
+  const dlg = $('dlg-usr');
+  function abrirUsuario(k, m) {
+    usrColor = k; usrActual = m || null;
+    $('usr-msg').textContent = ''; $('usr-msg').className = 'msg';
+    $('usr-tit').textContent = m ? (m.nombre || m.email) : 'Añadir usuario · ' + COLORS[k].name;
+    $('usr-sub').textContent = m ? `Rol: ${ROLES[m.rol] || m.rol}. Entra con ${m.email}.` : 'Esta persona entrará con su correo y la contraseña que pongas aquí, y solo verá lo que permite su rol.';
+    ['usr-nombre', 'usr-email', 'usr-pass'].forEach((id) => { const el = $(id); el.value = ''; el.closest('label').hidden = !!m; el.required = !m; });
+    $('usr-rol').closest('label').hidden = !!m;
+    $('usr-ok').textContent = m ? 'Quitar acceso' : 'Crear usuario';
+    $('usr-ok').classList.toggle('peligro', !!m);
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+  }
+  const cerrarDlg = () => { if (dlg.open) dlg.close(); };
+  $('usr-cancel').addEventListener('click', cerrarDlg);
+  $('usr-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = $('usr-msg'); const ok = $('usr-ok');
+    const fallo = (t) => { msg.textContent = t; msg.className = 'msg err'; ok.disabled = false; };
+    ok.disabled = true;
+    if (usrActual) {
+      const m = usrActual;
+      libroRef.collection('miembros').doc(m.id).delete();
+      db.doc('accesos/' + m.id).delete();
+      ok.disabled = false; cerrarDlg(); setMsg(`${m.nombre || m.email} ya no tiene acceso a tu libro.`);
+      return;
+    }
+    const nombre = $('usr-nombre').value.trim(), email = $('usr-email').value.trim().toLowerCase(), pass = $('usr-pass').value, rol = $('usr-rol').value;
+    if (!nombre || !email || pass.length < 6) return fallo('Completa nombre, correo y una contraseña de al menos 6 caracteres.');
+    if (miembros.some((x) => x.email === email)) return fallo('Ese correo ya es usuario de tu libro.');
+    msg.textContent = 'Creando usuario…'; msg.className = 'msg';
+    let app2 = null, guid = null;
+    try {
+      app2 = initializeApp(firebaseConfig, 'alta-' + Date.now());
+      const a2 = getAuth(app2);
+      try { guid = (await createUserWithEmailAndPassword(a2, email, pass)).user.uid; }
+      catch (er) {
+        if (er && er.code === 'auth/email-already-in-use') {
+          try { guid = (await signInWithEmailAndPassword(a2, email, pass)).user.uid; }
+          catch (er2) { throw new Error('Ese correo ya tiene cuenta en la app. Para darle acceso, pon la contraseña que esa persona ya usa.'); }
+        } else if (er && er.code === 'auth/invalid-email') throw new Error('El correo no es válido.');
+        else if (er && er.code === 'auth/weak-password') throw new Error('La contraseña debe tener al menos 6 caracteres.');
+        else throw new Error('No se pudo crear el usuario. Revisa tu conexión e intenta otra vez.');
+      }
+      try { await signOut(a2); } catch (er) {}
+    } catch (er) { if (app2) deleteApp(app2).catch(() => {}); return fallo(er.message); }
+    deleteApp(app2).catch(() => {});
+    if (guid === auth.currentUser.uid) return fallo('Ese es tu propio correo.');
+    const datos = { nombre, email, rol, color: usrColor, creado: new Date().toISOString() };
+    libroRef.collection('miembros').doc(guid).set(datos);
+    db.doc('accesos/' + guid).set({ owner: auth.currentUser.uid, ownerEmail: auth.currentUser.email || '', rol, color: usrColor, nombre });
+    ok.disabled = false; cerrarDlg();
+    setMsg(`Listo: ${nombre} ya puede entrar con ${email} y la contraseña que pusiste.`);
+  });
+
+  // New case form (Casos header)
+  $('nuevo-caso-btn').addEventListener('click', () => { const f = $('nuevo-caso'); f.hidden = !f.hidden; if (!f.hidden) $('nc-nombre').focus(); });
+  $('nuevo-caso').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombre = $('nc-nombre').value.trim().replace(/\s+/g, ' '); if (!nombre) return;
+    const tv = parseFloat(String($('nc-total').value).replace(',', '.'));
+    await col('casos').add({ nombre, archivo: $('nc-archivo').value.trim(), total: tv >= 0 ? Math.round(tv * 100) / 100 : 0, creado: new Date().toISOString() });
+    $('nc-nombre').value = ''; $('nc-archivo').value = ''; $('nc-total').value = ''; $('nuevo-caso').hidden = true;
+    setMsg(`Caso de ${nombre} creado.`);
+  });
+
+  function suscribirCasos(lost) {
+    col('audiencias').onSnapshot((snap) => {
+      raw['audiencias'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      audsListas = true;
+      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), casoId: String(x.casoId || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || ''), clase: String(x.clase || ''), gcalId: x.gcalId ? String(x.gcalId) : '' }; }).filter((a) => a.inicio);
+      ligarAudiencias();
+      render();
+    }, lost);
+    col('casos').onSnapshot((snap) => {
+      raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      casosListos = true;
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true }; });
+      ligarAudiencias();
+      render();
+    }, lost);
+  }
+  const mapMov = (d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '' }; };
+
+  function startInvitado(u, acc) {
+    invitado = acc;
+    document.body.classList.add('invitado');
+    $('u-name').textContent = `${u.email || 'Tu cuenta'} · ${ROLES[acc.rol] || acc.rol}`;
+    { const sb = document.querySelector('.top .sub'); if (sb) sb.textContent = `Hola ${acc.nombre || ''}. Estás en el libro de ${acc.ownerEmail || 'tu equipo'} como asistente: puedes trabajar en la tabla de Casos, su Detalle y su Agenda.`; }
+    if (acc.color && COLORS[acc.color]) { colorKey = acc.color; applyColor(); }
+    try { gcalOn = localStorage.getItem('libro-gcal-inv') === '1'; } catch (e) {}
+    db = fireDb;
+    libroRef = db.doc('users/' + acc.owner);
+    const lost = () => setMsg('No se pudo abrir el libro compartido. Puede que te hayan quitado el acceso; recarga la página.', true);
+    libroRef.collection('movimientos').onSnapshotDeCasos((snap) => {
+      rows = snap.docs.map(mapMov).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
+      render();
+    }, lost);
+    suscribirCasos(lost);
+    render();
+  }
+
   function startBook(u) {
     $('u-name').textContent = u.email || 'Tu cuenta';
     db = fireDb;
@@ -1859,22 +2018,25 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       invs = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), categoria: String(x.categoria || ''), tasa: Number(x.tasa) || 0 }; });
       render();
     }, lost);
-    col('audiencias').onSnapshot((snap) => {
-      raw['audiencias'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      audsListas = true;
-      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), casoId: String(x.casoId || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || ''), clase: String(x.clase || ''), gcalId: x.gcalId ? String(x.gcalId) : '' }; }).filter((a) => a.inicio);
-      ligarAudiencias();
-      render();
-    }, lost);
-    col('casos').onSnapshot((snap) => {
-      raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      casosListos = true;
-      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true }; });
-      ligarAudiencias();
-      render();
-    }, lost);
+    suscribirCasos(lost);
+    col('miembros').onSnapshot((snap) => {
+      miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || '') }; });
+      renderUsuarios();
+    }, () => {});
   }
 })();
 </script>
+<dialog class="dlg-usr" id="dlg-usr">
+  <form id="usr-form" method="dialog">
+    <h3 id="usr-tit">Añadir usuario</h3>
+    <p class="sub" style="margin:0" id="usr-sub">Esta persona entrará con su correo y contraseña a tu libro, solo con el acceso de su rol.</p>
+    <label>Nombre<input type="text" id="usr-nombre" maxlength="60" required placeholder="Ej.: María"></label>
+    <label>Correo<input type="email" id="usr-email" maxlength="120" required autocomplete="off"></label>
+    <label>Contraseña<input type="text" id="usr-pass" minlength="6" maxlength="60" required autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>
+    <label>Rol<select id="usr-rol"><option value="asistente">Asistente: solo la tabla de Casos</option></select></label>
+    <p class="msg" id="usr-msg" role="status"></p>
+    <div class="det-acts"><button type="button" class="ghost" id="usr-cancel">Cancelar</button><button type="submit" class="btn" id="usr-ok">Crear usuario</button></div>
+  </form>
+</dialog>
 </body>
 </html>

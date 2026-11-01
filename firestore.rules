@@ -1,12 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Cada persona solo puede leer y escribir su propio libro.
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    function firmado() { return request.auth != null; }
+    function esDueno(uid) { return firmado() && request.auth.uid == uid; }
+    // Asistente: alguien a quien el dueño agregó en users/{dueño}/miembros con rol "asistente"
+    function esAsistente(uid) {
+      return firmado()
+        && exists(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.rol == 'asistente';
     }
+
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // El dueño lee y escribe todo su libro.
+      allow read, write: if esDueno(uid);
+      match /{document=**} {
+        allow read, write: if esDueno(uid);
+      }
+      // El asistente solo trabaja en Casos y su Agenda...
+      match /casos/{id} {
+        allow read, write: if esAsistente(uid);
+      }
+      match /audiencias/{id} {
+        allow read, write: if esAsistente(uid);
+      }
+      // ...y solo ve o registra pagos que pertenecen a un caso (nunca tus otros movimientos).
+      match /movimientos/{id} {
+        allow read, delete: if esAsistente(uid) && resource.data.casoId > '';
+        allow create: if esAsistente(uid) && request.resource.data.casoId > ''
+          && request.resource.data.tipo == 'Ingreso' && request.resource.data.categoria == 'Honorarios por casos';
+      }
+    }
+
+    // Aviso para que cada usuario sepa a qué libro entra. No da permisos por sí solo.
+    match /accesos/{guest} {
+      allow read: if firmado() && (request.auth.uid == guest || resource.data.owner == request.auth.uid);
+      allow create: if firmado() && request.resource.data.owner == request.auth.uid;
+      allow update: if firmado() && resource.data.owner == request.auth.uid && request.resource.data.owner == request.auth.uid;
+      allow delete: if firmado() && resource.data.owner == request.auth.uid;
     }
   }
 }
