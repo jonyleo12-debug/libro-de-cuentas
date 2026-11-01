@@ -284,6 +284,17 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .agenda .det-h { color: inherit; }
 .agenda .det-edit, .agenda label { color: var(--muted); }
 .ghost.elim-abonos { justify-self: start; align-self: end; padding: 10px 16px; font-size: 13px; color: var(--out); }
+.seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.seg .ghost { padding: 5px 12px; }
+.seg .ghost.on { background: var(--ink); color: var(--ink-fg); }
+.pies { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 20px; }
+.pie { margin: 0; display: grid; gap: 10px; justify-items: center; }
+.pie figcaption { font-family: var(--font-display); font-size: 16px; }
+.pie svg { width: 100%; max-width: 180px; height: auto; display: block; }
+.pie .pie-tot { fill: var(--fg); font-family: var(--font-display); font-size: 20px; }
+.pie-leg { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; width: 100%; font-size: 13px; }
+.pie-leg li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; }
+.pie-leg b { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -384,8 +395,12 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
     </section>
 
     <section class="panel" aria-labelledby="h-hist">
-      <h2 id="h-hist">Historial por mes</h2>
-      <div class="legend"><span><i class="sw" style="background:var(--in)"></i>Ingresos</span><span><i class="sw" style="background:var(--out)"></i>Gastos</span><span class="sub" style="margin:0">Últimos 12 meses</span></div>
+      <div class="budget-row"><h2 id="h-hist">Historial por mes</h2>
+        <div class="seg" role="group" aria-label="Tipo de gráfico">
+          <button type="button" class="ghost" data-chart="barras">Barras</button><button type="button" class="ghost" data-chart="lineas">Líneas</button><button type="button" class="ghost" data-chart="circular">Circular</button>
+        </div>
+      </div>
+      <div class="legend" id="chart-legend"><span><i class="sw" style="background:var(--in)"></i>Ingresos</span><span><i class="sw" style="background:var(--out)"></i>Gastos</span><span class="sub" style="margin:0">Últimos 12 meses</span></div>
       <div class="chart" id="chart"></div>
       <div class="tbox">
         <table>
@@ -1014,7 +1029,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     } else {
       const ends = [...rows.map((r) => r.fecha.slice(0, 7)), thisMonth, mes].sort();
       const lista = monthsBetween(starts[0], ends[ends.length - 1]).reverse();
-      drawChart(lista.slice(0, 12).reverse().map((m) => { const rs = entriesFor(m); return { m, i: sum(rs, 'Ingreso'), g: sum(rs, 'Gasto') }; }));
+      drawChart(lista.slice(0, 12).reverse().map((m) => { const rs = entriesFor(m); return { m, i: sum(rs, 'Ingreso'), g: sum(rs, 'Gasto'), rs }; }));
       hist.replaceChildren(...lista.map((m) => {
         const rs = entriesFor(m);
         const i = sum(rs, 'Ingreso'), g = sum(rs, 'Gasto');
@@ -1046,9 +1061,61 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const compact = new Intl.NumberFormat('es-EC', { notation: 'compact', maximumFractionDigits: 1 });
   function niceMax(v) { if (v <= 0) return 100; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
 
+  let chartType = 'barras';
+  try { const t = localStorage.getItem('libro-chart'); if (['barras', 'lineas', 'circular'].includes(t)) chartType = t; } catch (e) {}
+  document.querySelectorAll('[data-chart]').forEach((b) => b.addEventListener('click', () => {
+    chartType = b.dataset.chart; try { localStorage.setItem('libro-chart', chartType); } catch (e) {} render();
+  }));
+  const PIE_IN = ['var(--in)', '#2a9d8f', '#e0a030', '#7a5cc0', '#5a7fb0', '#d0607a', '#8c8c94'];
+  const PIE_OUT = ['var(--out)', '#e0a030', '#7a5cc0', '#2a9d8f', '#5a7fb0', '#d0607a', '#8c8c94'];
+  function drawPie(data) {
+    const box = $('chart');
+    const wrap = document.createElement('div'); wrap.className = 'pies';
+    [['Ingreso', 'Ingresos', PIE_IN], ['Gasto', 'Gastos', PIE_OUT]].forEach(([tipo, titulo, pal]) => {
+      const tot = {};
+      data.forEach((d) => d.rs.filter((r) => r.tipo === tipo).forEach((r) => { const k = r.categoria || 'Otros'; tot[k] = (tot[k] || 0) + r.monto; }));
+      let parts = Object.entries(tot).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+      if (parts.length > pal.length) { const rest = parts.slice(pal.length - 1).reduce((s2, [, v]) => s2 + v, 0); parts = parts.slice(0, pal.length - 1).concat([['Otros', rest]]); }
+      const total = parts.reduce((s2, [, v]) => s2 + v, 0);
+      const fig = document.createElement('figure'); fig.className = 'pie';
+      const cap = document.createElement('figcaption'); cap.textContent = titulo; fig.appendChild(cap);
+      const S = 180, R = 80, r0 = 50, c0 = S / 2;
+      const svg = svgEl('svg', { viewBox: `0 0 ${S} ${S}`, role: 'img', 'aria-label': `${titulo} por categoría, últimos 12 meses` });
+      if (!total) svg.appendChild(svgEl('circle', { cx: c0, cy: c0, r: (R + r0) / 2, fill: 'none', style: `stroke:var(--line);stroke-width:${R - r0}` }));
+      let a0 = -Math.PI / 2;
+      const pt = (a, rad) => `${c0 + rad * Math.cos(a)} ${c0 + rad * Math.sin(a)}`;
+      parts.forEach(([, v], k) => {
+        const frac = v / total; const a1 = a0 + frac * Math.PI * 2;
+        if (frac >= 0.9999) { svg.appendChild(svgEl('circle', { cx: c0, cy: c0, r: (R + r0) / 2, fill: 'none', style: `stroke:${pal[k]};stroke-width:${R - r0}` })); }
+        else {
+          const big = a1 - a0 > Math.PI ? 1 : 0, gap = parts.length > 1 ? 0.012 : 0;
+          const s0 = a0 + gap, s1 = a1 - gap;
+          svg.appendChild(svgEl('path', { d: `M ${pt(s0, R)} A ${R} ${R} 0 ${big} 1 ${pt(s1, R)} L ${pt(s1, r0)} A ${r0} ${r0} 0 ${big} 0 ${pt(s0, r0)} Z`, style: `fill:${pal[k]}` }));
+        }
+        a0 = a1;
+      });
+      const tv = svgEl('text', { x: c0, y: c0 + 2, 'text-anchor': 'middle', class: 'pie-tot' }); tv.textContent = '$' + compact.format(total); svg.appendChild(tv);
+      const tl = svgEl('text', { x: c0, y: c0 + 18, 'text-anchor': 'middle' }); tl.textContent = '12 meses'; svg.appendChild(tl);
+      fig.appendChild(svg);
+      const ul = document.createElement('ul'); ul.className = 'pie-leg';
+      if (!parts.length) { const li = document.createElement('li'); li.className = 'sub'; li.textContent = 'Sin datos todavía.'; ul.appendChild(li); }
+      parts.forEach(([n, v], k) => {
+        const li = document.createElement('li');
+        const sw = document.createElement('i'); sw.className = 'sw'; sw.style.background = pal[k];
+        const nm = document.createElement('span'); nm.textContent = n;
+        const vl = document.createElement('b'); vl.textContent = `${usd.format(v)} · ${Math.round((v / total) * 100)}%`;
+        li.append(sw, nm, vl); ul.appendChild(li);
+      });
+      fig.appendChild(ul); wrap.appendChild(fig);
+    });
+    box.replaceChildren(wrap);
+  }
   function drawChart(data) {
     const box = $('chart');
+    document.querySelectorAll('[data-chart]').forEach((b) => { const on = b.dataset.chart === chartType; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    $('chart-legend').hidden = chartType === 'circular';
     if (!data.length) { box.replaceChildren(); const p = document.createElement('p'); p.className = 'msg'; p.textContent = 'El gráfico aparece cuando tengas tu primer mes.'; box.appendChild(p); return; }
+    if (chartType === 'circular') { drawPie(data); return; }
     const W = Math.max(280, box.clientWidth || 420), H = 200;
     const top = Math.max(...data.map((d) => Math.max(d.i, d.g)));
     const max = niceMax(top);
@@ -1071,7 +1138,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const hit = svgEl('rect', { class: 'hit', x: x0, y: m.t, width: band, height: ih, rx: 4 });
       svg.appendChild(hit);
       const cx = x0 + band / 2;
-      [[d.i, 'var(--in)', cx - bw - 1], [d.g, 'var(--out)', cx + 1]].forEach(([v, c, x]) => {
+      if (chartType !== 'lineas') [[d.i, 'var(--in)', cx - bw - 1], [d.g, 'var(--out)', cx + 1]].forEach(([v, c, x]) => {
         const h = Math.max(v > 0 ? 1.5 : 0, (v / max) * ih);
         svg.appendChild(svgEl('rect', { x, y: m.t + ih - h, width: bw, height: h, rx: Math.min(3, bw / 2), style: `fill:${c};pointer-events:none` }));
       });
@@ -1091,6 +1158,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       hit.addEventListener('pointerenter', show);
       hit.addEventListener('click', show);
     });
+    if (chartType === 'lineas') {
+      const X = (k) => m.l + k * band + band / 2;
+      [['i', 'var(--in)'], ['g', 'var(--out)']].forEach(([key, c]) => {
+        const pts = data.map((d, k) => `${X(k)},${y(d[key])}`);
+        const area = svgEl('path', { d: `M ${X(0)},${y(0)} L ${pts.join(' L ')} L ${X(data.length - 1)},${y(0)} Z`, style: `fill:${c};opacity:.08;pointer-events:none` });
+        svg.appendChild(area);
+        svg.appendChild(svgEl('polyline', { points: pts.join(' '), fill: 'none', style: `stroke:${c};stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;pointer-events:none` }));
+        data.forEach((d, k) => svg.appendChild(svgEl('circle', { cx: X(k), cy: y(d[key]), r: 3.5, style: `fill:var(--panel);stroke:${c};stroke-width:2;pointer-events:none` })));
+      });
+    }
     svg.addEventListener('pointerleave', () => { tip.hidden = true; svg.querySelectorAll('.hit.on').forEach((e) => e.classList.remove('on')); });
     box.replaceChildren(svg, tip);
   }
