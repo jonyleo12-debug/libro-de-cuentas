@@ -200,6 +200,62 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
   .hero { padding: 18px 30px; justify-self: stretch; }
 }
 @media (prefers-reduced-motion: reduce) { .btn, .ghost, tbody tr { transition: none; } }
+/* Liquid glass: translucent blurred surfaces over soft colored light, with a bright rim and a top sheen. */
+:root {
+  --glass: rgba(255,255,255,.38); --glass-strong: rgba(255,255,255,.62);
+  --rim: rgba(255,255,255,.85); --rim-lo: rgba(255,255,255,.25);
+  --gshadow: 0 18px 40px -12px rgba(30,30,60,.18), 0 2px 6px rgba(30,30,60,.06);
+  --blob-a: color-mix(in srgb, var(--accent) 55%, transparent);
+  --blob-b: rgba(110,150,255,.45); --blob-c: rgba(255,150,190,.42);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --glass: rgba(40,42,48,.5); --glass-strong: rgba(50,52,60,.68); --rim: rgba(255,255,255,.22); --rim-lo: rgba(255,255,255,.05);
+  --gshadow: 0 18px 40px -12px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.3);
+  --blob-b: rgba(80,110,220,.28); --blob-c: rgba(200,90,150,.22); } }
+:root[data-theme="dark"] {
+  --glass: rgba(40,42,48,.5); --glass-strong: rgba(50,52,60,.68); --rim: rgba(255,255,255,.22); --rim-lo: rgba(255,255,255,.05);
+  --gshadow: 0 18px 40px -12px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.3);
+  --blob-b: rgba(80,110,220,.28); --blob-c: rgba(200,90,150,.22); }
+
+body::before { content: ""; position: fixed; inset: -10%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38% 34% at 12% 8%, var(--blob-a), transparent 70%),
+    radial-gradient(34% 30% at 92% 22%, var(--blob-b), transparent 70%),
+    radial-gradient(40% 36% at 70% 92%, var(--blob-c), transparent 70%),
+    radial-gradient(30% 30% at 8% 75%, var(--blob-b), transparent 70%),
+    var(--bg);
+  filter: blur(10px); }
+body { background: var(--bg); }
+.panel, .tot, .callout, .auth-card, .usr {
+  background: linear-gradient(160deg, var(--glass-strong), var(--glass) 45%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%); backdrop-filter: blur(26px) saturate(180%);
+  box-shadow: var(--gshadow), inset 0 1px 0 var(--rim), inset 0 -1px 0 var(--rim-lo), inset 0 0 0 1px var(--rim-lo);
+}
+.callout { border-left: 0; box-shadow: var(--gshadow), inset 4px 0 0 var(--accent), inset 0 1px 0 var(--rim), inset 0 0 0 1px var(--rim-lo); }
+.hero { background: linear-gradient(150deg, rgba(40,40,46,.82), rgba(12,12,16,.9));
+  -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 20px 44px -14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.08); }
+.hero::before { content: ""; position: absolute; inset: 0 0 50% 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255,255,255,.16), transparent); z-index: 1; pointer-events: none; }
+.hero::after { filter: blur(2px); opacity: .85; }
+input, select, .obs { background: rgba(255,255,255,.35); box-shadow: inset 0 1px 3px rgba(0,0,0,.08), inset 0 0 0 1px var(--rim-lo); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+:root[data-theme="dark"] input, :root[data-theme="dark"] select, :root[data-theme="dark"] .obs { background: rgba(0,0,0,.22); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) input, :root:not([data-theme="light"]) select, :root:not([data-theme="light"]) .obs { background: rgba(0,0,0,.22); } }
+.ghost { background: linear-gradient(180deg, var(--glass-strong), var(--glass)); -webkit-backdrop-filter: blur(14px) saturate(180%); backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: 0 4px 12px -4px rgba(30,30,60,.18), inset 0 1px 0 var(--rim), inset 0 0 0 1px var(--rim-lo); }
+.ghost:active { box-shadow: inset 0 1px 4px rgba(0,0,0,.15); }
+.ghost.on { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 80%, white), var(--accent)); }
+.btn { position: relative; overflow: hidden; background: linear-gradient(180deg, #3a3a40, #121215);
+  box-shadow: 0 10px 22px -8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.3), inset 0 0 0 1px rgba(255,255,255,.08); }
+.btn::before { content: ""; position: absolute; inset: 0 0 52% 0; background: linear-gradient(180deg, rgba(255,255,255,.22), transparent); pointer-events: none; }
+.swatch { box-shadow: 0 3px 8px -2px rgba(0,0,0,.25), inset 0 1px 1px rgba(255,255,255,.6); border-color: rgba(255,255,255,.7); }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fg), 0 3px 8px -2px rgba(0,0,0,.25); }
+.chip, .meter { background: rgba(255,255,255,.3); box-shadow: inset 0 0 0 1px var(--rim-lo); }
+.det-row td, .det-row:hover td { background: rgba(255,255,255,.22); box-shadow: inset 0 1px 0 var(--rim-lo); }
+.tip { background: var(--glass-strong); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: var(--gshadow), inset 0 0 0 1px var(--rim-lo); }
+th, td { border-bottom-color: color-mix(in srgb, var(--fg) 8%, transparent); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .panel, .tot, .callout, .auth-card, .usr, .ghost { background: var(--panel); }
+}
 </style>
 </head>
 <body>
