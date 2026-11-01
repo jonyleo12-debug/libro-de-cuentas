@@ -282,6 +282,12 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @media (prefers-reduced-motion: reduce) { #casos .tag.c-dil.aviso { animation: none; box-shadow: 0 0 0 2px #6a3fa0; } }
 .agenda { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--panel); box-shadow: var(--raise-sm); border-left: 4px solid currentColor; }
 .agenda.c-aud { color: #c0262d; } .agenda.c-dil { color: #6a3fa0; }
+.agenda.c-pag { color: #1f8a4c; } .agenda.c-cli { color: #2456a6; } .agenda.c-cau { color: #b4671a; }
+.agenda .det-nota { margin: 0; font-size: 13px; color: var(--ink); font-weight: 500; }
+.agenda .det-nota + .det-nota { color: var(--muted); font-weight: 400; }
+.agenda .det-list { color: var(--ink); }
+.det-acts { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
+.det-acts .btn { width: auto; padding-left: 28px; padding-right: 28px; }
 .agenda .det-h { color: inherit; }
 .agenda .det-edit, .agenda label { color: var(--muted); }
 .ghost.elim-abonos { justify-self: start; align-self: end; padding: 10px 16px; font-size: 13px; color: var(--out); }
@@ -304,7 +310,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @media (hover: none) { .hero::after { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .hero::after { transition: none; } }
 .arch-btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.det-edit .arch-btn { justify-self: center; align-self: end; padding: 10px 16px; font-size: 13px; }
+.det-edit .arch-btn, .det-acts .arch-btn { justify-self: center; align-self: end; padding: 10px 16px; font-size: 13px; }
 th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .arch-btn.on { background: var(--ink); color: var(--ink-fg); }
 /* Minimal tables (Casos, Inversiones, Fijos): a soft navy header card over clean white rows with thin dividers. */
@@ -1029,8 +1035,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const cell = document.createElement('td'); cell.colSpan = 6;
       const wrap = document.createElement('div'); wrap.className = 'det';
       const ps = rows.filter((r) => r.casoId === c.id).sort((a, b) => a.fecha.localeCompare(b.fecha));
-      const h = document.createElement('p'); h.className = 'det-h'; h.textContent = ps.length ? `Pagos recibidos (${ps.length})` : 'Aún no hay pagos registrados para este caso.';
-      wrap.appendChild(h);
+      const tarjeta = (titulo, color) => { const g = document.createElement('div'); g.className = 'agenda ' + color; const gh = document.createElement('p'); gh.className = 'det-h'; gh.textContent = titulo; g.appendChild(gh); wrap.appendChild(g); return g; };
+      const cPag = tarjeta('Pagos', 'c-pag');
+      const h = document.createElement('p'); h.className = 'det-nota'; h.textContent = ps.length ? `Pagos recibidos (${ps.length})` : 'Aún no hay pagos registrados para este caso.';
+      cPag.appendChild(h);
       if (ps.length) {
         const ul = document.createElement('ul'); ul.className = 'det-list';
         ps.forEach((r) => {
@@ -1039,10 +1047,15 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           const m = document.createElement('span'); m.className = 'c-in'; m.textContent = usd.format(r.bruto) + (r.parte < 100 ? ` (tu parte ${usd.format(r.monto)})` : '');
           li.append(d, m); ul.appendChild(li);
         });
-        wrap.appendChild(ul);
+        cPag.appendChild(ul);
       }
-      if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'sub'; aj.style.margin = '0'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; wrap.appendChild(aj); }
-      const ed = document.createElement('div'); ed.className = 'det-edit';
+      if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'det-nota'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; cPag.appendChild(aj); }
+      const gPag = document.createElement('div'); gPag.className = 'det-edit'; cPag.appendChild(gPag);
+      const cCli = tarjeta('Datos del cliente', 'c-cli');
+      const gCli = document.createElement('div'); gCli.className = 'det-edit'; cCli.appendChild(gCli);
+      const cCau = tarjeta('Causa y observación', 'c-cau');
+      const gCau = document.createElement('div'); gCau.className = 'det-dos'; cCau.appendChild(gCau);
+      const ed = document.createElement('div'); ed.className = 'det-acts';
       const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Mi parte (%)', 'number'], ['nombre', 'Nombre del cliente', 'text'], ['causa', 'Números de causa', 'text'], ['observacion', 'Observación', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
       const inputs = {};
       FIELDS.forEach(([k, label, type]) => {
@@ -1064,10 +1077,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         }
         inp.addEventListener('input', () => { drafts[k] = inp.value; });
         lb.appendChild(inp); inputs[k] = inp;
-        if (k === 'causa' || k === 'observacion') {
-          let dos = ed.querySelector('.det-dos'); if (!dos) { dos = document.createElement('div'); dos.className = 'det-dos'; ed.appendChild(dos); }
-          dos.appendChild(lb);
-        } else ed.appendChild(lb);
+        if (k === 'causa' || k === 'observacion') gCau.appendChild(lb);
+        else if (k === 'abono' || k === 'fpago' || k === 'parte') gPag.appendChild(lb);
+        else gCli.appendChild(lb);
       });
       if (ps.length || c.ajuste) {
         const eb = delBtn('abonos:' + c.id, async () => {
