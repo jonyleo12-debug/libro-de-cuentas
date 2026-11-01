@@ -302,6 +302,10 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .hero:has(.hero-color:hover)::after, .hero:has(.hero-color[aria-expanded="true"])::after, .hero:has(.hero-color:focus-visible)::after { transform: scale(1.18); }
 @media (hover: none) { .hero::after { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .hero::after { transition: none; } }
+.arch-btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.det-edit .arch-btn { justify-self: start; align-self: center; padding: 10px 16px; font-size: 13px; }
+th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
+.arch-btn.on { background: var(--ink); color: var(--ink-fg); }
 </style>
 </head>
 <body>
@@ -432,7 +436,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
     <p class="sub" style="margin:0">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
     <div class="tbox">
       <table>
-        <thead><tr><th><span class="th-f">Archivo<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="archivo" aria-label="Ordenar o filtrar por Archivo"><option value="asc">Menor a mayor</option><option value="desc">Mayor a menor</option></select></span></th><th><span class="th-f">Caso<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="caso" aria-label="Ordenar o filtrar por Caso"><option value="">Todos</option><option value="az">A → Z</option><option value="za">Z → A</option><optgroup label="Estado" data-fijo="1"><option value="pagados">Pagado</option><option value="pendientes">Pendiente</option><option value="saldo">Con saldo por cobrar</option><option value="audiencia">Audiencia</option><option value="diligencia">Diligencia</option></optgroup></select></span></th><th class="num"><span class="th-f">Total<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="total" aria-label="Ordenar o filtrar por Total"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Pagado<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="pagado" aria-label="Ordenar o filtrar por Pagado"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Falta<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="falta" aria-label="Ordenar o filtrar por Falta"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th></th></tr></thead>
+        <thead><tr><th><span class="th-f">Archivo<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="archivo" aria-label="Ordenar o filtrar por Archivo"><option value="asc">Menor a mayor</option><option value="desc">Mayor a menor</option></select></span></th><th><span class="th-f">Caso<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="caso" aria-label="Ordenar o filtrar por Caso"><option value="">Todos</option><option value="az">A → Z</option><option value="za">Z → A</option><optgroup label="Estado" data-fijo="1"><option value="pagados">Pagado</option><option value="pendientes">Pendiente</option><option value="saldo">Con saldo por cobrar</option><option value="audiencia">Audiencia</option><option value="diligencia">Diligencia</option></optgroup></select></span></th><th class="num"><span class="th-f">Total<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="total" aria-label="Ordenar o filtrar por Total"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Pagado<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="pagado" aria-label="Ordenar o filtrar por Pagado"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Falta<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="falta" aria-label="Ordenar o filtrar por Falta"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><button type="button" class="ghost arch-btn" id="ver-arch" aria-pressed="false" title="Ver procesos archivados"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg><span id="ver-arch-t">Archivados</span></button></th></tr></thead>
         <tbody id="casos"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -584,7 +588,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   new MutationObserver(applyColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   let drafts = {};
   let archDrafts = {};
-  let casoSort = { col: 'archivo', dir: 'asc' }, casoFiltro = '';
+  let casoSort = { col: 'archivo', dir: 'asc' }, casoFiltro = '', verArch = false;
+  document.getElementById('ver-arch').addEventListener('click', () => { verArch = !verArch; openCaso = null; openObs = null; render(); });
   function syncCasoSelects() {
     document.querySelectorAll('.th-sel').forEach((sel) => {
       const k = sel.dataset.col;
@@ -782,16 +787,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       audiencia: (c) => tieneAud(c, 'audiencia'),
       diligencia: (c) => tieneAud(c, 'diligencia'),
     };
-    const csView = !casoFiltro ? cs : casoFiltro.startsWith('et:') ? cs.filter((c) => c.etiqueta.trim() === casoFiltro.slice(3)) : filtros[casoFiltro] ? cs.filter(filtros[casoFiltro]) : cs;
-    const porCobrar = cs.reduce((s, c) => s + c.falta, 0);
-    const pend = cs.filter((c) => c.falta > 0).length;
+    const nArch = cs.length - casosAct.length;
+    $('h-cobrar').textContent = verArch ? 'Procesos archivados' : 'Casos';
+    $('ver-arch').setAttribute('aria-pressed', String(verArch)); $('ver-arch').classList.toggle('on', verArch);
+    $('ver-arch-t').textContent = verArch ? 'Volver a casos' : `Archivados${nArch ? ' (' + nArch + ')' : ''}`;
+    $('ver-arch').title = verArch ? 'Volver a la lista de casos' : 'Ver procesos archivados';
+    const csLista = cs.filter((c) => !!c.archivado === verArch);
+    const csView = !casoFiltro ? csLista : casoFiltro.startsWith('et:') ? csLista.filter((c) => c.etiqueta.trim() === casoFiltro.slice(3)) : filtros[casoFiltro] ? csLista.filter(filtros[casoFiltro]) : csLista;
+    const casosAct = cs.filter((c) => !c.archivado);
+    const porCobrar = casosAct.reduce((s, c) => s + c.falta, 0);
+    const pend = casosAct.filter((c) => c.falta > 0).length;
     $('cob-v').textContent = usd.format(porCobrar);
     $('cob-n').textContent = `en ${pend} ${pend === 1 ? 'caso' : 'casos'}`;
     $('casos-list').replaceChildren(...casos.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
     $('sec-casos').hidden = !cs.length;
     const cbody = $('casos');
     if (!cs.length) cbody.replaceChildren(emptyRow(6, 'Aún no tienes casos. Anota un honorario con su caso y total.'));
-    else if (!csView.length) cbody.replaceChildren(emptyRow(6, 'No hay casos con ese estado.'));
+    else if (!csView.length) cbody.replaceChildren(emptyRow(6, verArch && !casoFiltro ? 'No tienes procesos archivados. Archiva uno desde su Detalle.' : 'No hay casos con ese estado.'));
     else cbody.replaceChildren(...csView.flatMap((c) => {
       const tr = document.createElement('tr');
       const ar = document.createElement('td');
@@ -1007,6 +1019,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         catch (e) { setMsg('No se pudieron guardar los datos. Intenta de nuevo.', true); }
       });
       ed.appendChild(sv);
+      { const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'ghost arch-btn';
+        ab.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg>';
+        const tx = document.createElement('span'); tx.textContent = c.archivado ? 'Desarchivar proceso' : 'Archivar proceso'; ab.appendChild(tx);
+        ab.addEventListener('click', async () => {
+          try { await col('casos').doc(c.id).update({ archivado: !c.archivado }); openCaso = null; setMsg(c.archivado ? `${c.nombre} volvió a la lista de casos.` : `${c.nombre} pasó a Procesos archivados.`); render(); }
+          catch (e) { setMsg('No se pudo archivar. Intenta de nuevo.', true); }
+        });
+        ed.appendChild(ab); }
       wrap.appendChild(ed);
       if (c.pagado > c.total) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
       cell.appendChild(wrap); dr.appendChild(cell);
@@ -1428,7 +1448,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }, lost);
     col('casos').onSnapshot((snap) => {
       raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))) }; });
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true }; });
       render();
     }, lost);
   }
