@@ -295,6 +295,9 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .pie-leg { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; width: 100%; font-size: 13px; }
 .pie-leg li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; }
 .pie-leg b { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--muted); }
+.pie { align-content: start; }
+.pie svg { aspect-ratio: 1; }
+.seg .periodo { border-right: 0; margin-right: 6px; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -397,7 +400,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
     <section class="panel" aria-labelledby="h-hist">
       <div class="budget-row"><h2 id="h-hist">Historial por mes</h2>
         <div class="seg" role="group" aria-label="Tipo de gráfico">
-          <button type="button" class="ghost" data-chart="barras">Barras</button><button type="button" class="ghost" data-chart="lineas">Líneas</button><button type="button" class="ghost" data-chart="circular">Circular</button>
+          <button type="button" class="ghost periodo" id="periodo" aria-label="Cambiar entre mensual y anual">Mensual</button><button type="button" class="ghost" data-chart="barras">Barras</button><button type="button" class="ghost" data-chart="lineas">Líneas</button><button type="button" class="ghost" data-chart="circular">Circular</button>
         </div>
       </div>
       <div class="legend" id="chart-legend"><span><i class="sw" style="background:var(--in)"></i>Ingresos</span><span><i class="sw" style="background:var(--out)"></i>Gastos</span><span class="sub" style="margin:0">Últimos 12 meses</span></div>
@@ -1029,7 +1032,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     } else {
       const ends = [...rows.map((r) => r.fecha.slice(0, 7)), thisMonth, mes].sort();
       const lista = monthsBetween(starts[0], ends[ends.length - 1]).reverse();
-      drawChart(lista.slice(0, 12).reverse().map((m) => { const rs = entriesFor(m); return { m, i: sum(rs, 'Ingreso'), g: sum(rs, 'Gasto'), rs }; }));
+      const porMes = lista.map((m) => { const rs = entriesFor(m); return { m, i: sum(rs, 'Ingreso'), g: sum(rs, 'Gasto'), rs }; });
+      const mesSel = $('mes').value || thisMonth;
+      if (periodo === 'anual') {
+        const years = {};
+        porMes.forEach((d) => { const y = d.m.slice(0, 4); (years[y] = years[y] || { m: y, i: 0, g: 0, rs: [] }); years[y].i += d.i; years[y].g += d.g; years[y].rs.push(...d.rs); });
+        const ys = Object.values(years).sort((a, b) => a.m.localeCompare(b.m));
+        const sel = ys.find((d) => d.m === mesSel.slice(0, 4));
+        drawChart(ys, sel ? [sel] : [], mesSel.slice(0, 4));
+      } else {
+        const sel = porMes.find((d) => d.m === mesSel);
+        drawChart(porMes.slice(0, 12).reverse(), sel ? [sel] : [], mesLabel(mesSel));
+      }
       hist.replaceChildren(...lista.map((m) => {
         const rs = entriesFor(m);
         const i = sum(rs, 'Ingreso'), g = sum(rs, 'Gasto');
@@ -1061,14 +1075,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const compact = new Intl.NumberFormat('es-EC', { notation: 'compact', maximumFractionDigits: 1 });
   function niceMax(v) { if (v <= 0) return 100; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
 
-  let chartType = 'barras';
+  let chartType = 'barras', periodo = 'mensual';
+  try { const t = localStorage.getItem('libro-periodo'); if (t === 'anual') periodo = t; } catch (e) {}
+  $('periodo').addEventListener('click', () => { periodo = periodo === 'anual' ? 'mensual' : 'anual'; try { localStorage.setItem('libro-periodo', periodo); } catch (e) {} render(); });
   try { const t = localStorage.getItem('libro-chart'); if (['barras', 'lineas', 'circular'].includes(t)) chartType = t; } catch (e) {}
   document.querySelectorAll('[data-chart]').forEach((b) => b.addEventListener('click', () => {
     chartType = b.dataset.chart; try { localStorage.setItem('libro-chart', chartType); } catch (e) {} render();
   }));
   const PIE_IN = ['var(--in)', '#2a9d8f', '#e0a030', '#7a5cc0', '#5a7fb0', '#d0607a', '#8c8c94'];
   const PIE_OUT = ['var(--out)', '#e0a030', '#7a5cc0', '#2a9d8f', '#5a7fb0', '#d0607a', '#8c8c94'];
-  function drawPie(data) {
+  function drawPie(data, etiqueta) {
     const box = $('chart');
     const wrap = document.createElement('div'); wrap.className = 'pies';
     [['Ingreso', 'Ingresos', PIE_IN], ['Gasto', 'Gastos', PIE_OUT]].forEach(([tipo, titulo, pal]) => {
@@ -1080,7 +1096,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const fig = document.createElement('figure'); fig.className = 'pie';
       const cap = document.createElement('figcaption'); cap.textContent = titulo; fig.appendChild(cap);
       const S = 180, R = 80, r0 = 50, c0 = S / 2;
-      const svg = svgEl('svg', { viewBox: `0 0 ${S} ${S}`, role: 'img', 'aria-label': `${titulo} por categoría, últimos 12 meses` });
+      const svg = svgEl('svg', { viewBox: `0 0 ${S} ${S}`, role: 'img', 'aria-label': `${titulo} por categoría, ${etiqueta}` });
       if (!total) svg.appendChild(svgEl('circle', { cx: c0, cy: c0, r: (R + r0) / 2, fill: 'none', style: `stroke:var(--line);stroke-width:${R - r0}` }));
       let a0 = -Math.PI / 2;
       const pt = (a, rad) => `${c0 + rad * Math.cos(a)} ${c0 + rad * Math.sin(a)}`;
@@ -1095,7 +1111,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         a0 = a1;
       });
       const tv = svgEl('text', { x: c0, y: c0 + 2, 'text-anchor': 'middle', class: 'pie-tot' }); tv.textContent = '$' + compact.format(total); svg.appendChild(tv);
-      const tl = svgEl('text', { x: c0, y: c0 + 18, 'text-anchor': 'middle' }); tl.textContent = '12 meses'; svg.appendChild(tl);
+      const tl = svgEl('text', { x: c0, y: c0 + 18, 'text-anchor': 'middle' }); tl.textContent = etiqueta; svg.appendChild(tl);
       fig.appendChild(svg);
       const ul = document.createElement('ul'); ul.className = 'pie-leg';
       if (!parts.length) { const li = document.createElement('li'); li.className = 'sub'; li.textContent = 'Sin datos todavía.'; ul.appendChild(li); }
@@ -1110,12 +1126,15 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     });
     box.replaceChildren(wrap);
   }
-  function drawChart(data) {
+  function drawChart(data, pieData = data, pieLabel = '12 meses') {
     const box = $('chart');
+    $('periodo').textContent = periodo === 'anual' ? 'Anual' : 'Mensual';
+    $('periodo').classList.toggle('on', periodo === 'anual');
+    const leyTxt = document.querySelector('#chart-legend .sub'); if (leyTxt) leyTxt.textContent = periodo === 'anual' ? 'Por año' : 'Últimos 12 meses';
     document.querySelectorAll('[data-chart]').forEach((b) => { const on = b.dataset.chart === chartType; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
     $('chart-legend').hidden = chartType === 'circular';
     if (!data.length) { box.replaceChildren(); const p = document.createElement('p'); p.className = 'msg'; p.textContent = 'El gráfico aparece cuando tengas tu primer mes.'; box.appendChild(p); return; }
-    if (chartType === 'circular') { drawPie(data); return; }
+    if (chartType === 'circular') { drawPie(pieData, pieLabel); return; }
     const W = Math.max(280, box.clientWidth || 420), H = 200;
     const top = Math.max(...data.map((d) => Math.max(d.i, d.g)));
     const max = niceMax(top);
@@ -1143,12 +1162,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         svg.appendChild(svgEl('rect', { x, y: m.t + ih - h, width: bw, height: h, rx: Math.min(3, bw / 2), style: `fill:${c};pointer-events:none` }));
       });
       if (k % every === 0 || k === data.length - 1) {
-        const lb = svgEl('text', { x: cx, y: H - 6, 'text-anchor': 'middle' }); lb.textContent = MESES[Number(d.m.slice(5, 7)) - 1]; svg.appendChild(lb);
+        const lb = svgEl('text', { x: cx, y: H - 6, 'text-anchor': 'middle' }); lb.textContent = d.m.length === 4 ? d.m : MESES[Number(d.m.slice(5, 7)) - 1]; svg.appendChild(lb);
       }
       const show = () => {
         svg.querySelectorAll('.hit.on').forEach((e) => e.classList.remove('on')); hit.classList.add('on');
         tip.replaceChildren();
-        const t = document.createElement('b'); t.textContent = mesLabel(d.m); tip.appendChild(t);
+        const t = document.createElement('b'); t.textContent = d.m.length === 4 ? d.m : mesLabel(d.m); tip.appendChild(t);
         [['Ingresos', d.i], ['Gastos', d.g], ['Disponible', d.i - d.g]].forEach(([n, v]) => { const r = document.createElement('div'); r.textContent = `${n}: ${usd.format(v)}`; tip.appendChild(r); });
         tip.hidden = false;
         const px = (cx / W) * box.clientWidth;
