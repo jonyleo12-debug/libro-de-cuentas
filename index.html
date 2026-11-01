@@ -286,6 +286,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .agenda .det-nota { margin: 0; font-size: 13px; color: var(--ink); font-weight: 500; }
 .agenda .det-nota + .det-nota { color: var(--muted); font-weight: 400; }
 .agenda .det-list { color: var(--ink); }
+.det-list li.aud-edit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; margin: 6px 0; }
 .det-acts { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
 .det-acts .btn { width: auto; padding-left: 28px; padding-right: 28px; }
 .agenda .det-h { color: inherit; }
@@ -608,6 +609,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   let obsDraft = null;
   let obsAud = {};
+  let editAud = null;
   const esDelCaso = (x, c) => x.casoId ? x.casoId === c.id : x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase();
   const claseDe = (a) => a.clase === 'diligencia' || (!a.clase && /dilig/i.test(a.tipo || '')) ? 'diligencia' : 'audiencia';
   let libroRef = null;
@@ -988,6 +990,35 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           const ul = document.createElement('ul'); ul.className = 'det-list';
           delCaso.forEach((x) => {
             const li = document.createElement('li');
+            if (editAud && editAud.id === x.id) {
+              li.className = 'aud-edit agenda ' + (claseDe(x) === 'diligencia' ? 'c-dil' : 'c-aud');
+              { const eh = document.createElement('p'); eh.className = 'det-h'; eh.textContent = claseDe(x) === 'diligencia' ? 'Editar diligencia' : 'Editar audiencia'; li.appendChild(eh); }
+              const fl = document.createElement('div'); fl.className = 'det-edit';
+              [['fecha', 'Fecha', 'date'], ['hora', 'Hora', 'time'], ['tipo', 'Detalle', 'text'], ['lugar', 'Lugar', 'text']].forEach(([k, label, type]) => {
+                const l = document.createElement('label'); l.textContent = label;
+                const i = document.createElement('input'); i.type = type; i.value = editAud[k]; if (type === 'text') i.maxLength = 160;
+                i.addEventListener('input', () => { editAud[k] = i.value; });
+                l.appendChild(i); fl.appendChild(l);
+              });
+              const bx = document.createElement('div'); bx.className = 'det-acts';
+              const cn = document.createElement('button'); cn.type = 'button'; cn.className = 'ghost'; cn.textContent = 'Cancelar'; cn.addEventListener('click', () => { editAud = null; render(); });
+              const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn'; ok.textContent = 'Guardar cambios';
+              ok.addEventListener('click', () => {
+                const e = editAud;
+                if (!e.fecha || !e.hora) { setMsg('Pon fecha y hora.', true); return; }
+                const dur = Math.max(15, Math.round((new Date(x.fin) - new Date(x.inicio)) / 60000) || 60);
+                const ini = new Date(`${e.fecha}T${e.hora}:00-05:00`); const fin = new Date(ini.getTime() + dur * 60000);
+                const upd = { fecha: e.fecha, hora: e.hora, inicio: ini.toISOString(), fin: fin.toISOString(), tipo: e.tipo.trim(), lugar: e.lugar.trim() };
+                if (x.gcalId && gcalOn && GCAL_CLIENT_ID) {
+                  const b2 = { ...x, ...upd };
+                  ensureToken(() => gcalFetch('/' + encodeURIComponent(x.gcalId), { method: 'PATCH', body: JSON.stringify({ summary: audTitulo(b2), location: b2.lugar || '', description: gcalDetalle(b2), start: { dateTime: b2.inicio, timeZone: 'America/Guayaquil' }, end: { dateTime: b2.fin, timeZone: 'America/Guayaquil' } }) })
+                    .then(() => setMsg('Cambios guardados también en Google Calendar.')).catch(() => setMsg('Se guardó en la app, pero no se pudo actualizar Google Calendar.', true)));
+                }
+                col('audiencias').doc(x.id).update(upd).then(() => { if (!(x.gcalId && gcalOn)) setMsg('Cambios guardados.'); }).catch(() => setMsg('No se pudieron guardar los cambios.', true));
+                editAud = null; render();
+              });
+              bx.append(cn, ok); li.append(fl, bx); ul.appendChild(li); return;
+            }
             const d = new Date(x.inicio);
             const t = document.createElement('span');
             const k = document.createElement('span'); k.className = 'tag estado ' + (claseDe(x) === 'diligencia' ? 'c-dil' : 'c-aud'); k.textContent = claseDe(x) === 'diligencia' ? 'Diligencia' : 'Audiencia'; k.style.marginRight = '8px';
@@ -1003,7 +1034,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
               col('audiencias').doc(x.id).delete();
               if (x.gcalId && gcalOn && GCAL_CLIENT_ID) ensureToken(() => gcalFetch('/' + encodeURIComponent(x.gcalId), { method: 'DELETE' }).catch(() => setMsg('Se quitó de la app; bórrala también en Google Calendar.', true)));
             };
-            bs.append(ap, gg, delBtn('aud:' + x.id, quitar, 'Quitar', '¿Quitar?')); li.append(t, bs); ul.appendChild(li);
+            const edb = document.createElement('button'); edb.type = 'button'; edb.className = 'ghost'; edb.textContent = 'Editar';
+            edb.addEventListener('click', () => { editAud = { id: x.id, fecha: x.fecha, hora: x.hora, tipo: x.tipo, lugar: x.lugar }; render(); });
+            bs.append(edb, ap, gg, delBtn('aud:' + x.id, quitar, 'Quitar', '¿Quitar?')); li.append(t, bs); ul.appendChild(li);
           });
           box.appendChild(ul);
         }
