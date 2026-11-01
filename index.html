@@ -260,6 +260,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @media (max-width: 520px) { .hero-box { justify-self: stretch; } .hero { padding-left: 24px; padding-right: 72px; } .hero h1 { font-size: clamp(20px, 6.2vw, 28px); } .hero-nav { font-size: 24px; padding: 2px 6px; } }
 @media (prefers-reduced-motion: reduce) { .hero-color svg { transition: none; } }
 .tag.c-pend, #casos .tag.c-in { background: var(--panel); box-shadow: var(--raise-sm); }
+#casos .estado { display: block; width: fit-content; margin: 8px 0 0 auto; }
 </style>
 </head>
 <body>
@@ -739,8 +740,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       ar.appendChild(ai); tr.appendChild(ar);
       const n = document.createElement('td'); n.textContent = c.nombre;
-      if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in'; t.style.marginLeft = '6px'; t.textContent = 'Pagado'; n.appendChild(t); }
-      else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend'; t.style.marginLeft = '6px'; t.textContent = 'Pendiente'; n.appendChild(t); }
+      if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; n.appendChild(t); }
+      else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend estado'; t.textContent = 'Pendiente'; n.appendChild(t); }
       tr.appendChild(n);
       const moneyCell = (key, val, label, cls, save) => {
         const cell = document.createElement('td'); cell.className = 'num';
