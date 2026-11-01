@@ -272,6 +272,17 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @keyframes palpito { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192,38,45,.45), var(--raise-sm); } 50% { transform: scale(1.08); box-shadow: 0 0 0 7px rgba(192,38,45,0), var(--raise-sm); } }
 #casos .tag.c-aud.aviso { animation: palpito 1.2s ease-in-out infinite; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { #casos .tag.c-aud.aviso { animation: none; box-shadow: 0 0 0 2px #c0262d; } }
+#casos .tag.c-dil, .tag.c-dil { color: #6a3fa0; background: var(--panel); box-shadow: var(--raise-sm); }
+.tag.c-aud { color: #c0262d; background: var(--panel); box-shadow: var(--raise-sm); }
+:root[data-theme="dark"] .tag.c-dil { color: #b592e6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.c-dil { color: #b592e6; } }
+@keyframes palpito-m { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(106,63,160,.45), var(--raise-sm); } 50% { transform: scale(1.08); box-shadow: 0 0 0 7px rgba(106,63,160,0), var(--raise-sm); } }
+#casos .tag.c-dil.aviso { animation: palpito-m 1.2s ease-in-out infinite; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { #casos .tag.c-dil.aviso { animation: none; box-shadow: 0 0 0 2px #6a3fa0; } }
+.agenda { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--panel); box-shadow: var(--raise-sm); border-left: 4px solid currentColor; }
+.agenda.c-aud { color: #c0262d; } .agenda.c-dil { color: #6a3fa0; }
+.agenda .det-h { color: inherit; }
+.agenda .det-edit, .agenda label { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -512,6 +523,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let auds = [];
   let obsDraft = null;
   let obsAud = {};
+  const claseDe = (a) => a.clase === 'diligencia' || (!a.clase && /dilig/i.test(a.tipo || '')) ? 'diligencia' : 'audiencia';
   let libroRef = null;
   const col = (name) => libroRef.collection(name);
 
@@ -767,8 +779,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       est.appendChild(ei);
       if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; est.appendChild(t); }
       else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend estado'; t.textContent = 'Pendiente'; est.appendChild(t); }
-      { const ahora = new Date().toISOString(); const prox = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= ahora).sort((x, y) => x.inicio.localeCompare(y.inicio))[0];
-        if (prox) { const t = document.createElement('span'); t.className = 'tag c-aud estado'; t.textContent = 'Audiencia'; { const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; const hoy = new Date(); const man = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1); if (prox.fecha === ymd(hoy) || prox.fecha === ymd(man)) { t.classList.add('aviso'); t.textContent = prox.fecha === ymd(hoy) ? 'Audiencia hoy' : 'Audiencia mañana'; } } t.title = `${prox.tipo || 'Audiencia'}: ${prox.fecha.split('-').reverse().join('/')} ${prox.hora}`; est.appendChild(t); } }
+      { const ahora = new Date().toISOString();
+        const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const hoy = new Date(); const man = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
+        const delC = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= ahora).sort((x, y) => x.inicio.localeCompare(y.inicio));
+        [['audiencia', 'Audiencia', 'c-aud'], ['diligencia', 'Diligencia', 'c-dil']].forEach(([cl, nom, color]) => {
+          const prox = delC.find((x) => claseDe(x) === cl); if (!prox) return;
+          const t = document.createElement('span'); t.className = `tag ${color} estado`; t.textContent = nom;
+          if (prox.fecha === ymd(hoy) || prox.fecha === ymd(man)) { t.classList.add('aviso'); t.textContent = nom + (prox.fecha === ymd(hoy) ? ' hoy' : ' mañana'); }
+          t.title = `${prox.tipo || nom}: ${prox.fecha.split('-').reverse().join('/')} ${prox.hora}`; est.appendChild(t);
+        }); }
       n.appendChild(est);
       tr.appendChild(n);
       const moneyCell = (key, val, label, cls, save) => {
@@ -819,10 +839,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar observación';
         sv.addEventListener('click', () => {
           col('casos').doc(c.id).update({ observacion: ta.value.trim() });
-          const f = afIn.fecha.value, h = afIn.hora.value;
-          if (f && h) {
-            crearAudiencia({ fecha: f, hora: h, dur: 60, caso: c.nombre, tipo: afIn.tipo.value.trim(), lugar: afIn.lugar.value.trim() });
-            setMsg(`Observación y audiencia de ${c.nombre} guardadas.`);
+          const hechos = [];
+          ['audiencia', 'diligencia'].forEach((cl) => {
+            const g = afIn[cl], f = g.fecha.value, h = g.hora.value;
+            if (f && h) { crearAudiencia({ fecha: f, hora: h, dur: 60, caso: c.nombre, tipo: g.tipo.value.trim(), lugar: g.lugar.value.trim(), clase: cl }); hechos.push(cl); }
+          });
+          if (hechos.length) {
+            setMsg(`Observación y ${hechos.join(' y ')} de ${c.nombre} guardadas.`);
             obsAud = {}; obsDraft = null; render();
           } else { obsDraft = null; obsAud = {}; openObs = null; render(); }
         });
@@ -830,36 +853,41 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         // Hearings for this case + quick add with calendar pickers
         const nowI = new Date().toISOString();
         const delCaso = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= nowI).sort((x, y) => x.inicio.localeCompare(y.inicio));
-        const ah = document.createElement('p'); ah.className = 'det-h'; ah.textContent = delCaso.length ? 'Próximas audiencias/diligencias de este caso' : 'Agendar audiencia/diligencia';
         const box = document.createElement('div'); box.className = 'det';
-        box.appendChild(ah);
         if (delCaso.length) {
+          const ah = document.createElement('p'); ah.className = 'det-h'; ah.textContent = 'Próximas audiencias y diligencias de este caso'; box.appendChild(ah);
           const ul = document.createElement('ul'); ul.className = 'det-list';
           delCaso.forEach((x) => {
             const li = document.createElement('li');
             const d = new Date(x.inicio);
             const t = document.createElement('span');
-            t.textContent = d.toLocaleString('es-EC', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }) + (x.tipo ? ' · ' + x.tipo : '');
+            const k = document.createElement('span'); k.className = 'tag estado ' + (claseDe(x) === 'diligencia' ? 'c-dil' : 'c-aud'); k.textContent = claseDe(x) === 'diligencia' ? 'Diligencia' : 'Audiencia'; k.style.marginRight = '8px';
+            t.append(k, d.toLocaleString('es-EC', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }) + (x.tipo ? ' · ' + x.tipo : '') + (x.lugar ? ' · ' + x.lugar : ''));
             const bs = document.createElement('span'); bs.className = 'acts';
             const ap = document.createElement('button'); ap.type = 'button'; ap.className = 'ghost'; ap.textContent = 'Apple / Outlook'; ap.addEventListener('click', () => descargarIcs(x));
             const gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(x); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none';
             bs.append(ap, gg, delBtn('aud:' + x.id, () => col('audiencias').doc(x.id).delete(), 'Quitar', '¿Quitar?')); li.append(t, bs); ul.appendChild(li);
           });
           box.appendChild(ul);
-          const ah2 = document.createElement('p'); ah2.className = 'det-h'; ah2.textContent = 'Agendar otra audiencia/diligencia'; box.appendChild(ah2);
         }
-        const grid = document.createElement('div'); grid.className = 'det-edit';
         const afIn = {};
-        [['fecha', 'Fecha de audiencia/diligencias', 'date'], ['hora', 'Hora', 'time'], ['tipo', 'Tipo (opcional)', 'text'], ['lugar', 'Lugar (opcional)', 'text']].forEach(([k, label, type]) => {
-          const l = document.createElement('label'); l.htmlFor = 'oa-' + k + '-' + c.id; l.textContent = label;
-          const i = document.createElement('input'); i.type = type; i.id = 'oa-' + k + '-' + c.id; if (type === 'text') i.maxLength = 160;
-          i.value = obsAud[k] !== undefined ? obsAud[k] : '';
-          i.addEventListener('input', () => { obsAud[k] = i.value; });
-          l.appendChild(i); grid.appendChild(l); afIn[k] = i;
+        [['audiencia', 'Agendar audiencia', 'Fecha de audiencia', 'c-aud'], ['diligencia', 'Agendar diligencia', 'Fecha de diligencia', 'c-dil']].forEach(([cl, titulo, flabel, color]) => {
+          const g = document.createElement('div'); g.className = 'agenda ' + color;
+          const gh = document.createElement('p'); gh.className = 'det-h'; gh.textContent = titulo; g.appendChild(gh);
+          const grid = document.createElement('div'); grid.className = 'det-edit';
+          afIn[cl] = {};
+          [['fecha', flabel, 'date'], ['hora', 'Hora', 'time'], ['tipo', 'Detalle (opcional)', 'text'], ['lugar', 'Lugar (opcional)', 'text']].forEach(([k, label, type]) => {
+            const key = cl + '-' + k;
+            const l = document.createElement('label'); l.htmlFor = 'oa-' + key + '-' + c.id; l.textContent = label;
+            const i = document.createElement('input'); i.type = type; i.id = 'oa-' + key + '-' + c.id; if (type === 'text') i.maxLength = 160;
+            i.value = obsAud[key] !== undefined ? obsAud[key] : '';
+            i.addEventListener('input', () => { obsAud[key] = i.value; });
+            l.appendChild(i); grid.appendChild(l); afIn[cl][k] = i;
+          });
+          g.appendChild(grid); box.appendChild(g);
         });
-        box.appendChild(grid);
         const hint = document.createElement('p'); hint.className = 'sub'; hint.style.margin = '0'; hint.style.fontSize = '13px';
-        hint.textContent = 'Si pones fecha y hora, al guardar se agenda la audiencia o diligencia y aparece aquí con los botones para pasarla a tu calendario.';
+        hint.textContent = 'Si pones fecha y hora en una o en las dos, al guardar se agendan y aparecen aquí con los botones para pasarlas a tu calendario.';
         box.appendChild(hint);
         ow.append(lb, box, bar); oc.appendChild(ow); orow.appendChild(oc); extra.push(orow);
         setTimeout(() => { const t = document.getElementById('obs-' + c.id); if (t && document.activeElement !== t && obsDraft === null) t.focus(); }, 0);
@@ -1171,7 +1199,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Calendar helpers (Ecuador continental: UTC-5, sin horario de verano)
   const icsDate = (iso) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   const icsEsc = (t) => String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
-  const audTitulo = (a) => [a.tipo || 'Audiencia', a.caso].filter(Boolean).join(' – ');
+  const audTitulo = (a) => [claseDe(a) === 'diligencia' ? 'Diligencia' : 'Audiencia', a.tipo, a.caso].filter(Boolean).join(' – ');
   function descargarIcs(a) {
     const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Libro de cuentas//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
       'BEGIN:VEVENT', `UID:${a.id}@libro-de-cuentas`, `DTSTAMP:${icsDate(new Date().toISOString())}`,
@@ -1190,10 +1218,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const q = new URLSearchParams({ action: 'TEMPLATE', text: audTitulo(a), dates: `${icsDate(a.inicio)}/${icsDate(a.fin)}`, details: a.caso ? 'Caso: ' + a.caso : '', location: a.lugar || '', ctz: 'America/Guayaquil' });
     return 'https://calendar.google.com/calendar/render?' + q.toString();
   }
-  function crearAudiencia({ fecha, hora, dur, caso, tipo, lugar }) {
+  function crearAudiencia({ fecha, hora, dur, caso, tipo, lugar, clase }) {
     const ini = new Date(`${fecha}T${hora}:00-05:00`);
     const fin = new Date(ini.getTime() + Number(dur || 60) * 60000);
-    col('audiencias').add({ fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', tipo: tipo || '', lugar: lugar || '', creado: new Date().toISOString() });
+    col('audiencias').add({ fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', tipo: tipo || '', lugar: lugar || '', clase: clase === 'diligencia' ? 'diligencia' : 'audiencia', creado: new Date().toISOString() });
   }
   const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias'];
   const raw = {};
@@ -1254,7 +1282,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }, lost);
     col('audiencias').onSnapshot((snap) => {
       raw['audiencias'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || '') }; }).filter((a) => a.inicio);
+      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || ''), clase: String(x.clase || '') }; }).filter((a) => a.inicio);
       render();
     }, lost);
     col('casos').onSnapshot((snap) => {
