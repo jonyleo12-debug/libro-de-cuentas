@@ -306,6 +306,42 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .det-edit .arch-btn { justify-self: start; align-self: center; padding: 10px 16px; font-size: 13px; }
 th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .arch-btn.on { background: var(--ink); color: var(--ink-fg); }
+/* Colored tables: each table has its own tone, a faceted header band and rows that fade from a tinted edge to white. */
+[aria-labelledby="h-cobrar"] { --t1: #2b3576; --t2: #4b5fd1; --t3: #8f9cf0; --tint: #e9ecff; }
+[aria-labelledby="h-mov"]    { --t1: #8a5a12; --t2: #c99a4b; --t3: #ead2a4; --tint: #fbf1df; }
+[aria-labelledby="h-hist"]   { --t1: #2f7f7a; --t2: #5fb8b2; --t3: #a9e0dc; --tint: #e3f6f5; }
+[aria-labelledby="h-inv"]    { --t1: #c24a63; --t2: #ec7f90; --t3: #f7b9c2; --tint: #fdeaed; }
+[aria-labelledby="h-fijos"]  { --t1: #5b3b9a; --t2: #8f6fd6; --t3: #c8b6f2; --tint: #f0eafd; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tbox { --tint: rgba(255,255,255,.04); } }
+:root[data-theme="dark"] .tbox { --tint: rgba(255,255,255,.04); }
+
+.tbox { border-radius: 18px; box-shadow: 0 10px 28px -14px rgba(20,20,50,.35); background: var(--panel); }
+.tbox table { border-collapse: separate; border-spacing: 0; }
+.tbox thead tr { background:
+    linear-gradient(115deg, transparent 0 18%, rgba(255,255,255,.14) 18% 30%, transparent 30%) ,
+    linear-gradient(65deg, transparent 0 24%, rgba(255,255,255,.10) 24% 36%, transparent 36%),
+    linear-gradient(115deg, transparent 0 36%, rgba(0,0,0,.08) 36% 46%, transparent 46%),
+    linear-gradient(100deg, var(--t1) 0%, var(--t2) 38%, var(--t3) 100%); }
+.tbox th { color: #fff; border-bottom: 0; padding: 14px 10px; text-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.tbox th:first-child { border-top-left-radius: 18px; padding-left: 16px; }
+.tbox th:last-child { border-top-right-radius: 18px; padding-right: 16px; }
+.tbox .th-on { color: #fff; }
+.tbox .th-arrow { background: rgba(255,255,255,.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.tbox .th-on .th-arrow { background: #fff; color: var(--t1); }
+.tbox th .arch-btn { background: rgba(255,255,255,.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
+.tbox th .arch-btn.on { background: #fff; color: var(--t1); }
+.tbox tbody tr:not(.det-row) { background: linear-gradient(90deg, var(--tint) 0%, var(--panel) 55%); }
+.tbox tbody tr:not(.det-row):hover { background: linear-gradient(90deg, color-mix(in srgb, var(--t3) 40%, var(--panel)), var(--panel) 65%); }
+.tbox tbody tr:not(.det-row) td, .tbox tbody tr:not(.det-row):hover td { background: transparent; border-bottom: 1px solid color-mix(in srgb, var(--t2) 14%, transparent); }
+.tbox tbody tr:not(.det-row) td:first-child { box-shadow: inset 5px 0 0 var(--t2); padding-left: 16px; }
+.tbox tbody tr:not(.det-row) td:last-child { padding-right: 16px; }
+.tbox { overflow: hidden; overflow-x: auto; }
+.tbox tfoot td { border-top: 2px solid var(--t2); font-weight: 600; }
+.tbox .empty { color: var(--muted); }
+.tbox .det-row td { border-left: 5px solid var(--t2); }
+#casos .archivo { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--t1); text-align: center; background: var(--panel); }
+:root[data-theme="dark"] #casos .archivo { color: var(--t3); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .archivo { color: var(--t3); } }
 </style>
 </head>
 <body>
