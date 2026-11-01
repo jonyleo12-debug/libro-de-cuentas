@@ -1456,7 +1456,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (conGoogle) { try { const id = await gcalCrear(a); ref.update({ gcalId: id }); } catch (e) { console.error(e); setMsg('Se agendó en la app, pero no se pudo enviar a Google Calendar.', true); } }
   }
   // Google Calendar sync (Google Identity Services token flow, no server)
-  const GCAL_CLIENT_ID = '';
+  const GCAL_CLIENT_ID = '271170465387-hpt8uk6f2pvdlidd8h843355j7roho7t.apps.googleusercontent.com';
   let gcalOn = false, gcalToken = null, gcalExp = 0, gcalClient = null;
   try { const t = JSON.parse(sessionStorage.getItem('libro-gtoken') || 'null'); if (t && t.exp > Date.now()) { gcalToken = t.tok; gcalExp = t.exp; } } catch (e) {}
   function cargarGis() {
