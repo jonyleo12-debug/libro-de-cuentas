@@ -787,6 +787,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       audiencia: (c) => tieneAud(c, 'audiencia'),
       diligencia: (c) => tieneAud(c, 'diligencia'),
     };
+    const casosAct = cs.filter((c) => !c.archivado);
     const nArch = cs.length - casosAct.length;
     $('h-cobrar').textContent = verArch ? 'Procesos archivados' : 'Casos';
     $('ver-arch').setAttribute('aria-pressed', String(verArch)); $('ver-arch').classList.toggle('on', verArch);
@@ -794,7 +795,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('ver-arch').title = verArch ? 'Volver a la lista de casos' : 'Ver procesos archivados';
     const csLista = cs.filter((c) => !!c.archivado === verArch);
     const csView = !casoFiltro ? csLista : casoFiltro.startsWith('et:') ? csLista.filter((c) => c.etiqueta.trim() === casoFiltro.slice(3)) : filtros[casoFiltro] ? csLista.filter(filtros[casoFiltro]) : csLista;
-    const casosAct = cs.filter((c) => !c.archivado);
     const porCobrar = casosAct.reduce((s, c) => s + c.falta, 0);
     const pend = casosAct.filter((c) => c.falta > 0).length;
     $('cob-v').textContent = usd.format(porCobrar);
