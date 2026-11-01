@@ -465,7 +465,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <h1>Libro de cuentas</h1>
       <p class="sub" id="auth-sub">Ingresa con tu correo y contraseña.</p>
     </div>
-    <label for="a-email">Correo<input type="email" id="a-email" autocomplete="email" required></label>
+    <label for="a-email" id="a-email-l">Correo o usuario<input type="text" id="a-email" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
     <label for="a-pass">Contraseña<input type="password" id="a-pass" autocomplete="current-password" minlength="6" required></label>
     <label for="a-pass2" id="a-pass2-l" hidden>Repite la contraseña<input type="password" id="a-pass2" autocomplete="new-password" minlength="6"></label>
     <button class="btn" type="submit" id="a-btn">Ingresar</button>
@@ -674,6 +674,11 @@ const firebaseConfig = {
   appId: '1:271170465387:web:33af737039382851244b2e',
 };
 
+// Users created by an owner sign in with a short username; it maps to an internal address on the project's own domain.
+const DOMINIO_USR = 'usuarios.libro-de-cuentas-ce78b.firebaseapp.com';
+const normUsuario = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '');
+const correoDe = (t) => String(t || '').includes('@') ? String(t).trim().toLowerCase() : normUsuario(t) + '@' + DOMINIO_USR;
+const usuarioDe = (email) => String(email || '').endsWith('@' + DOMINIO_USR) ? String(email).split('@')[0] : String(email || '');
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 auth.languageCode = 'es';
@@ -1638,7 +1643,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let creating = false;
   const authMsg = (t, err) => { const m = $('a-msg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); };
   const ERR = {
-    'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+    'auth/invalid-credential': 'Correo, usuario o contraseña incorrectos.',
     'auth/wrong-password': 'Correo o contraseña incorrectos.',
     'auth/user-not-found': 'No existe una cuenta con ese correo.',
     'auth/email-already-in-use': 'Ya existe una cuenta con ese correo. Ingresa con tu contraseña.',
@@ -1653,6 +1658,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('a-mode').textContent = c ? 'Ya tengo una cuenta' : 'Crear una cuenta nueva';
     $('auth-sub').textContent = c ? 'Crea tu cuenta con tu correo y una contraseña.' : 'Ingresa con tu correo y contraseña.';
     $('a-pass2-l').hidden = !c; $('a-pass2').required = c;
+    $('a-email-l').firstChild.textContent = c ? 'Correo' : 'Correo o usuario';
     $('a-pass').autocomplete = c ? 'new-password' : 'current-password';
     authMsg('');
   };
@@ -1660,12 +1666,15 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('a-reset').addEventListener('click', async () => {
     const email = $('a-email').value.trim();
     if (!email) { authMsg('Escribe tu correo arriba y vuelve a tocar "Olvidé mi contraseña".', true); return; }
+    if (!email.includes('@')) { authMsg('Si entras con usuario, pídele a quien te creó la cuenta que te dé una contraseña nueva.', true); return; }
     try { await sendPasswordResetEmail(auth, email); authMsg('Te enviamos un correo para cambiar tu contraseña.'); }
     catch (e) { authMsg(ERR[e.code] || 'No se pudo enviar el correo.', true); }
   });
   $('auth-form').addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    const email = $('a-email').value.trim(), pass = $('a-pass').value;
+    const escrito = $('a-email').value.trim(), pass = $('a-pass').value;
+    if (creating && !escrito.includes('@')) { authMsg('Para crear tu propia cuenta usa tu correo.', true); return; }
+    const email = correoDe(escrito);
     if (creating && pass !== $('a-pass2').value) { authMsg('Las contraseñas no coinciden.', true); return; }
     $('a-btn').disabled = true; authMsg(creating ? 'Creando tu cuenta…' : 'Ingresando…');
     try {
@@ -1860,7 +1869,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const b = document.createElement('button'); b.type = 'button'; b.className = 'usr-fila' + (m ? '' : ' libre');
       const d = document.createElement('span'); d.className = 'dot'; d.style.background = c.light[0];
       const t = document.createElement('span'); t.className = 'usr-t';
-      if (m) { const n = document.createElement('b'); n.textContent = m.nombre || m.email; const sm = document.createElement('small'); sm.textContent = (ROLES[m.rol] || m.rol) + ' · ' + m.email; t.append(n, sm); }
+      if (m) { const n = document.createElement('b'); n.textContent = m.nombre || m.email; const sm = document.createElement('small'); sm.textContent = (ROLES[m.rol] || m.rol) + ' · usuario: ' + usuarioDe(m.email); t.append(n, sm); }
       else t.textContent = '+ Añadir usuario';
       b.append(d, t);
       b.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(k, m); });
@@ -1873,7 +1882,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     usrColor = k; usrActual = m || null;
     $('usr-msg').textContent = ''; $('usr-msg').className = 'msg';
     $('usr-tit').textContent = m ? (m.nombre || m.email) : 'Añadir usuario · ' + COLORS[k].name;
-    $('usr-sub').textContent = m ? `Rol: ${ROLES[m.rol] || m.rol}. Entra con ${m.email}.` : 'Esta persona entrará con su correo y la contraseña que pongas aquí, y solo verá lo que permite su rol.';
+    $('usr-sub').textContent = m ? `Rol: ${ROLES[m.rol] || m.rol}. Entra con el usuario "${usuarioDe(m.email)}".` : 'Esta persona entrará con el usuario y la contraseña que pongas aquí, y solo verá lo que permite su rol.';
     ['usr-nombre', 'usr-email', 'usr-pass'].forEach((id) => { const el = $(id); el.value = ''; el.closest('label').hidden = !!m; el.required = !m; });
     $('usr-rol').closest('label').hidden = !!m;
     $('usr-ok').textContent = m ? 'Quitar acceso' : 'Crear usuario';
@@ -1894,9 +1903,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ok.disabled = false; cerrarDlg(); setMsg(`${m.nombre || m.email} ya no tiene acceso a tu libro.`);
       return;
     }
-    const nombre = $('usr-nombre').value.trim(), email = $('usr-email').value.trim().toLowerCase(), pass = $('usr-pass').value, rol = $('usr-rol').value;
-    if (!nombre || !email || pass.length < 6) return fallo('Completa nombre, correo y una contraseña de al menos 6 caracteres.');
-    if (miembros.some((x) => x.email === email)) return fallo('Ese correo ya es usuario de tu libro.');
+    const nombre = $('usr-nombre').value.trim(), usuario = normUsuario($('usr-email').value), pass = $('usr-pass').value, rol = $('usr-rol').value;
+    if (!nombre || usuario.length < 3 || pass.length < 6) return fallo('Completa el nombre, un usuario de al menos 3 letras y una contraseña de al menos 6 caracteres.');
+    const email = correoDe(usuario);
+    if (miembros.some((x) => x.email === email)) return fallo('Ese usuario ya es parte de tu libro.');
     msg.textContent = 'Creando usuario…'; msg.className = 'msg';
     let app2 = null, guid = null;
     try {
@@ -1906,20 +1916,20 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       catch (er) {
         if (er && er.code === 'auth/email-already-in-use') {
           try { guid = (await signInWithEmailAndPassword(a2, email, pass)).user.uid; }
-          catch (er2) { throw new Error('Ese correo ya tiene cuenta en la app. Para darle acceso, pon la contraseña que esa persona ya usa.'); }
-        } else if (er && er.code === 'auth/invalid-email') throw new Error('El correo no es válido.');
+          catch (er2) { throw new Error('Ese usuario ya existe en la app. Elige otro, por ejemplo con su apellido: ' + usuario + '.' + 'apellido'); }
+        } else if (er && er.code === 'auth/invalid-email') throw new Error('Ese usuario no es válido. Usa solo letras, números y puntos.');
         else if (er && er.code === 'auth/weak-password') throw new Error('La contraseña debe tener al menos 6 caracteres.');
         else throw new Error('No se pudo crear el usuario. Revisa tu conexión e intenta otra vez.');
       }
       try { await signOut(a2); } catch (er) {}
     } catch (er) { if (app2) deleteApp(app2).catch(() => {}); return fallo(er.message); }
     deleteApp(app2).catch(() => {});
-    if (guid === auth.currentUser.uid) return fallo('Ese es tu propio correo.');
-    const datos = { nombre, email, rol, color: usrColor, creado: new Date().toISOString() };
+    if (guid === auth.currentUser.uid) return fallo('Ese es tu propio usuario.');
+    const datos = { nombre, email, usuario, rol, color: usrColor, creado: new Date().toISOString() };
     libroRef.collection('miembros').doc(guid).set(datos);
     db.doc('accesos/' + guid).set({ owner: auth.currentUser.uid, ownerEmail: auth.currentUser.email || '', rol, color: usrColor, nombre });
     ok.disabled = false; cerrarDlg();
-    setMsg(`Listo: ${nombre} ya puede entrar con ${email} y la contraseña que pusiste.`);
+    setMsg(`Listo: ${nombre} ya puede entrar con el usuario "${usuario}" y la contraseña que pusiste.`);
   });
 
   // New case form (Casos header)
@@ -1954,7 +1964,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function startInvitado(u, acc) {
     invitado = acc;
     document.body.classList.add('invitado');
-    $('u-name').textContent = `${u.email || 'Tu cuenta'} · ${ROLES[acc.rol] || acc.rol}`;
+    $('u-name').textContent = `${usuarioDe(u.email) || 'Tu cuenta'} · ${ROLES[acc.rol] || acc.rol}`;
     { const sb = document.querySelector('.top .sub'); if (sb) sb.textContent = `Hola ${acc.nombre || ''}. Estás en el libro de ${acc.ownerEmail || 'tu equipo'} como asistente: puedes trabajar en la tabla de Casos, su Detalle y su Agenda.`; }
     if (acc.color && COLORS[acc.color]) { colorKey = acc.color; applyColor(); }
     try { gcalOn = localStorage.getItem('libro-gcal-inv') === '1'; } catch (e) {}
@@ -2029,9 +2039,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 <dialog class="dlg-usr" id="dlg-usr">
   <form id="usr-form" method="dialog">
     <h3 id="usr-tit">Añadir usuario</h3>
-    <p class="sub" style="margin:0" id="usr-sub">Esta persona entrará con su correo y contraseña a tu libro, solo con el acceso de su rol.</p>
+    <p class="sub" style="margin:0" id="usr-sub"></p>
     <label>Nombre<input type="text" id="usr-nombre" maxlength="60" required placeholder="Ej.: María"></label>
-    <label>Correo<input type="email" id="usr-email" maxlength="120" required autocomplete="off"></label>
+    <label>Usuario<input type="text" id="usr-email" maxlength="30" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ej.: maria"></label>
     <label>Contraseña<input type="text" id="usr-pass" minlength="6" maxlength="60" required autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>
     <label>Rol<select id="usr-rol"><option value="asistente">Asistente: solo la tabla de Casos</option></select></label>
     <p class="msg" id="usr-msg" role="status"></p>
