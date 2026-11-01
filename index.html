@@ -290,6 +290,15 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .agenda .det-nota + .det-nota { color: var(--muted); font-weight: 400; }
 .agenda .det-list { color: var(--ink); }
 .det-list li.aud-edit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; margin: 6px 0; }
+.panel.plegable { position: relative; }
+.panel.plegable > :first-child { padding-right: 44px; }
+.plegar { position: absolute; top: 22px; right: 22px; width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 99px; background: var(--panel); box-shadow: var(--raise-sm); color: var(--muted); cursor: pointer; transition: transform .2s, color .2s; }
+.plegar:hover { color: var(--ink); }
+.plegar svg { transition: transform .25s ease; }
+.panel.plegada .plegar svg { transform: rotate(180deg); }
+.panel.plegada > :not(:first-child):not(.plegar) { display: none !important; }
+.panel.plegada > :first-child .seg { display: none; }
+.panel.plegada { gap: 0; align-self: start; }
 .det-acts { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
 .det-acts .btn { width: auto; padding-left: 28px; padding-right: 28px; }
 .agenda .det-h { color: inherit; }
@@ -727,6 +736,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const dia = Math.min(Number(($('f-fecha').value || todayStr).slice(8, 10)) || 1, ult);
     $('f-fecha').value = `${ms}-${String(dia).padStart(2, '0')}`;
   };
+  // Collapse button on every section except Nuevo movimiento
+  { let plegadas = {}; try { plegadas = JSON.parse(localStorage.getItem('libro-plegadas') || '{}') || {}; } catch (e) {}
+    document.querySelectorAll('#app section.panel').forEach((sec) => {
+      const h = sec.querySelector('h2'); if (!h || h.id === 'h-nuevo') return;
+      const key = h.id; sec.classList.add('plegable');
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'plegar';
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      const poner = (on) => { sec.classList.toggle('plegada', on); b.setAttribute('aria-expanded', String(!on)); b.setAttribute('aria-label', (on ? 'Mostrar ' : 'Contraer ') + h.textContent); b.title = on ? 'Mostrar' : 'Contraer'; };
+      poner(!!plegadas[key]);
+      b.addEventListener('click', () => { const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} });
+      sec.appendChild(b);
+    });
+  }
   $('mes').addEventListener('change', () => { userPickedMonth = true; fechaAlMes(); render(); });
   const moverMes = (d) => {
     const [y, m] = ($('mes').value || thisMonth).split('-').map(Number);
