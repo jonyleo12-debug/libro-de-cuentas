@@ -755,10 +755,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const inputs = {};
       FIELDS.forEach(([k, label, type]) => {
         const lb = document.createElement('label'); lb.htmlFor = 'det-' + k; lb.textContent = label;
-        const inp = document.createElement('input'); inp.type = type; inp.id = 'det-' + k;
-        if (type === 'number') { inp.min = '0'; inp.step = '0.01'; inp.inputMode = 'decimal'; }
-        else inp.maxLength = 120;
-        inp.value = drafts[k] !== undefined ? drafts[k] : String(c[k] ?? '');
+        let inp;
+        if (k === 'causa') {
+          lb.textContent = 'Números de causa (uno por línea)'; lb.style.gridColumn = '1 / -1';
+          inp = document.createElement('textarea'); inp.id = 'det-' + k; inp.className = 'obs'; inp.maxLength = 1000;
+          inp.placeholder = 'Ej.: 16281-2026-0189\n16201-2025-00931';
+          const val = drafts[k] !== undefined ? drafts[k] : String(c.causa || '').split(/\s+\/\s+/).join('\n').trim();
+          inp.value = val; inp.rows = Math.max(2, val.split('\n').length + 1);
+        } else {
+          inp = document.createElement('input'); inp.type = type; inp.id = 'det-' + k;
+          if (type === 'number') { inp.min = '0'; inp.step = '0.01'; inp.inputMode = 'decimal'; }
+          else inp.maxLength = 120;
+          inp.value = drafts[k] !== undefined ? drafts[k] : String(c[k] ?? '');
+        }
         inp.addEventListener('input', () => { drafts[k] = inp.value; });
         lb.appendChild(inp); ed.appendChild(lb); inputs[k] = inp;
       });
@@ -768,6 +777,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         if (!(v >= 0)) { setMsg('El total debe ser un número.', true); return; }
         const upd = { total: v };
         ['causa', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
+        upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
         try { await col('casos').doc(c.id).update(upd); drafts = {}; setMsg(`Datos de ${c.nombre} guardados.`); }
         catch (e) { setMsg('No se pudieron guardar los datos. Intenta de nuevo.', true); }
       });
