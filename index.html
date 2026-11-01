@@ -237,6 +237,28 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 :root[data-theme="dark"] .c-pend { color: #f2c94c; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .c-pend { color: #f2c94c; } }
 .panel { align-content: start; }
+/* Month and color controls live inside the black pill. */
+.hero-box { position: relative; justify-self: start; max-width: 100%; }
+.hero { justify-self: auto; padding-right: 92px; }
+.hero h1 { padding-right: 0; margin: 0; }
+.hero-row { display: flex; align-items: center; gap: 4px; margin-left: -10px; }
+.hero-nav { background: none; border: 0; color: var(--ink-fg); opacity: .55; font-size: 28px; line-height: 1; padding: 2px 8px; cursor: pointer; border-radius: 10px; font-weight: 300; }
+.hero-nav:hover { opacity: 1; background: rgba(255,255,255,.08); }
+.hero-mes-btn { white-space: nowrap; background: none; border: 0; padding: 0 4px; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: baseline; gap: 8px; border-radius: 10px; }
+.hero-mes-btn:hover { background: rgba(255,255,255,.06); }
+.hero-caret { font-size: .4em; opacity: .6; transform: translateY(-.2em); }
+.mes-oculto { position: absolute; left: 40px; bottom: 10px; width: 1px; height: 1px; opacity: 0; pointer-events: none; padding: 0; border: 0; box-shadow: none; }
+.hero-color { position: absolute; z-index: 2; top: 0; right: 0; width: 76px; height: 62px; background: none; border: 0; cursor: pointer; color: #fff; display: grid; place-items: center; padding: 0 0 6px 18px; border-radius: 0 999px 0 0; }
+.hero-color svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); transition: transform .2s; }
+.hero-color:hover svg, .hero-color[aria-expanded="true"] svg { transform: scale(1.15) rotate(-12deg); }
+.hero-color:focus-visible { outline-offset: -4px; }
+.color-pop { position: absolute; z-index: 40; top: calc(100% + 10px); right: 0; display: grid; gap: 8px; padding: 14px 16px; border-radius: 20px;
+  background: linear-gradient(160deg, rgba(255,255,255,.75), rgba(255,255,255,.5)); -webkit-backdrop-filter: blur(22px) saturate(190%); backdrop-filter: blur(22px) saturate(190%);
+  box-shadow: 0 14px 36px -12px rgba(20,20,40,.3), inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(255,255,255,.4); }
+:root[data-theme="dark"] .color-pop { background: linear-gradient(160deg, rgba(70,72,80,.75), rgba(30,32,36,.6)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .color-pop { background: linear-gradient(160deg, rgba(70,72,80,.75), rgba(30,32,36,.6)); } }
+@media (max-width: 520px) { .hero-box { justify-self: stretch; } .hero { padding-left: 24px; padding-right: 72px; } .hero h1 { font-size: clamp(20px, 6.2vw, 28px); } .hero-nav { font-size: 24px; padding: 2px 6px; } }
+@media (prefers-reduced-motion: reduce) { .hero-color svg { transition: none; } }
 </style>
 </head>
 <body>
@@ -265,16 +287,23 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
       <div><span class="usr-l">Usuario</span><b id="u-name">Cargando…</b><span class="sync" id="sync">Sincronizado</span></div>
       <button type="button" class="ghost" id="logout">Salir</button>
     </div>
-    <div class="colors"><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div></div>
-    <label for="mes">Mes
-      <input type="month" id="mes">
-    </label>
   </nav>
   <header class="top">
     <div class="hero-wrap">
-      <div class="hero">
-        <span class="hero-k">Libro de cuentas</span>
-        <h1 id="hero-mes">Mis finanzas</h1>
+      <div class="hero-box">
+        <div class="hero">
+          <span class="hero-k">Libro de cuentas</span>
+          <div class="hero-row">
+            <button type="button" class="hero-nav" id="mes-prev" aria-label="Mes anterior">‹</button>
+            <h1><button type="button" class="hero-mes-btn" id="hero-mes-btn" aria-label="Elegir mes"><span id="hero-mes">Mis finanzas</span><span class="hero-caret" aria-hidden="true">▾</span></button></h1>
+            <button type="button" class="hero-nav" id="mes-next" aria-label="Mes siguiente">›</button>
+          </div>
+          <input type="month" id="mes" class="mes-oculto" tabindex="-1" aria-label="Mes">
+          <button type="button" class="hero-color" id="hero-color" aria-label="Cambiar color" aria-expanded="false" aria-controls="color-pop">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A4.6 4.6 0 0 0 22 9.8C22 5.9 17.5 3 12 3Zm-5.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
+          </button>
+        </div>
+        <div class="color-pop" id="color-pop" hidden><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div></div>
       </div>
       <p class="sub">Anota cada honorario, sueldo, gasto e inversión el día que ocurre. Los totales y tu promedio de honorarios se calculan solos.</p>
     </div>
@@ -553,6 +582,25 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const findInv = (name) => invs.find((c) => c.nombre.trim().toLowerCase() === name.trim().toLowerCase());
   $('f-inv').addEventListener('input', () => { const c = findInv($('f-inv').value); if (c && !$('f-tasa').value) $('f-tasa').value = c.tasa; });
   $('mes').addEventListener('change', () => { userPickedMonth = true; render(); });
+  const moverMes = (d) => {
+    const [y, m] = ($('mes').value || thisMonth).split('-').map(Number);
+    const t = new Date(y, m - 1 + d, 1);
+    $('mes').value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
+    userPickedMonth = true; render();
+  };
+  $('mes-prev').addEventListener('click', () => moverMes(-1));
+  $('mes-next').addEventListener('click', () => moverMes(1));
+  $('hero-mes-btn').addEventListener('click', () => {
+    const inp = $('mes');
+    try { if (typeof inp.showPicker === 'function') { inp.showPicker(); return; } } catch (e) {}
+    inp.focus(); inp.click();
+  });
+  const pop = $('color-pop'), hc = $('hero-color');
+  const setPop = (open) => { pop.hidden = !open; hc.setAttribute('aria-expanded', String(open)); };
+  hc.addEventListener('click', (e) => { e.stopPropagation(); setPop(pop.hidden); });
+  document.addEventListener('click', (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target !== hc) setPop(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) { setPop(false); hc.focus(); } });
+  pop.addEventListener('click', (e) => { if (e.target.closest('.swatch')) setTimeout(() => setPop(false), 150); });
 
   const td = (text, cls) => { const el = document.createElement('td'); el.textContent = text; if (cls) el.className = cls; return el; };
   const emptyRow = (cols, text) => { const tr = document.createElement('tr'); const c = td(text, 'empty'); c.colSpan = cols; tr.appendChild(c); return tr; };
