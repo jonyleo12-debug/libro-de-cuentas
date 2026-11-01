@@ -755,8 +755,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   { const lb = document.getElementById('lupa-btn'), bi = document.getElementById('busca-caso');
     const norm = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     window.__normBusca = norm;
-    lb.addEventListener('click', () => { const open = bi.hidden; bi.hidden = !open; lb.setAttribute('aria-expanded', String(open)); lb.classList.toggle('on', open || !!casoBusca);
-      if (open) bi.focus(); else if (!bi.value) { casoBusca = ''; render(); } });
+    lb.addEventListener('click', () => { const open = bi.hidden; bi.hidden = !open; lb.setAttribute('aria-expanded', String(open)); lb.classList.toggle('on', open);
+      if (open) bi.focus(); else { bi.value = ''; casoBusca = ''; render(); } });
     bi.addEventListener('input', () => { casoBusca = bi.value.trim(); lb.classList.toggle('on', true); render(); });
     bi.addEventListener('keydown', (e) => { if (e.key === 'Escape') { bi.value = ''; casoBusca = ''; bi.hidden = true; lb.classList.remove('on'); lb.setAttribute('aria-expanded', 'false'); render(); lb.focus(); } }); }
   document.getElementById('ver-arch').addEventListener('click', () => { verArch = !verArch; openCaso = null; openObs = null; render(); });
