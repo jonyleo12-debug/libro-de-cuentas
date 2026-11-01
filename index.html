@@ -269,6 +269,9 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 #casos .tag.c-aud { color: #c0262d; background: var(--panel); box-shadow: var(--raise-sm); }
 :root[data-theme="dark"] #casos .tag.c-aud { color: #f2777b; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .tag.c-aud { color: #f2777b; } }
+@keyframes palpito { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192,38,45,.45), var(--raise-sm); } 50% { transform: scale(1.08); box-shadow: 0 0 0 7px rgba(192,38,45,0), var(--raise-sm); } }
+#casos .tag.c-aud.aviso { animation: palpito 1.2s ease-in-out infinite; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { #casos .tag.c-aud.aviso { animation: none; box-shadow: 0 0 0 2px #c0262d; } }
 </style>
 </head>
 <body>
@@ -765,7 +768,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; est.appendChild(t); }
       else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend estado'; t.textContent = 'Pendiente'; est.appendChild(t); }
       { const ahora = new Date().toISOString(); const prox = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= ahora).sort((x, y) => x.inicio.localeCompare(y.inicio))[0];
-        if (prox) { const t = document.createElement('span'); t.className = 'tag c-aud estado'; t.textContent = 'Audiencia'; t.title = `${prox.tipo || 'Audiencia'}: ${prox.fecha.split('-').reverse().join('/')} ${prox.hora}`; est.appendChild(t); } }
+        if (prox) { const t = document.createElement('span'); t.className = 'tag c-aud estado'; t.textContent = 'Audiencia'; { const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; const hoy = new Date(); const man = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1); if (prox.fecha === ymd(hoy) || prox.fecha === ymd(man)) { t.classList.add('aviso'); t.textContent = prox.fecha === ymd(hoy) ? 'Audiencia hoy' : 'Audiencia mañana'; } } t.title = `${prox.tipo || 'Audiencia'}: ${prox.fecha.split('-').reverse().join('/')} ${prox.hora}`; est.appendChild(t); } }
       n.appendChild(est);
       tr.appendChild(n);
       const moneyCell = (key, val, label, cls, save) => {
