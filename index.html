@@ -700,12 +700,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   });
   const findInv = (name) => invs.find((c) => c.nombre.trim().toLowerCase() === name.trim().toLowerCase());
   $('f-inv').addEventListener('input', () => { const c = findInv($('f-inv').value); if (c && !$('f-tasa').value) $('f-tasa').value = c.tasa; });
-  $('mes').addEventListener('change', () => { userPickedMonth = true; render(); });
+  const fechaAlMes = () => {
+    const ms = $('mes').value; if (!/^\d{4}-\d{2}$/.test(ms)) return;
+    if (ms === todayStr.slice(0, 7)) { $('f-fecha').value = todayStr; return; }
+    const [y, m] = ms.split('-').map(Number), ult = new Date(y, m, 0).getDate();
+    const dia = Math.min(Number(($('f-fecha').value || todayStr).slice(8, 10)) || 1, ult);
+    $('f-fecha').value = `${ms}-${String(dia).padStart(2, '0')}`;
+  };
+  $('mes').addEventListener('change', () => { userPickedMonth = true; fechaAlMes(); render(); });
   const moverMes = (d) => {
     const [y, m] = ($('mes').value || thisMonth).split('-').map(Number);
     const t = new Date(y, m - 1 + d, 1);
     $('mes').value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
-    userPickedMonth = true; render();
+    userPickedMonth = true; fechaAlMes(); render();
   };
   $('mes-prev').addEventListener('click', () => moverMes(-1));
   $('mes-next').addEventListener('click', () => moverMes(1));
