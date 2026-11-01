@@ -923,7 +923,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const open = openCaso === c.id;
       const det = document.createElement('button'); det.type = 'button'; det.className = 'ghost' + (open ? ' on' : '');
       det.textContent = open ? 'Cerrar' : 'Detalle'; det.setAttribute('aria-expanded', String(open));
-      det.addEventListener('click', () => { openCaso = open ? null : c.id; drafts = {}; render(); });
+      det.addEventListener('click', () => { openCaso = open ? null : c.id; if (!open) { openObs = null; obsDraft = null; obsAud = {}; } drafts = {}; render(); });
       act.appendChild(delBtn('caso:' + c.id, () => col('casos').doc(c.id).delete(), 'Quitar', '¿Quitar?'));
       act.appendChild(det);
       const obsOpen = openObs === c.id;
@@ -932,7 +932,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         ob.textContent = obsOpen ? 'Cerrar' : (tieneAg ? 'Agenda •' : 'Agenda');
         ob.title = 'Agendar audiencias y diligencias'; }
       ob.setAttribute('aria-expanded', String(obsOpen));
-      ob.addEventListener('click', () => { openObs = obsOpen ? null : c.id; obsDraft = null; obsAud = {}; render(); });
+      ob.addEventListener('click', () => { openObs = obsOpen ? null : c.id; if (!obsOpen) { openCaso = null; drafts = {}; } obsDraft = null; obsAud = {}; render(); });
       act.appendChild(ob);
       tr.appendChild(act);
       const extra = [];
