@@ -607,10 +607,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   <section class="panel" id="sec-notas" aria-labelledby="h-notas">
     <div class="notas-cab"><h2 id="h-notas">Notas</h2><span class="nota-para-l" id="nota-para-l"><select id="nota-para" aria-label="Para quién es la nota" form="nota-form"></select></span><span class="sub" style="margin:0" id="nota-para-txt" hidden></span><span class="sub" style="display:inline;margin:0 0 0 auto" id="notas-n"></span></div>
     <form class="nota-form" id="nota-form">
-      <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota…" aria-label="Nueva nota"></textarea>
-      <div class="nota-bar">
-        <button type="submit" class="btn">Guardar nota</button>
-      </div>
+      <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota y presiona Enter…" aria-label="Nueva nota" enterkeyhint="send"></textarea>
     </form>
     <div class="notas" id="notas"></div>
   </section>
@@ -2101,6 +2098,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       return card;
     }));
   }
+  $('nota-txt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('nota-form').requestSubmit(); } });
   $('nota-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const texto = $('nota-txt').value.trim(); if (!texto || !libroRef) return;
