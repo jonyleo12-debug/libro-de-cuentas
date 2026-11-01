@@ -974,8 +974,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             const ap = document.createElement('button'); ap.type = 'button'; ap.className = 'ghost'; ap.textContent = 'Apple / Outlook'; ap.addEventListener('click', () => descargarIcs(x));
             let gg;
             if (x.gcalId) { gg = document.createElement('span'); gg.className = 'tag c-in estado'; gg.textContent = 'En Google ✓'; }
-            else if (gcalOn && GCAL_CLIENT_ID) { gg = document.createElement('button'); gg.type = 'button'; gg.className = 'ghost'; gg.textContent = 'Enviar a Google';
-              gg.addEventListener('click', () => ensureToken(async () => { try { const id = await gcalCrear(x); await col('audiencias').doc(x.id).update({ gcalId: id }); setMsg('Enviada a Google Calendar.'); } catch (e) { setMsg('No se pudo enviar a Google Calendar.', true); } })); }
+            else if (GCAL_CLIENT_ID) { gg = document.createElement('button'); gg.type = 'button'; gg.className = 'ghost'; gg.textContent = 'Enviar a Google';
+              gg.addEventListener('click', () => ensureToken(async () => { try { if (!gcalOn) { gcalOn = true; if (libroRef) libroRef.set({ gcal: true }); } const id = await gcalCrear(x); await col('audiencias').doc(x.id).update({ gcalId: id }); setMsg('Enviada a Google Calendar.'); } catch (e) { setMsg('No se pudo enviar a Google Calendar.', true); } })); }
             else { gg = document.createElement('a'); gg.className = 'ghost'; gg.textContent = 'Google'; gg.href = googleUrl(x); gg.target = '_blank'; gg.rel = 'noopener'; gg.style.textDecoration = 'none'; }
             const quitar = () => {
               col('audiencias').doc(x.id).delete();
