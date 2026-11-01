@@ -592,8 +592,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let openCaso = null;
   let openObs = null;
   let auds = [];
+  let audsListas = false, casosListos = false, ligados = false;
+  function ligarAudiencias() {
+    if (ligados || !audsListas || !casosListos) return; ligados = true;
+    auds.filter((a) => !a.casoId && a.caso).forEach((a) => {
+      const m = casos.filter((c) => c.nombre.trim().toLowerCase() === a.caso.trim().toLowerCase());
+      if (m.length === 1) col('audiencias').doc(a.id).update({ casoId: m[0].id }).catch(() => {});
+    });
+  }
   let obsDraft = null;
   let obsAud = {};
+  const esDelCaso = (x, c) => x.casoId ? x.casoId === c.id : x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase();
   const claseDe = (a) => a.clase === 'diligencia' || (!a.clase && /dilig/i.test(a.tipo || '')) ? 'diligencia' : 'audiencia';
   let libroRef = null;
   const col = (name) => libroRef.collection(name);
@@ -832,7 +841,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
     syncCasoSelects();
     const ahoraF = new Date().toISOString();
-    const tieneAud = (c, cl) => auds.some((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= ahoraF && claseDe(x) === cl);
+    const tieneAud = (c, cl) => auds.some((x) => esDelCaso(x, c) && x.fin >= ahoraF && claseDe(x) === cl);
     const filtros = {
       pagados: (c) => !c.pendiente,
       pendientes: (c) => c.total === 0 && c.pagado === 0,
@@ -892,7 +901,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       { const ahora = new Date().toISOString();
         const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const hoy = new Date(); const man = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
-        const delC = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= ahora).sort((x, y) => x.inicio.localeCompare(y.inicio));
+        const delC = auds.filter((x) => esDelCaso(x, c) && x.fin >= ahora).sort((x, y) => x.inicio.localeCompare(y.inicio));
         [['audiencia', 'Audiencia', 'c-aud'], ['diligencia', 'Diligencia', 'c-dil']].forEach(([cl, nom, color]) => {
           const prox = delC.find((x) => claseDe(x) === cl); if (!prox) return;
           const t = document.createElement('span'); t.className = `tag ${color} estado`; t.textContent = nom;
@@ -928,7 +937,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       act.appendChild(det);
       const obsOpen = openObs === c.id;
       const ob = document.createElement('button'); ob.type = 'button'; ob.className = 'ghost' + (obsOpen ? ' on' : '');
-      { const tieneAg = auds.some((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= new Date().toISOString());
+      { const tieneAg = auds.some((x) => esDelCaso(x, c) && x.fin >= new Date().toISOString());
         ob.textContent = obsOpen ? 'Cerrar' : (tieneAg ? 'Agenda •' : 'Agenda');
         ob.title = 'Agendar audiencias y diligencias'; }
       ob.setAttribute('aria-expanded', String(obsOpen));
@@ -946,7 +955,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           const hechos = [], datos = [];
           ['audiencia', 'diligencia'].forEach((cl) => {
             const g = afIn[cl], f = g.fecha.value, h = g.hora.value;
-            if (f && h) { datos.push({ fecha: f, hora: h, dur: 60, caso: c.nombre, tipo: g.tipo.value.trim(), lugar: g.lugar.value.trim(), clase: cl }); hechos.push(cl); }
+            if (f && h) { datos.push({ fecha: f, hora: h, dur: 60, caso: c.nombre, casoId: c.id, tipo: g.tipo.value.trim(), lugar: g.lugar.value.trim(), clase: cl }); hechos.push(cl); }
           });
           if (!hechos.length) { setMsg('Pon fecha y hora en audiencia o diligencia para agendar.', true); return; }
           const hacer = (g) => {
@@ -959,7 +968,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         bar.appendChild(sv);
         // Hearings for this case + quick add with calendar pickers
         const nowI = new Date().toISOString();
-        const delCaso = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= nowI).sort((x, y) => x.inicio.localeCompare(y.inicio));
+        const delCaso = auds.filter((x) => esDelCaso(x, c) && x.fin >= nowI).sort((x, y) => x.inicio.localeCompare(y.inicio));
         const box = document.createElement('div'); box.className = 'det';
         if (delCaso.length) {
           const ah = document.createElement('p'); ah.className = 'det-h'; ah.textContent = 'Próximas audiencias y diligencias de este caso'; box.appendChild(ah);
@@ -1034,7 +1043,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'sub'; aj.style.margin = '0'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; wrap.appendChild(aj); }
       const ed = document.createElement('div'); ed.className = 'det-edit';
-      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Mi parte (%)', 'number'], ['causa', 'Números de causa', 'text'], ['observacion', 'Observación', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
+      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Mi parte (%)', 'number'], ['nombre', 'Nombre del cliente', 'text'], ['causa', 'Números de causa', 'text'], ['observacion', 'Observación', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
       const inputs = {};
       FIELDS.forEach(([k, label, type]) => {
         const lb = document.createElement('label'); lb.htmlFor = 'det-' + k; lb.textContent = label;
@@ -1080,8 +1089,15 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         { const pv = parseFloat(String(inputs.parte.value).replace(',', '.')); if (!(pv >= 0 && pv <= 100)) { setMsg('Mi parte debe estar entre 0 y 100.', true); return; } upd.parte = Math.round(pv * 100) / 100; }
         ['causa', 'observacion', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
         upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
+        const nuevoNombre = inputs.nombre.value.trim().replace(/\s+/g, ' ');
+        if (!nuevoNombre) { setMsg('El nombre del cliente no puede quedar vacío.', true); return; }
+        const renombra = nuevoNombre !== c.nombre;
+        if (renombra) upd.nombre = nuevoNombre;
+        const cambiaGoogle = renombra || ['causa', 'cedula', 'telefono'].some((k) => upd[k] !== String(c[k] || '').trim());
+        if (cambiaGoogle) gcalActualizarCaso(c.id, { nombre: nuevoNombre, nombreViejo: c.nombre, causa: upd.causa, cedula: upd.cedula, telefono: upd.telefono });
         try {
           await col('casos').doc(c.id).update(upd);
+          if (renombra) await Promise.all(auds.filter((a) => esDelCaso(a, c)).map((a) => col('audiencias').doc(a.id).update({ caso: nuevoNombre, casoId: c.id })));
           if (v > 0) await col('movimientos').add({ fecha: fp, tipo: 'Ingreso', categoria: 'Honorarios por casos', descripcion: 'Abono', monto: v, casoId: c.id, creado: new Date().toISOString() });
           drafts = {}; setMsg(v > 0 ? `Abono de ${usd.format(v)} registrado para ${c.nombre}.` : `Datos de ${c.nombre} guardados.`);
         }
@@ -1448,10 +1464,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const q = new URLSearchParams({ action: 'TEMPLATE', text: audTitulo(a), dates: `${icsDate(a.inicio)}/${icsDate(a.fin)}`, details: a.caso ? 'Caso: ' + a.caso : '', location: a.lugar || '', ctz: 'America/Guayaquil' });
     return 'https://calendar.google.com/calendar/render?' + q.toString();
   }
-  async function crearAudiencia({ fecha, hora, dur, caso, tipo, lugar, clase }, conGoogle = false) {
+  async function crearAudiencia({ fecha, hora, dur, caso, casoId, tipo, lugar, clase }, conGoogle = false) {
     const ini = new Date(`${fecha}T${hora}:00-05:00`);
     const fin = new Date(ini.getTime() + Number(dur || 60) * 60000);
-    const a = { fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', tipo: tipo || '', lugar: lugar || '', clase: clase === 'diligencia' ? 'diligencia' : 'audiencia', creado: new Date().toISOString() };
+    const a = { fecha, hora, inicio: ini.toISOString(), fin: fin.toISOString(), caso: caso || '', casoId: casoId || '', tipo: tipo || '', lugar: lugar || '', clase: clase === 'diligencia' ? 'diligencia' : 'audiencia', creado: new Date().toISOString() };
     const ref = await col('audiencias').add(a);
     if (conGoogle) { try { const id = await gcalCrear(a); ref.update({ gcalId: id }); } catch (e) { console.error(e); setMsg('Se agendó en la app, pero no se pudo enviar a Google Calendar.', true); } }
   }
@@ -1484,8 +1500,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (!r.ok && r.status !== 410 && r.status !== 404) throw new Error('gcal ' + r.status);
     return r.status === 204 || opts.method === 'DELETE' ? null : r.json();
   }
-  function gcalDetalle(a) {
-    const cs = casos.find((c) => c.nombre === a.caso) || {};
+  function gcalDetalle(a, datos) {
+    const cs = datos || casos.find((c) => a.casoId ? c.id === a.casoId : c.nombre === a.caso) || {};
     return [a.caso && 'Caso: ' + a.caso, cs.causa && 'Número de causa: ' + cs.causa, cs.cedula && 'Cédula: ' + cs.cedula, cs.telefono && 'Teléfono: ' + cs.telefono].filter(Boolean).concat('', 'Agendado desde Libro de cuentas').join('\n');
   }
   async function gcalCrear(a) {
@@ -1495,6 +1511,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 1440 }, { method: 'popup', minutes: 60 }] },
     }) });
     return ev.id;
+  }
+  function gcalActualizarCaso(cid, datos) {
+    const ahora = new Date().toISOString();
+    const lista = auds.filter((a) => a.gcalId && (a.casoId === cid || (!a.casoId && a.caso.trim().toLowerCase() === String(datos.nombreViejo || '').trim().toLowerCase())) && a.fin >= ahora);
+    if (!lista.length || !gcalOn || !GCAL_CLIENT_ID) return;
+    ensureToken(async () => {
+      let mal = 0;
+      for (const a of lista) {
+        const b = { ...a, caso: datos.nombre };
+        try { await gcalFetch('/' + encodeURIComponent(a.gcalId), { method: 'PATCH', body: JSON.stringify({ summary: audTitulo(b), description: gcalDetalle(b, datos) }) }); } catch (e) { mal++; }
+      }
+      setMsg(mal ? 'Se guardó, pero algunos eventos de Google Calendar no se pudieron actualizar.' : `También se actualizó${lista.length > 1 ? 'ron' : ''} ${lista.length} ${lista.length > 1 ? 'eventos' : 'evento'} en Google Calendar.`, !!mal);
+    });
   }
   function gcalConectar() {
     ensureToken(() => { gcalOn = true; if (libroRef) libroRef.set({ gcal: true }); setMsg('Google Calendar conectado. Las nuevas audiencias y diligencias se agregarán solas.'); render(); });
@@ -1614,12 +1643,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }, lost);
     col('audiencias').onSnapshot((snap) => {
       raw['audiencias'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || ''), clase: String(x.clase || ''), gcalId: x.gcalId ? String(x.gcalId) : '' }; }).filter((a) => a.inicio);
+      audsListas = true;
+      auds = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), hora: String(x.hora || ''), inicio: String(x.inicio || ''), fin: String(x.fin || x.inicio || ''), caso: String(x.caso || ''), casoId: String(x.casoId || ''), tipo: String(x.tipo || ''), lugar: String(x.lugar || ''), clase: String(x.clase || ''), gcalId: x.gcalId ? String(x.gcalId) : '' }; }).filter((a) => a.inicio);
+      ligarAudiencias();
       render();
     }, lost);
     col('casos').onSnapshot((snap) => {
       raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      casosListos = true;
       casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true }; });
+      ligarAudiencias();
       render();
     }, lost);
   }
