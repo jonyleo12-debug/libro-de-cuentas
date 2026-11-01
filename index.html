@@ -262,7 +262,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .tag.c-pend, #casos .tag.c-in { background: var(--panel); box-shadow: var(--raise-sm); }
 #casos .estados { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 8px; }
 #casos .estado { display: inline-block; }
-#casos .estado-libre { background: var(--panel); box-shadow: var(--raise-sm); color: var(--fg); font: inherit; font-size: 12px; font-weight: 500; line-height: 1.5; padding: 2px 10px; border: 0; border-radius: 99px; min-width: 0; max-width: 100%; text-align: center; }
+#casos .estado-libre { background: var(--panel); box-shadow: var(--raise-sm); color: #1f8a4c; font: inherit; font-size: 12px; font-weight: 500; line-height: 1.5; padding: 2px 10px; border: 0; border-radius: 99px; min-width: 0; max-width: 100%; text-align: center; }
 #casos .estado-libre::placeholder { color: var(--muted); font-weight: 400; }
 #casos .estado-libre:placeholder-shown { opacity: .55; }
 #casos .estado-libre:focus { opacity: 1; }
@@ -308,10 +308,10 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .arch-btn.on { background: var(--ink); color: var(--ink-fg); }
 /* Colored tables: each table has its own tone, a faceted header band and rows that fade from a tinted edge to white. */
 [aria-labelledby="h-cobrar"] { --t1: #2b3576; --t2: #4b5fd1; --t3: #8f9cf0; --tint: #e9ecff; }
-[aria-labelledby="h-mov"]    { --t1: #8a5a12; --t2: #c99a4b; --t3: #ead2a4; --tint: #fbf1df; }
+[aria-labelledby="h-mov"]    { --t1: #2f7f7a; --t2: #5fb8b2; --t3: #a9e0dc; --tint: #e3f6f5; }
 [aria-labelledby="h-hist"]   { --t1: #2f7f7a; --t2: #5fb8b2; --t3: #a9e0dc; --tint: #e3f6f5; }
-[aria-labelledby="h-inv"]    { --t1: #c24a63; --t2: #ec7f90; --t3: #f7b9c2; --tint: #fdeaed; }
-[aria-labelledby="h-fijos"]  { --t1: #5b3b9a; --t2: #8f6fd6; --t3: #c8b6f2; --tint: #f0eafd; }
+[aria-labelledby="h-inv"]    { --t1: #5b3b9a; --t2: #8f6fd6; --t3: #c8b6f2; --tint: #f0eafd; }
+[aria-labelledby="h-fijos"]  { --t1: #c24a63; --t2: #ec7f90; --t3: #f7b9c2; --tint: #fdeaed; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tbox { --tint: rgba(255,255,255,.04); } }
 :root[data-theme="dark"] .tbox { --tint: rgba(255,255,255,.04); }
 
@@ -342,6 +342,8 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 #casos .archivo { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--t1); text-align: center; background: var(--panel); }
 :root[data-theme="dark"] #casos .archivo { color: var(--t3); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .archivo { color: var(--t3); } }
+:root[data-theme="dark"] #casos .estado-libre { color: #5cd18f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .estado-libre { color: #5cd18f; } }
 </style>
 </head>
 <body>
