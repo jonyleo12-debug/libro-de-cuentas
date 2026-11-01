@@ -345,8 +345,12 @@ body.invitado .fila-nuevo > #sec-notas { border: 0; }
 body.invitado .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
 #sec-notas .notas { grid-template-columns: minmax(0, 1fr); max-height: 300px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
 body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); max-height: none; }
-#sec-notas .nota-bar { justify-content: space-between; }
-#sec-notas .nota-para-l { min-width: 0; flex: 1 1 140px; margin-right: 0; }
+#sec-notas .nota-bar { justify-content: flex-start; }
+.notas-cab { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px 14px; }
+.notas-cab .nota-para-l { min-width: 0; margin: 0; flex: 1 1 0; max-width: 220px; display: block; }
+.notas-cab #notas-n { white-space: nowrap; font-size: 13px; }
+.notas-cab .nota-para-l[hidden] { display: none; }
+.notas-cab select { width: 100%; padding: 7px 12px; font-size: 14px; }
 .nota-form { display: grid; gap: 10px; }
 .nota-form textarea { resize: vertical; min-height: 70px; }
 .nota-bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; justify-content: flex-end; }
@@ -601,12 +605,10 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <p class="msg" id="f-msg" role="status"></p>
   </section>
   <section class="panel" id="sec-notas" aria-labelledby="h-notas">
-    <div class="budget-row"><h2 id="h-notas">Notas</h2><span class="sub" style="display:inline" id="notas-n"></span></div>
+    <div class="notas-cab"><h2 id="h-notas">Notas</h2><span class="nota-para-l" id="nota-para-l"><select id="nota-para" aria-label="Para quién es la nota" form="nota-form"></select></span><span class="sub" style="margin:0" id="nota-para-txt" hidden></span><span class="sub" style="display:inline;margin:0 0 0 auto" id="notas-n"></span></div>
     <form class="nota-form" id="nota-form">
       <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota…" aria-label="Nueva nota"></textarea>
       <div class="nota-bar">
-        <label class="nota-para-l" id="nota-para-l">Para<select id="nota-para"></select></label>
-        <span class="sub" style="margin:0" id="nota-para-txt" hidden></span>
         <button type="submit" class="btn">Guardar nota</button>
       </div>
     </form>
@@ -2059,7 +2061,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const sel = $('nota-para');
     if (invitado) { $('nota-para-l').hidden = true; const t = $('nota-para-txt'); t.hidden = false; t.textContent = 'Para ' + nombreDueno(); return; }
     const prev = sel.value;
-    sel.replaceChildren(...[['', 'Solo para mí'], ...miembros.map((m) => [m.id, m.nombre || usuarioDe(m.email)])].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
+    sel.replaceChildren(...[['', 'Para mí'], ...miembros.map((m) => [m.id, m.nombre || usuarioDe(m.email)])].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
     if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
     $('nota-para-l').hidden = !miembros.length;
   }
