@@ -266,6 +266,9 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 #casos .estado-libre::placeholder { color: var(--muted); font-weight: 400; }
 #casos .estado-libre:placeholder-shown { opacity: .55; }
 #casos .estado-libre:focus { opacity: 1; }
+#casos .tag.c-aud { color: #c0262d; background: var(--panel); box-shadow: var(--raise-sm); }
+:root[data-theme="dark"] #casos .tag.c-aud { color: #f2777b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .tag.c-aud { color: #f2777b; } }
 </style>
 </head>
 <body>
@@ -761,6 +764,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       est.appendChild(ei);
       if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; est.appendChild(t); }
       else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend estado'; t.textContent = 'Pendiente'; est.appendChild(t); }
+      { const ahora = new Date().toISOString(); const prox = auds.filter((x) => x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase() && x.fin >= ahora).sort((x, y) => x.inicio.localeCompare(y.inicio))[0];
+        if (prox) { const t = document.createElement('span'); t.className = 'tag c-aud estado'; t.textContent = 'Audiencia'; t.title = `${prox.tipo || 'Audiencia'}: ${prox.fecha.split('-').reverse().join('/')} ${prox.hora}`; est.appendChild(t); } }
       n.appendChild(est);
       tr.appendChild(n);
       const moneyCell = (key, val, label, cls, save) => {
