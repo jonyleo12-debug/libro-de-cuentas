@@ -344,6 +344,11 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .archivo { color: var(--t3); } }
 :root[data-theme="dark"] #casos .estado-libre { color: #5cd18f; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .estado-libre { color: #5cd18f; } }
+.aviso-resp { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 20px; background: var(--panel); box-shadow: var(--raise-sm), inset 4px 0 0 var(--accent); }
+.aviso-resp .acts { display: inline-flex; gap: 8px; }
+.auto-resp { display: grid; gap: 8px; }
+.auto-list li { align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.auto-list li:last-child { border-bottom: 0; }
 </style>
 </head>
 <body>
@@ -393,6 +398,10 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     </div>
   </header>
 
+  <div class="aviso-resp" id="aviso-resp" role="status" hidden>
+    <span><b>Descarga tu respaldo del mes.</b> Guárdalo en iCloud para tener una copia fuera de la app.</span>
+    <span class="acts"><button type="button" class="btn" id="aviso-desc">Descargar ahora</button><button type="button" class="ghost" id="aviso-luego">Más tarde</button></span>
+  </div>
   <section class="totals" aria-label="Totales del mes">
     <div class="tot"><span>Ingresos</span><b class="c-in" id="t-in">—</b><small id="t-in-n"></small></div>
     <div class="tot"><span>Gastos</span><b class="c-out" id="t-out">—</b><small id="t-out-n"></small></div>
@@ -514,6 +523,11 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <label for="imp">Cargar respaldo (.json)<input type="file" id="imp" accept="application/json,.json"></label>
     </div>
     <p class="msg" id="resp-msg" role="status"></p>
+    <div class="auto-resp">
+      <p class="det-h">Copias automáticas</p>
+      <p class="sub" style="margin:0">La app guarda sola una copia de todo cada día que la abres y conserva las últimas 30. Restaurar devuelve lo que borraste o cambiaste ese día, sin borrar lo que agregaste después.</p>
+      <ul class="det-list auto-list" id="auto-list"><li class="sub">Cargando…</li></ul>
+    </div>
   </section>
 </div>
 
@@ -1424,7 +1438,50 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias'];
   const raw = {};
+  // Automatic daily copies, kept inside the account (last 30)
+  let respaldos = [], ultimaDescarga = '', autoHecho = false;
+  const KEEP = 30;
+  function snapshotData() { const data = {}; COLS.forEach((c) => { data[c] = raw[c] || {}; }); return data; }
+  function contar(data) { return COLS.reduce((n, c) => n + Object.keys(data[c] || {}).length, 0); }
+  async function autoRespaldo() {
+    if (autoHecho || !libroRef) return;
+    if (!COLS.every((c) => raw[c])) { setTimeout(autoRespaldo, 5000); return; }
+    autoHecho = true;
+    const data = snapshotData(); const n = contar(data);
+    if (!n) return;
+    if (respaldos.some((r) => r.id === todayStr)) return;
+    try {
+      await col('respaldos').doc(todayStr).set({ fecha: todayStr, creado: new Date().toISOString(), registros: n, datos: JSON.stringify(data) });
+      const viejos = [...respaldos.map((r) => r.id), todayStr].filter((v, i, a) => a.indexOf(v) === i).sort().reverse().slice(KEEP);
+      await Promise.all(viejos.map((id) => col('respaldos').doc(id).delete()));
+    } catch (e) { console.error(e); }
+  }
+  function drawRespaldos() {
+    const ul = $('auto-list'); if (!ul) return;
+    const lst = [...respaldos].sort((a, b) => b.id.localeCompare(a.id));
+    if (!lst.length) { ul.replaceChildren(); const li = document.createElement('li'); li.className = 'sub'; li.textContent = 'Todavía no hay copias. La primera se guarda hoy en unos segundos.'; ul.appendChild(li); return; }
+    ul.replaceChildren(...lst.map((r) => {
+      const li = document.createElement('li');
+      const t = document.createElement('span'); const [y, m, d] = r.id.split('-');
+      t.textContent = `${Number(d)} ${MESES[Number(m) - 1]} ${y} · ${r.registros} registros`;
+      const b = delBtn('rest:' + r.id, async () => {
+        const full = respaldos.find((x) => x.id === r.id); const data = JSON.parse(full.datos || '{}'); let n = 0;
+        COLS.forEach((c) => Object.entries(data[c] || {}).forEach(([id, dd]) => { if (dd && typeof dd === 'object' && /^[A-Za-z0-9_-]{1,100}$/.test(id)) { col(c).doc(id).set(dd); n++; } }));
+        $('resp-msg').textContent = `Se restauraron ${n} registros de la copia del ${Number(d)} ${MESES[Number(m) - 1]}.`; $('resp-msg').className = 'msg';
+      }, 'Restaurar', '¿Restaurar? Toca otra vez');
+      li.append(t, b); return li;
+    }));
+  }
+  function drawAviso() {
+    const el = $('aviso-resp'); if (!el) return;
+    let luego = ''; try { luego = localStorage.getItem('libro-aviso-luego') || ''; } catch (e) {}
+    const hace = (iso, dias) => !iso || (Date.now() - new Date(iso).getTime()) > dias * 864e5;
+    el.hidden = !(contar(snapshotData()) > 0 && hace(ultimaDescarga, 30) && hace(luego, 3));
+  }
+  $('aviso-desc').addEventListener('click', () => { $('exp').click(); });
+  $('aviso-luego').addEventListener('click', () => { try { localStorage.setItem('libro-aviso-luego', new Date().toISOString()); } catch (e) {} drawAviso(); });
   $('exp').addEventListener('click', () => {
+    ultimaDescarga = new Date().toISOString(); if (libroRef) libroRef.set({ ultimaDescarga }); drawAviso();
     const data = { app: 'libro-de-cuentas', version: 1, exportado: new Date().toISOString(), color: colorKey };
     COLS.forEach((c) => { data[c] = raw[c] || {}; });
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1451,6 +1508,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     libroRef.onSnapshot((snap) => {
       const c = snap.exists ? String((snap.data() || {}).color || '') : '';
       if (COLORS[c]) { colorKey = c; applyColor(); }
+      ultimaDescarga = snap.exists ? String((snap.data() || {}).ultimaDescarga || '') : '';
+      drawAviso();
     }, () => {});
     const lost = () => setMsg('Se perdió la conexión con tu libro. Recarga la página.', true);
     const pickMonth = () => {
@@ -1458,6 +1517,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const all = [...rows.map((r) => r.fecha.slice(0, 7)), ...fijos.map((f) => f.desde)];
       if (all.length && !all.some((m) => m <= thisMonth)) $('mes').value = all.sort()[0];
     };
+    col('respaldos').onSnapshot((snap) => {
+      respaldos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, registros: Number(x.registros) || 0, datos: String(x.datos || '') }; }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.id));
+      drawRespaldos();
+    }, () => {});
+    setTimeout(() => { autoRespaldo(); drawAviso(); }, 8000);
     col('movimientos').onSnapshot((snap) => {
       raw['movimientos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       rows = snap.docs.map((d) => {
