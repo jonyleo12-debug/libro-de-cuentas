@@ -337,10 +337,13 @@ body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none 
 .nuevo-caso label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 body.invitado .totals, body.invitado section[aria-labelledby="h-nuevo"], body.invitado .grid2, body.invitado #prom, body.invitado #sec-inv, body.invitado #sec-fijos, body.invitado section[aria-labelledby="h-resp"], body.invitado #aviso-resp, body.invitado #hero-color, body.invitado .hero-nav, body.invitado .hero-caret { display: none !important; }
 body.invitado #sec-casos { display: grid !important; }
-.fila-nuevo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
-@media (max-width: 900px) { .fila-nuevo { grid-template-columns: minmax(0, 1fr); } }
+.fila-nuevo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0; align-items: stretch; background: var(--panel); border-radius: var(--r); box-shadow: var(--raise); min-width: 0; }
+.fila-nuevo > .panel { background: transparent; box-shadow: none; border: 0; border-radius: 0; }
+.fila-nuevo > #sec-notas { border-left: 1px solid var(--line); }
+@media (max-width: 900px) { .fila-nuevo { grid-template-columns: minmax(0, 1fr); } .fila-nuevo > #sec-notas { border-left: 0; border-top: 1px solid var(--line); } }
+body.invitado .fila-nuevo > #sec-notas { border: 0; }
 body.invitado .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
-#sec-notas .notas { grid-template-columns: minmax(0, 1fr); max-height: 520px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
+#sec-notas .notas { grid-template-columns: minmax(0, 1fr); max-height: 300px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
 body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); max-height: none; }
 #sec-notas .nota-bar { justify-content: space-between; }
 #sec-notas .nota-para-l { min-width: 0; flex: 1 1 140px; margin-right: 0; }
@@ -971,13 +974,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let plegadas = {};
   { try { plegadas = JSON.parse(localStorage.getItem('libro-plegadas') || '{}') || {}; } catch (e) {}
     document.querySelectorAll('#app section.panel').forEach((sec) => {
-      const h = sec.querySelector('h2'); if (!h || h.id === 'h-nuevo') return;
+      const h = sec.querySelector('h2'); if (!h || h.id === 'h-nuevo' || h.id === 'h-notas') return;
       const key = h.id; sec.classList.add('plegable');
       const b = document.createElement('button'); b.type = 'button'; b.className = 'plegar';
       b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       const poner = (on) => { sec.classList.toggle('plegada', on); b.setAttribute('aria-expanded', String(!on)); b.setAttribute('aria-label', (on ? 'Mostrar ' : 'Contraer ') + h.textContent); b.title = on ? 'Mostrar' : 'Contraer'; };
       poner(!!plegadas[key]); ponerPlegada[key] = poner;
-      if (sec.id !== 'sec-notas') b.addEventListener('pointerdown', (e) => iniciarArrastre(e, sec, b));
+      b.addEventListener('pointerdown', (e) => iniciarArrastre(e, sec, b));
       b.addEventListener('click', (e) => { if (b.dataset.movido) { delete b.dataset.movido; e.preventDefault(); return; } const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} guardarVista('plegadas', { ...plegadas }); });
       sec.appendChild(b);
     });
