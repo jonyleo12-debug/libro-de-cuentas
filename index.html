@@ -671,6 +671,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const sum = (list, tipo) => list.filter((r) => r.tipo === tipo).reduce((s, r) => s + r.monto, 0);
 
   function render() {
+    { // only my share of each case payment counts as my income
+      const pm = new Map(casos.map((c) => [c.id, c.parte]));
+      rows.forEach((r) => { const pp = r.casoId && pm.has(r.casoId) ? pm.get(r.casoId) : 100; r.parte = pp; r.monto = Math.round(r.bruto * pp) / 100; });
+    }
     const mes = $('mes').value || thisMonth;
     { const [yy, mm] = mes.split('-').map(Number); const n = new Date(yy, mm - 1, 1).toLocaleDateString('es-EC', { month: 'long' }); $('hero-mes').textContent = `${n.charAt(0).toUpperCase()}${n.slice(1)}, ${yy}`; }
     const delMes = entriesFor(mes).sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -701,7 +705,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const txt = [caso ? caso.nombre : '', r.descripcion, r.fijo ? 'fijo mensual' : ''].filter(Boolean).join(' · ');
       if (txt) { const d = document.createElement('div'); d.textContent = txt; d.style.marginTop = '2px'; det.appendChild(d); }
       tr.appendChild(det);
-      tr.appendChild(td(signOf(r.tipo) + usd.format(r.monto), 'num ' + colorOf(r.tipo)));
+      { const mc = td(signOf(r.tipo) + usd.format(r.monto), 'num ' + colorOf(r.tipo)); if (r.parte < 100) { const sm = document.createElement('div'); sm.className = 'sub'; sm.style.fontSize = '12px'; sm.style.margin = '0'; sm.textContent = `tu ${r.parte}% de ${usd.format(r.bruto)}`; mc.appendChild(sm); } tr.appendChild(mc); }
       const act = document.createElement('td'); act.className = 'num';
       if (!r.fijo) act.appendChild(delBtn(r.id, () => col('movimientos').doc(r.id).delete()));
       tr.appendChild(act);
@@ -750,7 +754,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }));
 
     // Cuentas por cobrar
-    const pagos = (id) => rows.filter((r) => r.casoId === id).reduce((s, r) => s + r.monto, 0);
+    const pagos = (id) => rows.filter((r) => r.casoId === id).reduce((s, r) => s + r.bruto, 0);
     const cs = casos.map((c) => { const mv = pagos(c.id); const p = Math.round((mv + c.ajuste) * 100) / 100; const falta = Math.max(0, c.total - p); return { ...c, pagadoMov: mv, pagado: p, falta, pendiente: falta > 0 || (c.total === 0 && p === 0) }; })
       .sort((a, b) => { const na = parseFloat(a.archivo), nb = parseFloat(b.archivo); const ha = !isNaN(na), hb = !isNaN(nb); return (hb - ha) || (ha && hb ? na - nb : 0) || a.archivo.localeCompare(b.archivo, 'es', { numeric: true }) || a.nombre.localeCompare(b.nombre); });
     if (casoSort.col === 'archivo' && casoSort.dir === 'desc') { const sinNum = cs.filter((c) => isNaN(parseFloat(c.archivo))); const conNum = cs.filter((c) => !isNaN(parseFloat(c.archivo))).reverse(); cs.splice(0, cs.length, ...conNum, ...sinNum); }
@@ -943,14 +947,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         ps.forEach((r) => {
           const li = document.createElement('li');
           const d = document.createElement('span'); d.textContent = `${r.fecha.slice(8, 10)} ${MESES[Number(r.fecha.slice(5, 7)) - 1]} ${r.fecha.slice(0, 4)}` + (r.descripcion ? ` · ${r.descripcion}` : '');
-          const m = document.createElement('span'); m.className = 'c-in'; m.textContent = usd.format(r.monto);
+          const m = document.createElement('span'); m.className = 'c-in'; m.textContent = usd.format(r.bruto) + (r.parte < 100 ? ` (tu parte ${usd.format(r.monto)})` : '');
           li.append(d, m); ul.appendChild(li);
         });
         wrap.appendChild(ul);
       }
       if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'sub'; aj.style.margin = '0'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; wrap.appendChild(aj); }
       const ed = document.createElement('div'); ed.className = 'det-edit';
-      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['causa', 'Número de causa', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
+      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Mi parte (%)', 'number'], ['causa', 'Número de causa', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
       const inputs = {};
       FIELDS.forEach(([k, label, type]) => {
         const lb = document.createElement('label'); lb.htmlFor = 'det-' + k; lb.textContent = label;
@@ -967,6 +971,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           else inp.maxLength = 120;
           inp.value = drafts[k] !== undefined ? drafts[k] : (k === 'abono' ? '' : k === 'fpago' ? todayStr : String(c[k] ?? ''));
           if (k === 'abono') inp.placeholder = '0,00';
+          if (k === 'parte') { inp.min = '0'; inp.max = '100'; inp.step = '1'; inp.value = drafts[k] !== undefined ? drafts[k] : String(c.parte); }
         }
         inp.addEventListener('input', () => { drafts[k] = inp.value; });
         lb.appendChild(inp); ed.appendChild(lb); inputs[k] = inp;
@@ -988,6 +993,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const fp = inputs.fpago.value;
         if (v > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(fp)) { setMsg('Elige la fecha en que pagó.', true); return; }
         const upd = {};
+        { const pv = parseFloat(String(inputs.parte.value).replace(',', '.')); if (!(pv >= 0 && pv <= 100)) { setMsg('Mi parte debe estar entre 0 y 100.', true); return; } upd.parte = Math.round(pv * 100) / 100; }
         ['causa', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
         upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
         try {
@@ -1395,7 +1401,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       raw['movimientos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       rows = snap.docs.map((d) => {
         const x = d.data() || {};
-        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
+        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
       }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
       pickMonth(); render();
     }, lost);
@@ -1419,7 +1425,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }, lost);
     col('casos').onSnapshot((snap) => {
       raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || '') }; });
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))) }; });
       render();
     }, lost);
   }
