@@ -1095,7 +1095,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           try { await col('casos').doc(c.id).update({ archivado: !c.archivado }); openCaso = null; setMsg(c.archivado ? `${c.nombre} volvió a la lista de casos.` : `${c.nombre} pasó a Procesos archivados.`); render(); }
           catch (e) { setMsg('No se pudo archivar. Intenta de nuevo.', true); }
         });
-        ed.appendChild(ab); }
+        ed.insertBefore(ab, sv); }
       wrap.appendChild(ed);
       if (c.pagado > c.total) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
       cell.appendChild(wrap); dr.appendChild(cell);
