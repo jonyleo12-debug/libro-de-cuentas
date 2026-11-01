@@ -313,32 +313,32 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 [aria-labelledby="h-inv"]    { --t1: #5b3b9a; --t2: #8f6fd6; --t3: #c8b6f2; --tint: #f0eafd; }
 [aria-labelledby="h-fijos"]  { --t1: #c24a63; --t2: #ec7f90; --t3: #f7b9c2; --tint: #fdeaed; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tbox { --tint: rgba(255,255,255,.04); } }
-:root[data-theme="dark"] .tbox { --tint: rgba(255,255,255,.04); }
+:root[data-theme="dark"] .tone .tbox { --tint: rgba(255,255,255,.04); }
 
-.tbox { border-radius: 18px; box-shadow: 0 10px 28px -14px rgba(20,20,50,.35); background: var(--panel); }
-.tbox table { border-collapse: separate; border-spacing: 0; }
-.tbox thead tr { background:
+.tone .tbox { border-radius: 18px; box-shadow: 0 10px 28px -14px rgba(20,20,50,.35); background: var(--panel); }
+.tone .tbox table { border-collapse: separate; border-spacing: 0; }
+.tone .tbox thead tr { background:
     linear-gradient(115deg, transparent 0 18%, rgba(255,255,255,.14) 18% 30%, transparent 30%) ,
     linear-gradient(65deg, transparent 0 24%, rgba(255,255,255,.10) 24% 36%, transparent 36%),
     linear-gradient(115deg, transparent 0 36%, rgba(0,0,0,.08) 36% 46%, transparent 46%),
     linear-gradient(100deg, var(--t1) 0%, var(--t2) 38%, var(--t3) 100%); }
-.tbox th { color: #fff; border-bottom: 0; padding: 14px 10px; text-shadow: 0 1px 2px rgba(0,0,0,.18); }
-.tbox th:first-child { border-top-left-radius: 18px; padding-left: 16px; }
-.tbox th:last-child { border-top-right-radius: 18px; padding-right: 16px; }
-.tbox .th-on { color: #fff; }
-.tbox .th-arrow { background: rgba(255,255,255,.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
-.tbox .th-on .th-arrow { background: #fff; color: var(--t1); }
-.tbox th .arch-btn { background: rgba(255,255,255,.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
-.tbox th .arch-btn.on { background: #fff; color: var(--t1); }
-.tbox tbody tr:not(.det-row) { background: linear-gradient(90deg, var(--tint) 0%, var(--panel) 55%); }
-.tbox tbody tr:not(.det-row):hover { background: linear-gradient(90deg, color-mix(in srgb, var(--t3) 40%, var(--panel)), var(--panel) 65%); }
-.tbox tbody tr:not(.det-row) td, .tbox tbody tr:not(.det-row):hover td { background: transparent; border-bottom: 1px solid color-mix(in srgb, var(--t2) 14%, transparent); }
-.tbox tbody tr:not(.det-row) td:first-child { box-shadow: inset 5px 0 0 var(--t2); padding-left: 16px; }
-.tbox tbody tr:not(.det-row) td:last-child { padding-right: 16px; }
-.tbox { overflow: hidden; overflow-x: auto; }
-.tbox tfoot td { border-top: 2px solid var(--t2); font-weight: 600; }
-.tbox .empty { color: var(--muted); }
-.tbox .det-row td { border-left: 5px solid var(--t2); }
+.tone .tbox th { color: #fff; border-bottom: 0; padding: 14px 10px; text-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.tone .tbox th:first-child { border-top-left-radius: 18px; padding-left: 16px; }
+.tone .tbox th:last-child { border-top-right-radius: 18px; padding-right: 16px; }
+.tone .tbox .th-on { color: #fff; }
+.tone .tbox .th-arrow { background: rgba(255,255,255,.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.tone .tbox .th-on .th-arrow { background: #fff; color: var(--t1); }
+.tone .tbox th .arch-btn { background: rgba(255,255,255,.22); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
+.tone .tbox th .arch-btn.on { background: #fff; color: var(--t1); }
+.tone .tbox tbody tr:not(.det-row) { background: linear-gradient(90deg, var(--tint) 0%, var(--panel) 55%); }
+.tone .tbox tbody tr:not(.det-row):hover { background: linear-gradient(90deg, color-mix(in srgb, var(--t3) 40%, var(--panel)), var(--panel) 65%); }
+.tone .tbox tbody tr:not(.det-row) td, .tone .tbox tbody tr:not(.det-row):hover td { background: transparent; border-bottom: 1px solid color-mix(in srgb, var(--t2) 14%, transparent); }
+.tone .tbox tbody tr:not(.det-row) td:first-child { box-shadow: inset 5px 0 0 var(--t2); padding-left: 16px; }
+.tone .tbox tbody tr:not(.det-row) td:last-child { padding-right: 16px; }
+.tone .tbox { overflow: hidden; overflow-x: auto; }
+.tone .tbox tfoot td { border-top: 2px solid var(--t2); font-weight: 600; }
+.tone .tbox .empty { color: var(--muted); }
+.tone .tbox .det-row td { border-left: 5px solid var(--t2); }
 #casos .archivo { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--t1); text-align: center; background: var(--panel); }
 :root[data-theme="dark"] #casos .archivo { color: var(--t3); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #casos .archivo { color: var(--t3); } }
@@ -466,7 +466,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <span class="sub" id="prom-n" style="margin:0">Se calcula cuando registres tu primer honorario.</span>
   </div>
 
-  <section class="panel" id="sec-casos" aria-labelledby="h-cobrar">
+  <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar">
     <div class="budget-row">
       <h2 id="h-cobrar">Casos</h2>
       <span><span class="sub" style="display:inline">Por cobrar</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
@@ -480,7 +480,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     </div>
   </section>
 
-  <section class="panel" id="sec-inv" aria-labelledby="h-inv">
+  <section class="panel tone" id="sec-inv" aria-labelledby="h-inv">
     <div class="budget-row">
       <h2 id="h-inv">Mis inversiones</h2>
       <span><b class="c-inv" id="inv-v">—</b> <span class="sub" style="display:inline">invertido</span></span>
@@ -495,7 +495,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     </div>
   </section>
 
-  <section class="panel" id="sec-fijos" aria-labelledby="h-fijos">
+  <section class="panel tone" id="sec-fijos" aria-labelledby="h-fijos">
     <h2 id="h-fijos">Fijos de cada mes</h2>
     <p class="sub" style="margin:0">Estos movimientos se anotan solos en todos los meses desde que los agregas. Para sumar otro, marca "Repetir cada mes" al agregarlo.</p>
     <div class="tbox">
@@ -593,14 +593,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
   // Color del libro: each choice has a light and a dark version
   const COLORS = {
-    verde:   { name: 'Verde',   light: ['#1f6b57', '#e3efea'], dark: ['#5cbf9f', '#1d3029'] },
     azul:    { name: 'Azul',    light: ['#2456a6', '#e4ebf7'], dark: ['#7aa7ef', '#1c2638'] },
-    morado:  { name: 'Morado',  light: ['#6a3fa0', '#eee6f6'], dark: ['#b592e6', '#2a2236'] },
     rojo:     { name: 'Rojo',     light: ['#c0262d', '#fbe4e4'], dark: ['#f2777b', '#3a1f21'] },
+    morado:  { name: 'Morado',  light: ['#6a3fa0', '#eee6f6'], dark: ['#b592e6', '#2a2236'] },
     rosado:   { name: 'Rosado',   light: ['#c2367e', '#fbe4f0'], dark: ['#f08cc0', '#3a2030'] },
+    verde:   { name: 'Verde',   light: ['#1f6b57', '#e3efea'], dark: ['#5cbf9f', '#1d3029'] },
     amarillo: { name: 'Amarillo', light: ['#9a7200', '#fbf1d0'], dark: ['#f2c94c', '#38301a'] },
   };
-  let colorKey = 'verde';
+  let colorKey = 'azul';
   try { const k = localStorage.getItem('libro-color'); if (k && COLORS[k]) colorKey = k; } catch (e) {}
   const isDark = () => { const t = document.documentElement.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
   function applyColor() {
