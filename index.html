@@ -655,13 +655,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
     // Cuentas por cobrar
     const pagos = (id) => rows.filter((r) => r.casoId === id).reduce((s, r) => s + r.monto, 0);
-    const cs = casos.map((c) => { const mv = pagos(c.id); const p = Math.round((mv + c.ajuste) * 100) / 100; return { ...c, pagadoMov: mv, pagado: p, falta: Math.max(0, c.total - p) }; })
+    const cs = casos.map((c) => { const mv = pagos(c.id); const p = Math.round((mv + c.ajuste) * 100) / 100; const falta = Math.max(0, c.total - p); return { ...c, pagadoMov: mv, pagado: p, falta, pendiente: falta > 0 || (c.total === 0 && p === 0) }; })
       .sort((a, b) => { const na = parseFloat(a.archivo), nb = parseFloat(b.archivo); const ha = !isNaN(na), hb = !isNaN(nb); return (hb - ha) || (ha && hb ? na - nb : 0) || a.archivo.localeCompare(b.archivo, 'es', { numeric: true }) || a.nombre.localeCompare(b.nombre); });
     if (casoSort.col === 'archivo' && casoSort.dir === 'desc') { const sinNum = cs.filter((c) => isNaN(parseFloat(c.archivo))); const conNum = cs.filter((c) => !isNaN(parseFloat(c.archivo))).reverse(); cs.splice(0, cs.length, ...conNum, ...sinNum); }
     else if (casoSort.col === 'nombre') cs.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es') * (casoSort.dir === 'asc' ? 1 : -1));
     else if (['total', 'pagado', 'falta'].includes(casoSort.col)) { const k = casoSort.col, m = casoSort.dir === 'asc' ? 1 : -1; cs.sort((a, b) => (a[k] - b[k]) * m); }
     syncCasoSelects();
-    const csView = casoFiltro === 'pagados' ? cs.filter((c) => c.falta <= 0) : casoFiltro === 'pendientes' ? cs.filter((c) => c.falta > 0) : cs;
+    const csView = casoFiltro === 'pagados' ? cs.filter((c) => !c.pendiente) : casoFiltro === 'pendientes' ? cs.filter((c) => c.pendiente) : cs;
     const porCobrar = cs.reduce((s, c) => s + c.falta, 0);
     const pend = cs.filter((c) => c.falta > 0).length;
     $('cob-v').textContent = usd.format(porCobrar);
@@ -686,7 +686,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       ar.appendChild(ai); tr.appendChild(ar);
       const n = document.createElement('td'); n.textContent = c.nombre;
-      if (c.falta <= 0) { const t = document.createElement('span'); t.className = 'tag c-in'; t.style.marginLeft = '6px'; t.textContent = 'Pagado'; n.appendChild(t); }
+      if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in'; t.style.marginLeft = '6px'; t.textContent = 'Pagado'; n.appendChild(t); }
+      else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-out'; t.style.marginLeft = '6px'; t.textContent = 'Pendiente'; n.appendChild(t); }
       tr.appendChild(n);
       const moneyCell = (key, val, label, cls, save) => {
         const cell = document.createElement('td'); cell.className = 'num';
