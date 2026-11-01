@@ -337,6 +337,13 @@ body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none 
 .nuevo-caso label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 body.invitado .totals, body.invitado section[aria-labelledby="h-nuevo"], body.invitado .grid2, body.invitado #prom, body.invitado #sec-inv, body.invitado #sec-fijos, body.invitado section[aria-labelledby="h-resp"], body.invitado #aviso-resp, body.invitado #hero-color, body.invitado .hero-nav, body.invitado .hero-caret { display: none !important; }
 body.invitado #sec-casos { display: grid !important; }
+.fila-nuevo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .fila-nuevo { grid-template-columns: minmax(0, 1fr); } }
+body.invitado .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
+#sec-notas .notas { grid-template-columns: minmax(0, 1fr); max-height: 520px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
+body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); max-height: none; }
+#sec-notas .nota-bar { justify-content: space-between; }
+#sec-notas .nota-para-l { min-width: 0; flex: 1 1 140px; margin-right: 0; }
 .nota-form { display: grid; gap: 10px; }
 .nota-form textarea { resize: vertical; min-height: 70px; }
 .nota-bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; justify-content: flex-end; }
@@ -559,6 +566,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <div class="tot"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small id="t-inv-rinde" class="c-in" hidden></small><small>Lo que apartaste este mes</small></div>
   </section>
 
+<div class="fila-nuevo" id="fila-nuevo">
   <section class="panel" aria-labelledby="h-nuevo">
     <h2 id="h-nuevo">Nuevo movimiento</h2>
     <form class="form" id="f">
@@ -589,6 +597,19 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     </form>
     <p class="msg" id="f-msg" role="status"></p>
   </section>
+  <section class="panel" id="sec-notas" aria-labelledby="h-notas">
+    <div class="budget-row"><h2 id="h-notas">Notas</h2><span class="sub" style="display:inline" id="notas-n"></span></div>
+    <form class="nota-form" id="nota-form">
+      <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota…" aria-label="Nueva nota"></textarea>
+      <div class="nota-bar">
+        <label class="nota-para-l" id="nota-para-l">Para<select id="nota-para"></select></label>
+        <span class="sub" style="margin:0" id="nota-para-txt" hidden></span>
+        <button type="submit" class="btn">Guardar nota</button>
+      </div>
+    </form>
+    <div class="notas" id="notas"></div>
+  </section>
+</div>
 
   <div class="grid2">
     <section class="panel" aria-labelledby="h-mov">
@@ -671,18 +692,6 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     </div>
   </section>
 
-  <section class="panel" id="sec-notas" aria-labelledby="h-notas">
-    <div class="budget-row"><h2 id="h-notas">Notas</h2><span class="sub" style="display:inline" id="notas-n"></span></div>
-    <form class="nota-form" id="nota-form">
-      <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota…" aria-label="Nueva nota"></textarea>
-      <div class="nota-bar">
-        <label class="nota-para-l" id="nota-para-l">Para<select id="nota-para"></select></label>
-        <span class="sub" style="margin:0" id="nota-para-txt" hidden></span>
-        <button type="submit" class="btn">Guardar nota</button>
-      </div>
-    </form>
-    <div class="notas" id="notas"></div>
-  </section>
 
   <section class="panel" aria-labelledby="h-resp">
     <h2 id="h-resp">Respaldo</h2>
@@ -916,7 +925,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   };
   // Reorder blocks below Nuevo movimiento by long-pressing a collapse button
   const appEl = document.getElementById('app');
-  const nuevoEl = document.querySelector('#app section[aria-labelledby="h-nuevo"]');
+  const nuevoEl = document.getElementById('fila-nuevo');
   const claveBloque = (el) => el.classList.contains('grid2') ? 'b-grid' : el.id === 'prom' ? 'b-prom' : (el.querySelector('h2') || {}).id || '';
   const bloques = () => { const arr = [...appEl.children]; return arr.slice(arr.indexOf(nuevoEl) + 1).filter((el) => claveBloque(el)); };
   const bloqueDe = (sec) => { let el = sec; while (el.parentElement && el.parentElement !== appEl) el = el.parentElement; return el; };
@@ -968,7 +977,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       const poner = (on) => { sec.classList.toggle('plegada', on); b.setAttribute('aria-expanded', String(!on)); b.setAttribute('aria-label', (on ? 'Mostrar ' : 'Contraer ') + h.textContent); b.title = on ? 'Mostrar' : 'Contraer'; };
       poner(!!plegadas[key]); ponerPlegada[key] = poner;
-      b.addEventListener('pointerdown', (e) => iniciarArrastre(e, sec, b));
+      if (sec.id !== 'sec-notas') b.addEventListener('pointerdown', (e) => iniciarArrastre(e, sec, b));
       b.addEventListener('click', (e) => { if (b.dataset.movido) { delete b.dataset.movido; e.preventDefault(); return; } const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} guardarVista('plegadas', { ...plegadas }); });
       sec.appendChild(b);
     });
