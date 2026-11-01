@@ -227,6 +227,12 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 #casos .archivo, #casos .monto-in { box-sizing: border-box; padding: 6px 10px; }
 #casos .archivo { width: 60px; }
 #casos .monto-in { width: 78px; }
+/* Excel-style sort/filter arrows on the casos table headers. */
+.th-f { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+.th-arrow { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; font-size: 10px; background: var(--panel); box-shadow: 0 1px 3px rgba(0,0,0,.12), inset 0 0 0 1px var(--line); color: var(--muted); }
+.th-on .th-arrow { background: var(--accent); color: #fff; box-shadow: none; }
+.th-on { color: var(--fg); }
+.th-sel { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; border: 0; box-shadow: none; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -347,7 +353,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
     <p class="sub" style="margin:0">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
     <div class="tbox">
       <table>
-        <thead><tr><th>Archivo</th><th>Caso</th><th class="num">Total</th><th class="num">Pagado</th><th class="num">Falta</th><th></th></tr></thead>
+        <thead><tr><th><span class="th-f">Archivo<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="archivo" aria-label="Ordenar o filtrar por Archivo"><option value="asc">Menor a mayor</option><option value="desc">Mayor a menor</option></select></span></th><th><span class="th-f">Caso<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="caso" aria-label="Ordenar o filtrar por Caso"><option value="">Todos</option><option value="az">A → Z</option><option value="za">Z → A</option><option value="pagados">Solo pagados</option><option value="pendientes">Solo pendientes</option></select></span></th><th class="num"><span class="th-f">Total<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="total" aria-label="Ordenar o filtrar por Total"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Pagado<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="pagado" aria-label="Ordenar o filtrar por Pagado"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Falta<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="falta" aria-label="Ordenar o filtrar por Falta"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th></th></tr></thead>
         <tbody id="casos"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -498,6 +504,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   new MutationObserver(applyColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   let drafts = {};
   let archDrafts = {};
+  let casoSort = { col: 'archivo', dir: 'asc' }, casoFiltro = '';
+  function syncCasoSelects() {
+    document.querySelectorAll('.th-sel').forEach((sel) => {
+      const k = sel.dataset.col;
+      if (k === 'caso') sel.value = casoFiltro || (casoSort.col === 'nombre' ? (casoSort.dir === 'asc' ? 'az' : 'za') : '');
+      else sel.value = casoSort.col === k ? casoSort.dir : (k === 'archivo' ? 'asc' : '');
+      sel.closest('th').classList.toggle('th-on', k === 'caso' ? !!sel.value : (casoSort.col === k && !(k === 'archivo' && casoSort.dir === 'asc')));
+    });
+  }
+  document.querySelectorAll('.th-sel').forEach((sel) => sel.addEventListener('change', () => {
+    const k = sel.dataset.col, v = sel.value;
+    if (k === 'caso') {
+      if (v === 'az' || v === 'za') { casoSort = { col: 'nombre', dir: v === 'az' ? 'asc' : 'desc' }; casoFiltro = ''; }
+      else casoFiltro = v;
+    } else casoSort = v ? { col: k, dir: v } : { col: 'archivo', dir: 'asc' };
+    render();
+  }));
   let db = null;
   let userPickedMonth = false;
   let armed = null;
@@ -634,6 +657,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const pagos = (id) => rows.filter((r) => r.casoId === id).reduce((s, r) => s + r.monto, 0);
     const cs = casos.map((c) => { const mv = pagos(c.id); const p = Math.round((mv + c.ajuste) * 100) / 100; return { ...c, pagadoMov: mv, pagado: p, falta: Math.max(0, c.total - p) }; })
       .sort((a, b) => { const na = parseFloat(a.archivo), nb = parseFloat(b.archivo); const ha = !isNaN(na), hb = !isNaN(nb); return (hb - ha) || (ha && hb ? na - nb : 0) || a.archivo.localeCompare(b.archivo, 'es', { numeric: true }) || a.nombre.localeCompare(b.nombre); });
+    if (casoSort.col === 'archivo' && casoSort.dir === 'desc') { const sinNum = cs.filter((c) => isNaN(parseFloat(c.archivo))); const conNum = cs.filter((c) => !isNaN(parseFloat(c.archivo))).reverse(); cs.splice(0, cs.length, ...conNum, ...sinNum); }
+    else if (casoSort.col === 'nombre') cs.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es') * (casoSort.dir === 'asc' ? 1 : -1));
+    else if (['total', 'pagado', 'falta'].includes(casoSort.col)) { const k = casoSort.col, m = casoSort.dir === 'asc' ? 1 : -1; cs.sort((a, b) => (a[k] - b[k]) * m); }
+    syncCasoSelects();
+    const csView = casoFiltro === 'pagados' ? cs.filter((c) => c.falta <= 0) : casoFiltro === 'pendientes' ? cs.filter((c) => c.falta > 0) : cs;
     const porCobrar = cs.reduce((s, c) => s + c.falta, 0);
     const pend = cs.filter((c) => c.falta > 0).length;
     $('cob-v').textContent = usd.format(porCobrar);
@@ -642,7 +670,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('sec-casos').hidden = !cs.length;
     const cbody = $('casos');
     if (!cs.length) cbody.replaceChildren(emptyRow(6, 'Aún no tienes casos. Anota un honorario con su caso y total.'));
-    else cbody.replaceChildren(...cs.flatMap((c) => {
+    else if (!csView.length) cbody.replaceChildren(emptyRow(6, casoFiltro === 'pagados' ? 'No hay casos pagados.' : 'No hay casos pendientes.'));
+    else cbody.replaceChildren(...csView.flatMap((c) => {
       const tr = document.createElement('tr');
       const ar = document.createElement('td');
       const ai = document.createElement('input'); ai.type = 'text'; ai.className = 'archivo'; ai.id = 'arch-' + c.id; ai.maxLength = 20;
