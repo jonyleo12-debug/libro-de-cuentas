@@ -154,6 +154,15 @@ img { max-width: 100%; }
   --ink: #0f1012; --ink-fg: #f5f5f7; --sh-hi: #292a2f; --sh-lo: #121315; }
 
 body { font-size: 15px; letter-spacing: -.005em; }
+body::before { content: ''; position: fixed; inset: -10vmax; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38vmax 34vmax at 6% 18%, color-mix(in srgb, var(--accent) 42%, transparent), transparent 70%),
+    radial-gradient(30vmax 28vmax at 96% 62%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%),
+    radial-gradient(24vmax 22vmax at 12% 92%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+    radial-gradient(22vmax 20vmax at 88% 6%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+  filter: blur(30px); animation: manchas 28s ease-in-out infinite alternate; }
+@keyframes manchas { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(2vmax, -2vmax, 0) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
 .wrap { gap: 30px; padding-block: 32px 64px; }
 h1, h2 { font-weight: 400; letter-spacing: -.01em; }
 h2 { font-size: 22px; }
@@ -287,22 +296,6 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .agenda .det-nota + .det-nota { color: var(--muted); font-weight: 400; }
 .agenda .det-list { color: var(--ink); }
 .det-list li.aud-edit { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; margin: 6px 0; }
-.lado { display: none; }
-@media (min-width: 1520px) {
-  .lado:not([hidden]) { display: grid; align-content: start; gap: 10px; position: fixed; top: 150px; width: 230px; max-height: calc(100vh - 180px); overflow: auto; padding: 18px; border-radius: 22px; background: var(--panel); box-shadow: var(--raise-sm); box-sizing: border-box; scrollbar-width: none; }
-  .lado-izq { left: calc(50% - 490px - 24px - 230px); }
-  .lado-der { right: calc(50% - 490px - 24px - 230px); }
-}
-.lado h3 { margin: 0 0 4px; font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 17px; }
-.lado .lado-vacio { margin: 0; font-size: 13px; color: var(--muted); }
-.lado-item { display: grid; gap: 3px; text-align: left; width: 100%; padding: 10px 12px; border: 0; border-radius: 14px; background: transparent; color: var(--ink); font: inherit; cursor: pointer; border-left: 3px solid var(--line); }
-.lado-item:hover { background: rgba(0,0,0,.035); }
-.lado-item.c-aud { border-left-color: #c0262d; } .lado-item.c-dil { border-left-color: #6a3fa0; } .lado-item.c-cob { border-left-color: #b4671a; }
-.lado-item .li-k { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-.lado-item.c-aud .li-k { color: #c0262d; } .lado-item.c-dil .li-k { color: #6a3fa0; } .lado-item.c-cob .li-k { color: #b4671a; }
-.lado-item .li-n { font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
-.lado-item .li-d { font-size: 12px; color: var(--muted); }
-.lado-item.aviso { animation: none; background: rgba(192,38,45,.06); }
 .det-acts { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
 .det-acts .btn { width: auto; padding-left: 28px; padding-right: 28px; }
 .agenda .det-h { color: inherit; }
@@ -387,8 +380,6 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   </form>
 </div>
 
-<aside class="lado lado-izq" id="lado-izq" aria-label="Próximas audiencias y diligencias" hidden></aside>
-<aside class="lado lado-der" id="lado-der" aria-label="Casos por cobrar" hidden></aside>
 <div class="wrap" id="app" hidden>
   <nav class="side menu" aria-label="Menú">
     <div class="usr">
@@ -772,48 +763,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   const sum = (list, tipo) => list.filter((r) => r.tipo === tipo).reduce((s, r) => s + r.monto, 0);
 
-  function irACaso(cid, panel) {
-    const c = casos.find((x) => x.id === cid); if (!c) return;
-    verArch = !!c.archivado; casoFiltro = ''; casoBusca = '';
-    { const bi = document.getElementById('busca-caso'); if (bi) bi.value = ''; }
-    if (panel === 'agenda') { openObs = cid; openCaso = null; obsAud = {}; } else { openCaso = cid; openObs = null; drafts = {}; }
-    render();
-    const fila = document.querySelector(`#casos tr[data-caso="${cid}"]`);
-    if (fila) fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-  function renderLados(cs) {
-    const izq = document.getElementById('lado-izq'), der = document.getElementById('lado-der');
-    const ahora = new Date().toISOString();
-    const manana = new Date(Date.now() + 2 * 864e5).toISOString();
-    const prox = auds.filter((a) => a.fin >= ahora).sort((a, b) => a.inicio.localeCompare(b.inicio)).slice(0, 8);
-    const hi = document.createElement('h3'); hi.textContent = 'Próximas';
-    const itemsI = prox.map((a) => {
-      const b = document.createElement('button'); b.type = 'button';
-      const dil = claseDe(a) === 'diligencia';
-      b.className = 'lado-item ' + (dil ? 'c-dil' : 'c-aud') + (a.inicio <= manana ? ' aviso' : '');
-      const k = document.createElement('span'); k.className = 'li-k'; k.textContent = dil ? 'Diligencia' : 'Audiencia';
-      const c = casos.find((x) => esDelCaso(a, x));
-      const n = document.createElement('span'); n.className = 'li-n'; n.textContent = (c && c.nombre) || a.caso || 'Sin caso';
-      const d = document.createElement('span'); d.className = 'li-d'; d.textContent = new Date(a.inicio).toLocaleString('es-EC', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Guayaquil' }) + (a.lugar ? ' · ' + a.lugar : '');
-      b.append(k, n, d);
-      if (c) b.addEventListener('click', () => irACaso(c.id, 'agenda')); else b.disabled = true;
-      return b;
-    });
-    if (!itemsI.length) { const v = document.createElement('p'); v.className = 'lado-vacio'; v.textContent = 'No tienes audiencias ni diligencias agendadas.'; itemsI.push(v); }
-    izq.replaceChildren(hi, ...itemsI);
-    const cob = cs.filter((c) => !c.archivado && c.falta > 0).sort((a, b) => b.falta - a.falta);
-    const hd = document.createElement('h3'); hd.textContent = 'Por cobrar';
-    const tot = document.createElement('p'); tot.className = 'lado-vacio'; tot.textContent = cob.length ? `${usd.format(cob.reduce((s2, c) => s2 + c.falta, 0))} en ${cob.length} ${cob.length === 1 ? 'caso' : 'casos'}` : 'No tienes saldos pendientes.';
-    const itemsD = cob.slice(0, 8).map((c) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'lado-item c-cob';
-      const n = document.createElement('span'); n.className = 'li-n'; n.textContent = c.nombre;
-      const d = document.createElement('span'); d.className = 'li-k'; d.textContent = 'Falta ' + usd.format(c.falta);
-      b.append(n, d); b.addEventListener('click', () => irACaso(c.id, 'detalle'));
-      return b;
-    });
-    der.replaceChildren(hd, tot, ...itemsD);
-    izq.hidden = false; der.hidden = false;
-  }
   function render() {
     { // only my share of each case payment counts as my income
       const pm = new Map(casos.map((c) => [c.id, c.parte]));
@@ -931,7 +880,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('ver-arch-t').textContent = verArch ? 'Volver a casos' : `Archivados${nArch ? ' (' + nArch + ')' : ''}`;
     $('ver-arch').title = verArch ? 'Volver a la lista de casos' : 'Ver procesos archivados';
     const qb = window.__normBusca(casoBusca);
-    renderLados(cs);
     const csLista = cs.filter((c) => !!c.archivado === verArch && (!qb || window.__normBusca(c.nombre + ' ' + c.cedula + ' ' + c.causa + ' ' + c.archivo).includes(qb)));
     const csView = !casoFiltro ? csLista : casoFiltro.startsWith('et:') ? csLista.filter((c) => c.etiqueta.trim() === casoFiltro.slice(3)) : filtros[casoFiltro] ? csLista.filter(filtros[casoFiltro]) : csLista;
     const porCobrar = casosAct.reduce((s, c) => s + c.falta, 0);
@@ -944,7 +892,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (!cs.length) cbody.replaceChildren(emptyRow(6, 'Aún no tienes casos. Anota un honorario con su caso y total.'));
     else if (!csView.length) cbody.replaceChildren(emptyRow(6, casoBusca ? `No hay casos que coincidan con "${casoBusca}".` : verArch && !casoFiltro ? 'No tienes procesos archivados. Archiva uno desde su Detalle.' : 'No hay casos con ese estado.'));
     else cbody.replaceChildren(...csView.flatMap((c) => {
-      const tr = document.createElement('tr'); tr.dataset.caso = c.id;
+      const tr = document.createElement('tr');
       const ar = document.createElement('td');
       const ai = document.createElement('input'); ai.type = 'text'; ai.className = 'archivo'; ai.id = 'arch-' + c.id; ai.maxLength = 20;
       ai.placeholder = 'N.º'; ai.setAttribute('aria-label', 'Número de archivo de ' + c.nombre);
@@ -1548,7 +1496,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
   let started = false;
   onAuthStateChanged(auth, (u) => {
-    if (!u) { $('app').hidden = true; $('lado-izq').hidden = true; $('lado-der').hidden = true; $('auth').hidden = false; return; }
+    if (!u) { $('app').hidden = true; $('auth').hidden = false; return; }
     $('auth').hidden = true; $('app').hidden = false;
     if (started) return;
     started = true;
