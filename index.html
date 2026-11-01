@@ -223,6 +223,10 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
   :root:not([data-theme="light"]) .menu input, :root:not([data-theme="light"]) .menu .ghost { background: rgba(0,0,0,.25); } }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .menu { background: var(--panel); } }
 @media (max-width: 640px) { .menu { justify-self: stretch; justify-content: space-between; gap: 8px 14px; padding: 8px 12px; } .menu .usr-l { display: none; } }
+/* Compact inline inputs in the casos table. */
+#casos .archivo, #casos .monto-in { box-sizing: border-box; padding: 6px 10px; }
+#casos .archivo { width: 60px; }
+#casos .monto-in { width: 78px; }
 </style>
 </head>
 <body>
@@ -678,8 +682,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const det = document.createElement('button'); det.type = 'button'; det.className = 'ghost' + (open ? ' on' : '');
       det.textContent = open ? 'Cerrar' : 'Detalle'; det.setAttribute('aria-expanded', String(open));
       det.addEventListener('click', () => { openCaso = open ? null : c.id; drafts = {}; render(); });
-      act.appendChild(det);
       act.appendChild(delBtn('caso:' + c.id, () => col('casos').doc(c.id).delete(), 'Quitar', '¿Quitar?'));
+      act.appendChild(det);
       const obsOpen = openObs === c.id;
       const ob = document.createElement('button'); ob.type = 'button'; ob.className = 'ghost' + (obsOpen ? ' on' : '');
       ob.textContent = obsOpen ? 'Cerrar' : (c.observacion ? 'Observación •' : 'Observación');
