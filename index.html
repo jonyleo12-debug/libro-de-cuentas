@@ -233,6 +233,9 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .th-on .th-arrow { background: var(--accent); color: #fff; box-shadow: none; }
 .th-on { color: var(--fg); }
 .th-sel { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; border: 0; box-shadow: none; font-size: 16px; }
+.c-pend { color: #9a7200; }
+:root[data-theme="dark"] .c-pend { color: #f2c94c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .c-pend { color: #f2c94c; } }
 </style>
 </head>
 <body>
@@ -687,7 +690,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ar.appendChild(ai); tr.appendChild(ar);
       const n = document.createElement('td'); n.textContent = c.nombre;
       if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in'; t.style.marginLeft = '6px'; t.textContent = 'Pagado'; n.appendChild(t); }
-      else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-out'; t.style.marginLeft = '6px'; t.textContent = 'Pendiente'; n.appendChild(t); }
+      else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend'; t.style.marginLeft = '6px'; t.textContent = 'Pendiente'; n.appendChild(t); }
       tr.appendChild(n);
       const moneyCell = (key, val, label, cls, save) => {
         const cell = document.createElement('td'); cell.className = 'num';
