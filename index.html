@@ -337,6 +337,9 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .auto-resp { display: grid; gap: 8px; }
 .auto-list li { align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .auto-list li:last-child { border-bottom: 0; }
+.th-lupa { margin-left: 6px; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; border: 0; padding: 0; cursor: pointer; vertical-align: middle; background: rgba(255,255,255,.14); color: #fff; }
+.th-lupa.on, .th-lupa:hover { background: #fff; color: var(--t1, var(--fg)); }
+.busca-caso { margin-left: 8px; width: 170px; max-width: 45vw; padding: 5px 12px; border-radius: 99px; border: 0; font-size: 13px; text-transform: none; letter-spacing: 0; vertical-align: middle; background: rgba(255,255,255,.92); color: #1b1b1d; box-shadow: none; }
 </style>
 </head>
 <body>
@@ -471,7 +474,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <p class="sub" style="margin:0">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
     <div class="tbox">
       <table>
-        <thead><tr><th><span class="th-f">Archivo<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="archivo" aria-label="Ordenar o filtrar por Archivo"><option value="asc">Menor a mayor</option><option value="desc">Mayor a menor</option></select></span></th><th><span class="th-f">Caso<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="caso" aria-label="Ordenar o filtrar por Caso"><option value="">Todos</option><option value="az">A → Z</option><option value="za">Z → A</option><optgroup label="Estado" data-fijo="1"><option value="pagados">Pagado</option><option value="pendientes">Pendiente</option><option value="saldo">Con saldo por cobrar</option><option value="audiencia">Audiencia</option><option value="diligencia">Diligencia</option></optgroup></select></span></th><th class="num"><span class="th-f">Total<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="total" aria-label="Ordenar o filtrar por Total"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Pagado<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="pagado" aria-label="Ordenar o filtrar por Pagado"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Falta<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="falta" aria-label="Ordenar o filtrar por Falta"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><button type="button" class="ghost arch-btn" id="ver-arch" aria-pressed="false" title="Ver procesos archivados"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg><span id="ver-arch-t">Archivados</span></button></th></tr></thead>
+        <thead><tr><th><span class="th-f">Archivo<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="archivo" aria-label="Ordenar o filtrar por Archivo"><option value="asc">Menor a mayor</option><option value="desc">Mayor a menor</option></select></span></th><th><span class="th-f">Caso<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="caso" aria-label="Ordenar o filtrar por Caso"><option value="">Todos</option><option value="az">A → Z</option><option value="za">Z → A</option><optgroup label="Estado" data-fijo="1"><option value="pagados">Pagado</option><option value="pendientes">Pendiente</option><option value="saldo">Con saldo por cobrar</option><option value="audiencia">Audiencia</option><option value="diligencia">Diligencia</option></optgroup></select></span><button type="button" class="th-lupa" id="lupa-btn" aria-label="Buscar caso por nombre" aria-expanded="false"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button><input type="search" id="busca-caso" class="busca-caso" placeholder="Buscar nombre…" aria-label="Buscar caso por nombre" hidden></th><th class="num"><span class="th-f">Total<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="total" aria-label="Ordenar o filtrar por Total"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Pagado<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="pagado" aria-label="Ordenar o filtrar por Pagado"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Falta<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="falta" aria-label="Ordenar o filtrar por Falta"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><button type="button" class="ghost arch-btn" id="ver-arch" aria-pressed="false" title="Ver procesos archivados"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg><span id="ver-arch-t">Archivados</span></button></th></tr></thead>
         <tbody id="casos"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody>
       </table>
     </div>
@@ -628,7 +631,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   new MutationObserver(applyColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   let drafts = {};
   let archDrafts = {};
-  let casoSort = { col: 'archivo', dir: 'asc' }, casoFiltro = '', verArch = false;
+  let casoSort = { col: 'archivo', dir: 'asc' }, casoFiltro = '', verArch = false, casoBusca = '';
+  { const lb = document.getElementById('lupa-btn'), bi = document.getElementById('busca-caso');
+    const norm = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    window.__normBusca = norm;
+    lb.addEventListener('click', () => { const open = bi.hidden; bi.hidden = !open; lb.setAttribute('aria-expanded', String(open)); lb.classList.toggle('on', open || !!casoBusca);
+      if (open) bi.focus(); else if (!bi.value) { casoBusca = ''; render(); } });
+    bi.addEventListener('input', () => { casoBusca = bi.value.trim(); lb.classList.toggle('on', true); render(); });
+    bi.addEventListener('keydown', (e) => { if (e.key === 'Escape') { bi.value = ''; casoBusca = ''; bi.hidden = true; lb.classList.remove('on'); lb.setAttribute('aria-expanded', 'false'); render(); lb.focus(); } }); }
   document.getElementById('ver-arch').addEventListener('click', () => { verArch = !verArch; openCaso = null; openObs = null; render(); });
   function syncCasoSelects() {
     document.querySelectorAll('.th-sel').forEach((sel) => {
@@ -834,7 +844,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('ver-arch').setAttribute('aria-pressed', String(verArch)); $('ver-arch').classList.toggle('on', verArch);
     $('ver-arch-t').textContent = verArch ? 'Volver a casos' : `Archivados${nArch ? ' (' + nArch + ')' : ''}`;
     $('ver-arch').title = verArch ? 'Volver a la lista de casos' : 'Ver procesos archivados';
-    const csLista = cs.filter((c) => !!c.archivado === verArch);
+    const qb = window.__normBusca(casoBusca);
+    const csLista = cs.filter((c) => !!c.archivado === verArch && (!qb || window.__normBusca(c.nombre + ' ' + c.cedula + ' ' + c.causa + ' ' + c.archivo).includes(qb)));
     const csView = !casoFiltro ? csLista : casoFiltro.startsWith('et:') ? csLista.filter((c) => c.etiqueta.trim() === casoFiltro.slice(3)) : filtros[casoFiltro] ? csLista.filter(filtros[casoFiltro]) : csLista;
     const porCobrar = casosAct.reduce((s, c) => s + c.falta, 0);
     const pend = casosAct.filter((c) => c.falta > 0).length;
@@ -844,7 +855,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('sec-casos').hidden = !cs.length;
     const cbody = $('casos');
     if (!cs.length) cbody.replaceChildren(emptyRow(6, 'Aún no tienes casos. Anota un honorario con su caso y total.'));
-    else if (!csView.length) cbody.replaceChildren(emptyRow(6, verArch && !casoFiltro ? 'No tienes procesos archivados. Archiva uno desde su Detalle.' : 'No hay casos con ese estado.'));
+    else if (!csView.length) cbody.replaceChildren(emptyRow(6, casoBusca ? `No hay casos que coincidan con "${casoBusca}".` : verArch && !casoFiltro ? 'No tienes procesos archivados. Archiva uno desde su Detalle.' : 'No hay casos con ese estado.'));
     else cbody.replaceChildren(...csView.flatMap((c) => {
       const tr = document.createElement('tr');
       const ar = document.createElement('td');
