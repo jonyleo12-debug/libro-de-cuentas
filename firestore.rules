@@ -24,6 +24,15 @@ service cloud.firestore {
         allow read, write: if esAsistente(uid);
       }
       // ...y solo ve o registra pagos que pertenecen a un caso (nunca tus otros movimientos).
+      // Notas: el usuario ve las notas para él y las que él escribió; solo puede escribirle al dueño.
+      match /notas/{id} {
+        allow read: if esAsistente(uid) && (resource.data.para == request.auth.uid || resource.data.autor == request.auth.uid);
+        allow create: if esAsistente(uid) && request.resource.data.autor == request.auth.uid && request.resource.data.para == 'dueno';
+        allow update: if esAsistente(uid) && (
+          (resource.data.autor == request.auth.uid && request.resource.data.autor == request.auth.uid && request.resource.data.para == resource.data.para)
+          || (resource.data.para == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hecha', 'hechaEn'])));
+        allow delete: if esAsistente(uid) && resource.data.autor == request.auth.uid;
+      }
       match /movimientos/{id} {
         allow read, delete: if esAsistente(uid) && resource.data.casoId > '';
         allow create: if esAsistente(uid) && request.resource.data.casoId > ''

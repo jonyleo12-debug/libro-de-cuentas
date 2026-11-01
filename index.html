@@ -337,6 +337,22 @@ body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none 
 .nuevo-caso label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 body.invitado .totals, body.invitado section[aria-labelledby="h-nuevo"], body.invitado .grid2, body.invitado #prom, body.invitado #sec-inv, body.invitado #sec-fijos, body.invitado section[aria-labelledby="h-resp"], body.invitado #aviso-resp, body.invitado #hero-color, body.invitado .hero-nav, body.invitado .hero-caret { display: none !important; }
 body.invitado #sec-casos { display: grid !important; }
+.nota-form { display: grid; gap: 10px; }
+.nota-form textarea { resize: vertical; min-height: 70px; }
+.nota-bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; justify-content: flex-end; }
+.nota-para-l { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: auto; min-width: 180px; }
+.nota-bar .btn { width: auto; padding-left: 26px; padding-right: 26px; }
+.notas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.notas:empty { display: none; }
+.nota { --nc: #d9a400; display: grid; gap: 8px; align-content: start; padding: 14px 16px; border-radius: 18px; background: color-mix(in srgb, var(--nc) 13%, var(--panel)); box-shadow: var(--raise-sm); border-top: 4px solid var(--nc); min-height: 120px; }
+.nota.hecha { opacity: .55; }
+.nota.hecha .nota-txt { text-decoration: line-through; }
+.nota-k { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--nc) 75%, var(--ink)); }
+.nota-txt { width: 100%; box-sizing: border-box; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; font: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); resize: none; min-height: 3em; field-sizing: content; }
+.nota-txt:focus { outline: 2px solid color-mix(in srgb, var(--nc) 45%, transparent); outline-offset: 4px; border-radius: 6px; }
+.nota-pie { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.nota-pie .acts { display: inline-flex; gap: 6px; }
+.nota-pie .ghost { padding: 4px 10px; font-size: 12px; }
 body.invitado .hero-mes-btn { pointer-events: none; }
 tr.por-cambio > td, .tone .tbox tbody tr.por-cambio:not(.det-row) > td { background: color-mix(in srgb, var(--pc) 9%, transparent) !important; }
 tr.por-cambio > td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--pc) 70%, transparent); }
@@ -655,6 +671,19 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     </div>
   </section>
 
+  <section class="panel" id="sec-notas" aria-labelledby="h-notas">
+    <div class="budget-row"><h2 id="h-notas">Notas</h2><span class="sub" style="display:inline" id="notas-n"></span></div>
+    <form class="nota-form" id="nota-form">
+      <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota…" aria-label="Nueva nota"></textarea>
+      <div class="nota-bar">
+        <label class="nota-para-l" id="nota-para-l">Para<select id="nota-para"></select></label>
+        <span class="sub" style="margin:0" id="nota-para-txt" hidden></span>
+        <button type="submit" class="btn">Guardar nota</button>
+      </div>
+    </form>
+    <div class="notas" id="notas"></div>
+  </section>
+
   <section class="panel" aria-labelledby="h-resp">
     <h2 id="h-resp">Respaldo</h2>
     <p class="sub" style="margin:0">Descarga una copia de todo tu libro, o carga una copia guardada. Cargar una copia agrega o reemplaza los movimientos con el mismo identificador y no borra nada.</p>
@@ -714,6 +743,7 @@ const wrapCol = (c) => ({
   doc: (id) => wrapDoc(id ? doc(c, id) : doc(c)),
   add: async (d) => { const r = doc(c); track(setDoc(r, d)); return wrapDoc(r); },
   onSnapshot: (next, err) => onSnapshot(c, (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
+  onSnapshotDonde: (campo, op, valor, next, err) => onSnapshot(query(c, where(campo, op, valor)), (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
   onSnapshotDeCasos: (next, err) => onSnapshot(query(c, where('casoId', '>', '')), (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
 });
 const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
@@ -2008,6 +2038,77 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     setMsg(`Caso de ${nombre} creado.`);
   });
 
+  // Notes: owner writes for themself or for a user; a user sees notes for them and can write back to the owner
+  let notas = [];
+  let yoUid = '';
+  const notasPor = {};
+  const nombreDueno = () => invitado ? (invitado.ownerEmail ? invitado.ownerEmail.split('@')[0] : 'el dueño') : 'ti';
+  function pintarParaNotas() {
+    const sel = $('nota-para');
+    if (invitado) { $('nota-para-l').hidden = true; const t = $('nota-para-txt'); t.hidden = false; t.textContent = 'Para ' + nombreDueno(); return; }
+    const prev = sel.value;
+    sel.replaceChildren(...[['', 'Solo para mí'], ...miembros.map((m) => [m.id, m.nombre || usuarioDe(m.email)])].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
+    if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
+    $('nota-para-l').hidden = !miembros.length;
+  }
+  function juntarNotas() { const m = {}; Object.values(notasPor).forEach((arr) => arr.forEach((n) => { m[n.id] = n; })); notas = Object.values(m); renderNotas(); }
+  const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true }; };
+  function renderNotas() {
+    const box = $('notas'); if (!box) return;
+    const yo = yoUid;
+    const lista = notas.slice().sort((a, b) => (a.hecha - b.hecha) || b.creado.localeCompare(a.creado));
+    const pend = lista.filter((n) => !n.hecha && (invitado ? n.para === yo : n.para === '' || n.para === 'dueno')).length;
+    $('notas-n').textContent = pend ? `${pend} ${pend === 1 ? 'pendiente' : 'pendientes'}` : '';
+    box.replaceChildren(...lista.map((n) => {
+      const card = document.createElement('div'); card.className = 'nota' + (n.hecha ? ' hecha' : '');
+      let etiqueta = 'Personal', colorK = '';
+      if (invitado) {
+        if (n.autor === yo) { etiqueta = 'Para ' + nombreDueno(); colorK = invitado.color; }
+        else { etiqueta = 'De ' + nombreDueno(); colorK = invitado.color; }
+      } else if (n.autor !== 'dueno') { const m = miembros.find((x) => x.id === n.autor); etiqueta = 'De ' + (m ? (m.nombre || usuarioDe(m.email)) : (n.autorNombre || 'usuario')); colorK = m ? m.color : n.color; }
+      else if (n.para) { const m = miembros.find((x) => x.id === n.para); etiqueta = 'Para ' + (m ? (m.nombre || usuarioDe(m.email)) : 'usuario eliminado'); colorK = m ? m.color : ''; }
+      if (colorK && COLORS[colorK]) card.style.setProperty('--nc', COLORS[colorK].light[0]);
+      const k = document.createElement('div'); k.className = 'nota-k';
+      const kt = document.createElement('span'); kt.textContent = etiqueta; k.appendChild(kt);
+      if (n.hecha) { const h = document.createElement('span'); h.textContent = 'Hecha ✓'; k.appendChild(h); }
+      const esMia = invitado ? n.autor === yo : n.autor === 'dueno';
+      const t = document.createElement('textarea'); t.className = 'nota-txt'; t.value = n.texto; t.rows = Math.min(12, Math.max(2, n.texto.split('\n').length));
+      t.readOnly = !esMia; t.setAttribute('aria-label', 'Nota');
+      if (esMia) t.addEventListener('change', () => { const v = t.value.trim(); if (v && v !== n.texto) libroRef.collection('notas').doc(n.id).update({ texto: v, editado: new Date().toISOString() }); });
+      const pie = document.createElement('div'); pie.className = 'nota-pie';
+      const f = document.createElement('span'); f.textContent = n.creado ? new Date(n.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+      const acts = document.createElement('span'); acts.className = 'acts';
+      const puedeMarcar = invitado ? n.para === yo : true;
+      if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Hecha';
+        hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
+      if (esMia || !invitado) acts.appendChild(delBtn('nota:' + n.id, () => libroRef.collection('notas').doc(n.id).delete(), 'Borrar', '¿Borrar?'));
+      pie.append(f, acts);
+      card.append(k, t, pie);
+      return card;
+    }));
+  }
+  $('nota-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const texto = $('nota-txt').value.trim(); if (!texto || !libroRef) return;
+    const yo = yoUid;
+    const d = invitado
+      ? { texto, para: 'dueno', autor: yo, autorNombre: invitado.nombre || '', color: invitado.color || '', creado: new Date().toISOString(), hecha: false }
+      : { texto, para: $('nota-para').value || '', autor: 'dueno', autorNombre: '', color: '', creado: new Date().toISOString(), hecha: false };
+    libroRef.collection('notas').add(d);
+    $('nota-txt').value = '';
+    setMsg(d.para && d.para !== 'dueno' ? 'Nota enviada.' : 'Nota guardada.');
+  });
+  function suscribirNotas(lost) {
+    if (invitado) {
+      const yo = yoUid;
+      libroRef.collection('notas').onSnapshotDonde('para', '==', yo, (snap) => { notasPor.para = snap.docs.map(mapNota); juntarNotas(); }, () => {});
+      libroRef.collection('notas').onSnapshotDonde('autor', '==', yo, (snap) => { notasPor.autor = snap.docs.map(mapNota); juntarNotas(); }, () => {});
+    } else {
+      libroRef.collection('notas').onSnapshot((snap) => { notasPor.todo = snap.docs.map(mapNota); juntarNotas(); }, lost);
+    }
+    pintarParaNotas();
+  }
+
   function suscribirCasos(lost) {
     col('audiencias').onSnapshot((snap) => {
       raw['audiencias'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
@@ -2027,6 +2128,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const mapMov = (d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', por: leerPor(x) }; };
 
   function startInvitado(u, acc) {
+    yoUid = u.uid;
     invitado = acc;
     document.body.classList.add('invitado');
     $('u-name').textContent = `${usuarioDe(u.email) || 'Tu cuenta'} · ${ROLES[acc.rol] || acc.rol}`;
@@ -2041,10 +2143,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       render();
     }, lost);
     suscribirCasos(lost);
+    suscribirNotas(lost);
     render();
   }
 
   function startBook(u) {
+    yoUid = u.uid;
     $('u-name').textContent = u.email || 'Tu cuenta';
     db = fireDb;
     libroRef = db.doc('users/' + u.uid);
@@ -2094,9 +2198,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       render();
     }, lost);
     suscribirCasos(lost);
+    suscribirNotas(lost);
     col('miembros').onSnapshot((snap) => {
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || '') }; });
-      renderUsuarios();
+      renderUsuarios(); pintarParaNotas(); renderNotas();
     }, () => {});
   }
 })();
