@@ -62,7 +62,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tot small { color: var(--muted); font-size: 12px; }
 .tot.flip { background: none; padding: 0; box-shadow: none; perspective: 1200px; }
 .tot-in { position: relative; height: 100%; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
-.tot.flip.vuelta .tot-in { transform: rotateY(180deg); }
+.tot.flip.vuelta .tot-in { transform: rotateY(-180deg); }
 .tot .cara, .tot .dorso { background: var(--panel); border-radius: 22px; padding: 18px 20px; box-shadow: var(--raise); display: grid; gap: 4px; align-content: start; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-width: 0; }
 .tot .cara { height: 100%; box-sizing: border-box; }
 .tot .dorso { position: absolute; inset: 0; transform: rotateY(180deg); overflow: hidden; grid-template-rows: auto 1fr; padding-bottom: 14px; }
