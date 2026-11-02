@@ -281,6 +281,10 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 #casos .archivo, #casos .monto-in { box-sizing: border-box; padding: 6px 10px; }
 #casos .archivo { width: 60px; }
 #casos .monto-in { width: 78px; }
+.monto-pila { display: grid; gap: 6px; justify-items: end; }
+.falta-fila { display: flex; align-items: center; justify-content: flex-end; min-height: 35px; }
+.monto-mas { border: 0; background: var(--panel); box-shadow: var(--raise-sm); color: var(--muted); width: 26px; height: 22px; border-radius: 99px; padding: 0; font-size: 15px; line-height: 1; cursor: pointer; }
+.monto-mas:hover { color: var(--ink); }
 /* Excel-style sort/filter arrows on the casos table headers. */
 .th-f { position: relative; display: inline-flex; align-items: center; gap: 4px; }
 .th-arrow { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; font-size: 10px; background: var(--panel); box-shadow: 0 1px 3px rgba(0,0,0,.12), inset 0 0 0 1px var(--line); color: var(--muted); }
@@ -603,6 +607,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   #casos tr:not(.det-row) > td:nth-child(4)::before { content: 'Pagado'; }
   #casos tr:not(.det-row) > td:nth-child(5)::before { content: 'Falta'; }
   #casos .monto-in { width: 100%; text-align: left; }
+  #casos .monto-pila { justify-items: stretch; } #casos .falta-fila { justify-content: flex-start; } #casos .monto-mas { justify-self: start; }
   #casos tr:not(.det-row) > td:nth-child(6) > * { flex: 1 1 0; }
   #casos .det-row > td { display: block; padding: 12px !important; }
   #casos .det-row td .estados { justify-content: flex-start; }
@@ -1502,9 +1507,55 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         });
         cell.appendChild(mi); return cell;
       };
-      tr.appendChild(moneyCell('tot', c.total, 'Total', '', (v) => col('casos').doc(c.id).update({ total: v })));
-      tr.appendChild(moneyCell('pag', c.pagado, 'Pagado', 'c-in', (v) => col('casos').doc(c.id).update({ ajuste: Math.round((v - c.pagadoMov) * 100) / 100 })));
-      tr.appendChild(td(usd.format(c.falta), 'num' + (c.falta > 0 ? ' c-out' : '')));
+      // Amounts by process: one line per process in Total, Pagado and Falta; "+" adds another process.
+      const r2 = (x) => Math.round(x * 100) / 100;
+      const tots = c.totales ? c.totales.slice() : [c.total];
+      const nP = tots.length;
+      const extraP = Array.from({ length: nP - 1 }, (_, i) => c.pagadosExtra[i] || 0);
+      const pag0 = r2(c.pagado - extraP.reduce((a, b) => a + b, 0));
+      const pags = [pag0, ...extraP];
+      const causasC = causasDe(c);
+      const etiquetaP = (i) => nP > 1 ? (causasC[i] ? 'Proceso ' + causasC[i] : 'Proceso ' + (i + 1)) : '';
+      const guardarTot = (nuevos) => { const t = nuevos.map(r2); const upd = { total: r2(t.reduce((a, b) => a + b, 0)) }; upd.totales = t.length > 1 ? t : deleteField(); return col('casos').doc(c.id).update(upd); };
+      const guardarPag = (p0, ex) => col('casos').doc(c.id).update({ ajuste: r2(p0 + ex.reduce((a, b) => a + b, 0) - c.pagadoMov), pagadosExtra: ex.map(r2) });
+      const pila = (key, vals, label, cls, onSave, puedeQuitar) => {
+        const cell = document.createElement('td'); cell.className = 'num';
+        const st = document.createElement('div'); st.className = 'monto-pila';
+        vals.forEach((val, i) => {
+          const mi = document.createElement('input'); mi.type = 'number'; mi.min = '0'; mi.step = '0.01'; mi.inputMode = 'decimal';
+          mi.className = 'monto-in ' + cls; mi.id = key + '-' + c.id + (i ? '-' + i : ''); mi.setAttribute('aria-label', label + ' de ' + c.nombre + (nP > 1 ? ', ' + etiquetaP(i) : ''));
+          if (nP > 1) mi.title = etiquetaP(i);
+          const dk = mi.id;
+          mi.value = archDrafts[dk] !== undefined ? archDrafts[dk] : String(val);
+          mi.addEventListener('input', () => { archDrafts[dk] = mi.value; });
+          mi.addEventListener('keydown', (e) => { if (e.key === 'Enter') mi.blur(); });
+          mi.addEventListener('change', async () => {
+            if (mi.value.trim() === '' && i > 0 && puedeQuitar) { try { await onSave(i, null); delete archDrafts[dk]; } catch (e) { setMsg('No se pudo quitar el proceso.', true); } return; }
+            const v = r2(parseFloat(mi.value));
+            if (!(v >= 0)) { setMsg('Escribe un monto válido.', true); return; }
+            try { await onSave(i, v); delete archDrafts[dk]; } catch (e) { setMsg('No se pudo guardar el monto.', true); }
+          });
+          st.appendChild(mi);
+        });
+        cell.appendChild(st); return cell;
+      };
+      const cTot = pila('tot', tots, 'Total', '', async (i, v) => {
+        if (v === null) { const t = tots.filter((_, j) => j !== i); const ex = extraP.filter((_, j) => j !== i - 1); await guardarTot(t); await guardarPag(pag0, ex); setMsg('Se quitó ese proceso.'); return; }
+        const t = tots.slice(); t[i] = v; await guardarTot(t);
+      }, true);
+      { const mas = document.createElement('button'); mas.type = 'button'; mas.className = 'monto-mas'; mas.textContent = '+'; mas.title = 'Agregar el valor de otro proceso'; mas.setAttribute('aria-label', 'Agregar otro proceso a ' + c.nombre);
+        mas.addEventListener('click', async () => { try { await guardarTot([...tots, 0]); await guardarPag(pag0, [...extraP, 0]); setTimeout(() => { const el = document.getElementById('tot-' + c.id + '-' + nP); if (el) { el.focus(); el.select(); } }, 300); } catch (e) { setMsg('No se pudo agregar.', true); } });
+        cTot.querySelector('.monto-pila').appendChild(mas); }
+      tr.appendChild(cTot);
+      tr.appendChild(pila('pag', pags, 'Pagado', 'c-in', async (i, v) => {
+        if (i === 0) await guardarPag(v, extraP); else { const ex = extraP.slice(); ex[i - 1] = v; await guardarPag(pag0, ex); }
+      }, false));
+      { const cell = document.createElement('td'); cell.className = 'num';
+        if (nP === 1) { cell.textContent = usd.format(c.falta); if (c.falta > 0) cell.classList.add('c-out'); }
+        else { const st = document.createElement('div'); st.className = 'monto-pila';
+          tots.forEach((t, i) => { const f = Math.max(0, r2(t - pags[i])); const sp = document.createElement('span'); sp.className = 'falta-fila' + (f > 0 ? ' c-out' : ''); sp.textContent = usd.format(f); sp.title = etiquetaP(i); st.appendChild(sp); });
+          cell.appendChild(st); }
+        tr.appendChild(cell); }
       const act = document.createElement('td'); act.className = 'num acts';
       const open = openCaso === c.id;
       const det = document.createElement('button'); det.type = 'button'; det.className = 'ghost' + (open ? ' on' : '');
@@ -2063,7 +2114,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const existente = findCaso(casoNombre);
         if (existente) {
           const upd = {};
-          if (total !== null && total !== existente.total) upd.total = total;
+          if (total !== null && total !== existente.total && !existente.totales) upd.total = total;
           CF.forEach((k) => { const v = $('f-' + k).value.trim(); if (v && v !== existente[k]) upd[k] = v; });
           if (Object.keys(upd).length) await col('casos').doc(existente.id).update(upd);
           base.casoId = existente.id;
@@ -2686,7 +2737,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     col('casos').onSnapshot((snap) => {
       raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       casosListos = true;
-      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.ruta && a.url) : [], ultActuacion: String(x.ultActuacion || ''), ultActFecha: String(x.ultActFecha || ''), revisado: String(x.revisado || ''), por: leerPor(x) }; });
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, totales: Array.isArray(x.totales) && x.totales.length > 1 ? x.totales.map((v) => Math.max(0, Number(v) || 0)) : null, pagadosExtra: Array.isArray(x.pagadosExtra) ? x.pagadosExtra.map((v) => Math.max(0, Number(v) || 0)) : [], archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.ruta && a.url) : [], ultActuacion: String(x.ultActuacion || ''), ultActFecha: String(x.ultActFecha || ''), revisado: String(x.revisado || ''), por: leerPor(x) }; });
       ligarAudiencias();
       renderPronto();
     }, lost);

@@ -26,7 +26,7 @@ service cloud.firestore {
         allow create: if esAsistente(uid) && (veDinero(uid)
           || (request.resource.data.get('total', 0) == 0 && !request.resource.data.keys().hasAny(['ajuste', 'parte'])));
         allow update: if esAsistente(uid) && (veDinero(uid)
-          || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['total', 'ajuste', 'parte']));
+          || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['total', 'totales', 'ajuste', 'pagadosExtra', 'parte']));
       }
       match /audiencias/{id} {
         allow read, write: if esAsistente(uid);
