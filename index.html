@@ -975,6 +975,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // e-SATJE: the Judicatura site asks for a captcha on every search, so the app only opens it with the number copied.
   const ESATJE_URL = 'https://procesosjudiciales.funcionjudicial.gob.ec/';
   const DIAS_REVISAR = 15;
+  const estadosDe = (c) => String(c.etiqueta || '').split('\n').map((x) => x.trim()).filter(Boolean);
   const causasDe = (c) => String(c.causa || '').split(/\n|\s+\/\s+/).map((x) => x.trim()).filter(Boolean);
   const diasDesde = (ymd) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd || '')) return Infinity; const [y, m, d] = ymd.split('-').map(Number); const h = new Date(); return Math.floor((new Date(h.getFullYear(), h.getMonth(), h.getDate()) - new Date(y, m - 1, d)) / 864e5); };
   const hoyYmd = () => { const h = new Date(); return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`; };
@@ -1390,7 +1391,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     else if (['total', 'pagado', 'falta'].includes(casoSort.col)) { const k = casoSort.col, m = casoSort.dir === 'asc' ? 1 : -1; cs.sort((a, b) => (a[k] - b[k]) * m); }
     { // custom states as filter options
       const sel = document.querySelector('.th-sel[data-col="caso"]');
-      const libres = [...new Set(casos.map((c) => c.etiqueta.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+      const libres = [...new Set(casos.flatMap(estadosDe))].sort((a, b) => a.localeCompare(b, 'es'));
       let og = sel.querySelector('optgroup[data-libre]');
       if (!og) { og = document.createElement('optgroup'); og.label = 'Mis estados'; og.dataset.libre = '1'; sel.appendChild(og); }
       og.replaceChildren(...libres.map((e) => { const o = document.createElement('option'); o.value = 'et:' + e; o.textContent = e; return o; }));
@@ -1415,7 +1416,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('ver-arch').title = verArch ? 'Volver a la lista de casos' : 'Ver procesos archivados';
     const qb = window.__normBusca(casoBusca);
     const csLista = cs.filter((c) => !!c.archivado === verArch && (!qb || window.__normBusca(c.nombre + ' ' + c.cedula + ' ' + c.causa + ' ' + c.archivo).includes(qb)));
-    const csView = !casoFiltro ? csLista : casoFiltro.startsWith('et:') ? csLista.filter((c) => c.etiqueta.trim() === casoFiltro.slice(3)) : filtros[casoFiltro] ? csLista.filter(filtros[casoFiltro]) : csLista;
+    const csView = !casoFiltro ? csLista : casoFiltro.startsWith('et:') ? csLista.filter((c) => estadosDe(c).includes(casoFiltro.slice(3))) : filtros[casoFiltro] ? csLista.filter(filtros[casoFiltro]) : csLista;
     const porCobrar = casosAct.reduce((s, c) => s + c.falta, 0);
     const pend = casosAct.filter((c) => c.falta > 0).length;
     $('cob-v').textContent = usd.format(porCobrar);
@@ -1452,19 +1453,24 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         tr.classList.add('por-cambio'); tr.style.setProperty('--pc', colorPor(c.por));
         est.appendChild(marcaPor(c.por, invitado ? null : () => libroRef.collection('casos').doc(c.id).update({ por: null })));
       }
-      const ei = document.createElement('input'); ei.type = 'text'; ei.className = 'tag estado-libre'; ei.id = 'et-' + c.id; ei.maxLength = 40;
-      ei.placeholder = '+ estado'; ei.setAttribute('aria-label', 'Estado personalizado de ' + c.nombre);
-      const ek = 'et-' + c.id;
-      ei.value = archDrafts[ek] !== undefined ? archDrafts[ek] : c.etiqueta;
-      const fit = () => { ei.style.width = Math.max(ei.value.length, ei.placeholder.length) + 3 + 'ch'; };
-      fit();
-      ei.addEventListener('input', () => { archDrafts[ek] = ei.value; fit(); });
-      ei.addEventListener('keydown', (e) => { if (e.key === 'Enter') ei.blur(); });
-      ei.addEventListener('change', async () => {
-        try { await col('casos').doc(c.id).update({ etiqueta: ei.value.trim() }); delete archDrafts[ek]; }
-        catch (e) { setMsg('No se pudo guardar el estado.', true); }
-      });
-      est.appendChild(ei);
+      // Several custom states per case: one box per state plus an empty "+ estado" box to add another.
+      { const ests = estadosDe(c); const cajas = [];
+        const guardarEst = async () => {
+          const vals = cajas.map((x) => x.value.trim().replace(/\s+/g, ' ')).filter(Boolean);
+          try { await col('casos').doc(c.id).update({ etiqueta: [...new Set(vals)].join('\n') }); cajas.forEach((x) => delete archDrafts[x.id]); }
+          catch (e) { setMsg('No se pudo guardar el estado.', true); }
+        };
+        [...ests, ''].forEach((v, i) => {
+          const ei = document.createElement('input'); ei.type = 'text'; ei.className = 'tag estado-libre'; ei.id = 'et-' + c.id + '-' + i; ei.maxLength = 40;
+          ei.placeholder = '+ estado'; ei.setAttribute('aria-label', (v ? 'Estado de ' : 'Agregar estado a ') + c.nombre);
+          ei.value = archDrafts[ei.id] !== undefined ? archDrafts[ei.id] : v;
+          const fit = () => { ei.style.width = Math.max(ei.value.length, v || ei.value ? 1 : ei.placeholder.length) + 3 + 'ch'; };
+          fit();
+          ei.addEventListener('input', () => { archDrafts[ei.id] = ei.value; fit(); });
+          ei.addEventListener('keydown', (e) => { if (e.key === 'Enter') ei.blur(); });
+          ei.addEventListener('change', guardarEst);
+          cajas.push(ei); est.appendChild(ei);
+        }); }
       if (!c.archivado && causasDe(c).length && diasDesde(c.revisado) > DIAS_REVISAR) { const t = document.createElement('button'); t.type = 'button'; t.className = 'tag c-sat estado sat-tag'; t.textContent = 'Revisar e-SATJE ↗'; t.title = 'Copiar ' + causasDe(c)[0] + ' y abrir e-SATJE' + (c.revisado ? ` · última revisión ${c.revisado.split('-').reverse().join('/')}` : '');
         t.addEventListener('click', () => abrirEsatje(causasDe(c)[0], c)); est.appendChild(t); }
       if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; est.appendChild(t); }
