@@ -120,6 +120,8 @@ td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .meter i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .3s; }
 .meter.over i { background: var(--out); }
 .budget-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.cob-grupo { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 28px; }
+.cob-it { white-space: nowrap; }
 .budget-row b { font-family: var(--font-display); font-weight: 400; font-size: 24px; font-variant-numeric: tabular-nums; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { font-size: 13px; padding: 2px 10px; border-radius: 99px; background: var(--accent-soft); font-variant-numeric: tabular-nums; }
@@ -765,7 +767,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar">
     <div class="budget-row">
       <div class="casos-tit"><h2 id="h-cobrar">Casos</h2><button type="button" class="ghost nuevo-caso-btn" id="nuevo-caso-btn">+ Nuevo caso</button></div>
-      <span class="solo-dinero"><span class="sub" style="display:inline">Por cobrar:</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
+      <span class="solo-dinero cob-grupo"><span class="cob-it"><span class="sub" style="display:inline" id="cbr-l">Cobrado:</span> <b class="c-in" id="cbr-v">—</b> <span class="sub" style="display:inline" id="cbr-n"></span></span><span class="cob-it"><span class="sub" style="display:inline">Por cobrar:</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span></span>
     </div>
     <form class="nuevo-caso" id="nuevo-caso" hidden>
       <label>Nombre del cliente<input type="text" id="nc-nombre" maxlength="120" required></label>
@@ -1380,6 +1382,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const porCobrar = casosAct.reduce((s, c) => s + c.falta, 0);
     const pend = casosAct.filter((c) => c.falta > 0).length;
     $('cob-v').textContent = usd.format(porCobrar);
+    { const cobr = rows.filter((r) => r.casoId && !r.registro && r.fecha.slice(0, 7) === mes);
+      $('cbr-l').textContent = `Cobrado en ${MESES[Number(mes.slice(5, 7)) - 1]}:`;
+      $('cbr-v').textContent = usd.format(cobr.reduce((s2, r) => s2 + r.bruto, 0));
+      $('cbr-n').textContent = `${cobr.length} ${cobr.length === 1 ? 'pago' : 'pagos'}`; }
     $('cob-n').textContent = `en ${pend} ${pend === 1 ? 'caso' : 'casos'}`;
     $('casos-list').replaceChildren(...casos.map((c) => { const o = document.createElement('option'); o.value = c.nombre; return o; }));
     $('sec-casos').hidden = !cs.length && !invitado;
