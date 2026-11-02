@@ -285,6 +285,11 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .falta-fila { display: flex; align-items: center; justify-content: flex-end; min-height: 35px; }
 .monto-mas { border: 0; background: var(--panel); box-shadow: var(--raise-sm); color: var(--muted); width: 26px; height: 22px; border-radius: 99px; padding: 0; font-size: 15px; line-height: 1; cursor: pointer; }
 .monto-mas:hover { color: var(--ink); }
+.monto-fila { display: flex; align-items: center; gap: 4px; }
+.monto-x { border: 0; background: none; box-shadow: none; padding: 0 2px; font-size: 16px; line-height: 1; color: var(--muted); cursor: pointer; }
+.monto-x:hover { color: var(--out); }
+.aj-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.aj-fila .ghost { padding: 6px 12px; font-size: 12.5px; }
 /* Excel-style sort/filter arrows on the casos table headers. */
 .th-f { position: relative; display: inline-flex; align-items: center; gap: 4px; }
 .th-arrow { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; font-size: 10px; background: var(--panel); box-shadow: 0 1px 3px rgba(0,0,0,.12), inset 0 0 0 1px var(--line); color: var(--muted); }
@@ -607,7 +612,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   #casos tr:not(.det-row) > td:nth-child(4)::before { content: 'Pagado'; }
   #casos tr:not(.det-row) > td:nth-child(5)::before { content: 'Falta'; }
   #casos .monto-in { width: 100%; text-align: left; }
-  #casos .monto-pila { justify-items: stretch; } #casos .falta-fila { justify-content: flex-start; } #casos .monto-mas { justify-self: start; }
+  #casos .monto-pila { justify-items: stretch; } #casos .monto-fila .monto-in { flex: 1; min-width: 0; } #casos .falta-fila { justify-content: flex-start; } #casos .monto-mas { justify-self: start; }
   #casos tr:not(.det-row) > td:nth-child(6) > * { flex: 1 1 0; }
   #casos .det-row > td { display: block; padding: 12px !important; }
   #casos .det-row td .estados { justify-content: flex-start; }
@@ -1517,7 +1522,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const causasC = causasDe(c);
       const etiquetaP = (i) => nP > 1 ? (causasC[i] ? 'Proceso ' + causasC[i] : 'Proceso ' + (i + 1)) : '';
       const guardarTot = (nuevos) => { const t = nuevos.map(r2); const upd = { total: r2(t.reduce((a, b) => a + b, 0)) }; upd.totales = t.length > 1 ? t : deleteField(); return col('casos').doc(c.id).update(upd); };
-      const guardarPag = (p0, ex) => col('casos').doc(c.id).update({ ajuste: r2(p0 + ex.reduce((a, b) => a + b, 0) - c.pagadoMov), pagadosExtra: ex.map(r2) });
+      const guardarPag = async (p0, ex) => {
+        const nuevo = r2(p0 + ex.reduce((a, b) => a + b, 0)); const delta = r2(nuevo - c.pagado);
+        if (delta > 0) {
+          await col('movimientos').add({ fecha: hoyYmd(), tipo: 'Ingreso', categoria: 'Honorarios por casos', descripcion: 'Pago registrado en la tabla', monto: delta, casoId: c.id, creado: new Date().toISOString() });
+          return col('casos').doc(c.id).update({ pagadosExtra: ex.map(r2) });
+        }
+        return col('casos').doc(c.id).update({ ajuste: r2(c.ajuste + delta), pagadosExtra: ex.map(r2) });
+      };
       const pila = (key, vals, label, cls, onSave, puedeQuitar) => {
         const cell = document.createElement('td'); cell.className = 'num';
         const st = document.createElement('div'); st.className = 'monto-pila';
@@ -1535,7 +1547,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             if (!(v >= 0)) { setMsg('Escribe un monto válido.', true); return; }
             try { await onSave(i, v); delete archDrafts[dk]; } catch (e) { setMsg('No se pudo guardar el monto.', true); }
           });
-          st.appendChild(mi);
+          if (puedeQuitar && nP > 1) {
+            const fila = document.createElement('div'); fila.className = 'monto-fila';
+            const x = document.createElement('button'); x.type = 'button'; x.className = 'monto-x'; x.textContent = '×';
+            if (i === 0) x.style.visibility = 'hidden';
+            else { x.title = 'Quitar ' + etiquetaP(i); x.setAttribute('aria-label', 'Quitar ' + etiquetaP(i) + ' de ' + c.nombre);
+              x.addEventListener('click', async () => { try { await onSave(i, null); } catch (e) { setMsg('No se pudo quitar el proceso.', true); } }); }
+            fila.append(x, mi); st.appendChild(fila);
+          } else st.appendChild(mi);
         });
         cell.appendChild(st); return cell;
       };
@@ -1703,7 +1722,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         });
         cPag.appendChild(ul);
       }
-      if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'det-nota'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; cPag.appendChild(aj); }
+      if (c.ajuste) {
+        const aj = document.createElement('div'); aj.className = 'det-nota aj-fila';
+        const at = document.createElement('span'); at.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)}` + (c.ajuste > 0 ? ' (aún no cuenta como ingreso).' : '.'); aj.appendChild(at);
+        if (c.ajuste > 0) { const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'ghost'; const mHoy = MESES[new Date().getMonth()]; ab.textContent = `Contar como ingreso de ${mHoy}`;
+          ab.addEventListener('click', async () => {
+            try { await col('movimientos').add({ fecha: hoyYmd(), tipo: 'Ingreso', categoria: 'Honorarios por casos', descripcion: 'Ajuste de pagado', monto: c.ajuste, casoId: c.id, creado: new Date().toISOString() }); await col('casos').doc(c.id).update({ ajuste: 0 }); setMsg(`${usd.format(c.ajuste)} de ${c.nombre} ahora cuenta como ingreso de ${mHoy}.`); }
+            catch (e) { setMsg('No se pudo pasar a ingresos. Intenta de nuevo.', true); }
+          }); aj.appendChild(ab); }
+        cPag.appendChild(aj);
+      }
       const gPag = document.createElement('div'); gPag.className = 'det-edit'; cPag.appendChild(gPag);
       const cCli = tarjeta('Datos del cliente y causa', 'c-cli');
       const gCli = document.createElement('div'); gCli.className = 'det-edit'; cCli.appendChild(gCli);
