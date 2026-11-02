@@ -122,6 +122,10 @@ td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .chip { font-size: 13px; padding: 2px 10px; border-radius: 99px; background: var(--accent-soft); font-variant-numeric: tabular-nums; }
 .check { flex-direction: row; display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--fg); }
 .check input { width: 18px; height: 18px; }
+.checks { display: grid; gap: 8px; align-self: end; }
+.tag.c-reg { color: var(--muted); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+.num.c-reg { color: var(--muted); }
+.solo-reg { color: var(--muted); font-size: 12px; }
 .acts { white-space: nowrap; }
 .acts .ghost + .ghost { margin-left: 4px; }
 .ghost.on { color: var(--accent); border-color: var(--accent); }
@@ -701,7 +705,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <label for="f-telefono" class="caso-f" hidden>Teléfono<input type="tel" id="f-telefono" maxlength="20" placeholder="09…"></label>
       <label for="f-correo" class="caso-f" hidden>Correo<input type="email" id="f-correo" maxlength="120" placeholder="cliente@correo.com"></label>
       <label for="f-desc" class="wide">Detalle<input type="text" id="f-desc" maxlength="120" placeholder="Ej.: Caso García, divorcio – 1.ª cuota"></label>
-      <label class="check" for="f-fijo"><input type="checkbox" id="f-fijo"> Repetir cada mes</label>
+      <div class="checks"><label class="check" for="f-fijo"><input type="checkbox" id="f-fijo"> Repetir cada mes</label><label class="check" for="f-reg" title="Se guarda en la lista, pero no se suma a ingresos, gastos ni inversiones"><input type="checkbox" id="f-reg"> Solo registro (no suma)</label></div>
       <button class="btn" id="f-btn" type="submit">Agregar</button>
     </form>
     <p class="msg" id="f-msg" role="status"></p>
@@ -1206,11 +1210,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const real = rows.filter((r) => r.fecha.slice(0, 7) === m);
     const fx = fijos.filter((f) => f.desde <= m && (!f.hasta || m <= f.hasta)).map((f) => ({
       id: 'fijo:' + f.id, fijo: true, fecha: `${m}-${pad(Math.min(f.dia, lastDay(m)))}`,
-      tipo: f.tipo, categoria: f.categoria, descripcion: f.descripcion, monto: f.monto,
+      tipo: f.tipo, categoria: f.categoria, descripcion: f.descripcion, monto: f.monto, registro: f.registro,
     }));
     return [...real, ...fx];
   }
-  const sum = (list, tipo) => list.filter((r) => r.tipo === tipo).reduce((s, r) => s + r.monto, 0);
+  const sum = (list, tipo) => list.filter((r) => r.tipo === tipo && !r.registro).reduce((s, r) => s + r.monto, 0);
 
   // Redraw only what changed: each heavy table keeps a fingerprint of what it shows.
   // Any click or typing inside a section counts as a change there, so the screen always follows what you do.
@@ -1246,7 +1250,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const nomCaso = new Map(casos.map((c) => [c.id, c.nombre]));
       const fila = (izq, der, cls, peq) => { const li = document.createElement('li'); if (cls) li.className = cls; const a = document.createElement('span'); if (peq) { const sm = document.createElement('small'); sm.textContent = peq; a.appendChild(sm); } a.append(izq); const b = document.createElement('b'); b.textContent = der; li.append(a, b); return li; };
       const lista = (id, tipo, vacio) => {
-        const xs = delMes.filter((r) => r.tipo === tipo).sort((a, b) => b.fecha.localeCompare(a.fecha));
+        const xs = delMes.filter((r) => r.tipo === tipo && !r.registro).sort((a, b) => b.fecha.localeCompare(a.fecha));
         $(id).replaceChildren(...(xs.length ? xs.map((r) => fila((r.casoId && nomCaso.get(r.casoId)) || r.descripcion || r.inversion || r.categoria, usd.format(r.monto), '', r.fecha.slice(8, 10) + ' ' + MESES[Number(r.fecha.slice(5, 7)) - 1])) : [fila(vacio, '', 'vacio')]));
       };
       lista('d-in', 'Ingreso', 'Sin ingresos este mes.');
@@ -1260,7 +1264,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('t-disp').textContent = usd.format(disp);
     $('t-disp').className = disp < 0 ? 'c-out' : '';
     $('t-inv').textContent = usd.format(inv);
-    const nIn = delMes.filter((r) => r.tipo === 'Ingreso').length, nOut = delMes.filter((r) => r.tipo === 'Gasto').length;
+    const nIn = delMes.filter((r) => r.tipo === 'Ingreso' && !r.registro).length, nOut = delMes.filter((r) => r.tipo === 'Gasto' && !r.registro).length;
     $('t-in-n').textContent = `${nIn} ${nIn === 1 ? 'movimiento' : 'movimientos'}`;
     $('t-out-n').textContent = `${nOut} ${nOut === 1 ? 'movimiento' : 'movimientos'}`;
     $('t-tasa').textContent = ing > 0 ? `${pct.format(disp / ing)} de tus ingresos` : 'Ingresos menos gastos';
@@ -1278,11 +1282,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       tag.className = 'tag ' + colorOf(r.tipo);
       tag.textContent = r.categoria;
       det.appendChild(tag);
+      if (r.registro) { const rg = document.createElement('span'); rg.className = 'tag c-reg'; rg.textContent = 'Solo registro'; rg.title = 'No se suma a los totales'; rg.style.marginLeft = '6px'; det.appendChild(rg); }
       const caso = r.casoId ? casos.find((c) => c.id === r.casoId) : null;
       const txt = [caso ? caso.nombre : '', r.descripcion, r.fijo ? 'fijo mensual' : ''].filter(Boolean).join(' · ');
       if (txt) { const d = document.createElement('div'); d.textContent = txt; d.style.marginTop = '2px'; det.appendChild(d); }
       tr.appendChild(det);
-      { const mc = td(signOf(r.tipo) + usd.format(r.monto), 'num ' + colorOf(r.tipo)); if (r.parte < 100) { const sm = document.createElement('div'); sm.className = 'sub'; sm.style.fontSize = '12px'; sm.style.margin = '0'; sm.textContent = `tu ${r.parte}% de ${usd.format(r.bruto)}`; mc.appendChild(sm); } tr.appendChild(mc); }
+      { const mc = td((r.registro ? '' : signOf(r.tipo)) + usd.format(r.monto), 'num ' + (r.registro ? 'c-reg' : colorOf(r.tipo))); if (r.parte < 100) { const sm = document.createElement('div'); sm.className = 'sub'; sm.style.fontSize = '12px'; sm.style.margin = '0'; sm.textContent = `tu ${r.parte}% de ${usd.format(r.bruto)}`; mc.appendChild(sm); } tr.appendChild(mc); }
       const act = document.createElement('td'); act.className = 'num';
       if (!r.fijo) act.appendChild(delBtn(r.id, () => col('movimientos').doc(r.id).delete()));
       tr.appendChild(act);
@@ -1294,7 +1299,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const pctAnual = new Intl.NumberFormat('es-EC', { maximumFractionDigits: 2 });
     const hastaHoy = (r) => r.fecha <= todayStr;
     const depositos = (id) => [...rows, ...fijos.flatMap((f) => f.inversionId === id ? monthsBetween(f.desde, f.hasta && f.hasta < thisMonth ? f.hasta : thisMonth).map((m) => ({ fecha: `${m}-${pad(Math.min(f.dia, lastDay(m)))}`, monto: f.monto, inversionId: id })) : [])]
-      .filter((r) => r.inversionId === id && hastaHoy(r)).reduce((s, r) => s + r.monto, 0);
+      .filter((r) => r.inversionId === id && !r.registro && hastaHoy(r)).reduce((s, r) => s + r.monto, 0);
     const iv = invs.map((x) => { const d = depositos(x.id); return { ...x, dep: d, mes: d * x.tasa / 100 / 12, anio: d * x.tasa / 100 }; }).sort((a, b) => b.dep - a.dep);
     const tot = iv.reduce((a, x) => ({ dep: a.dep + x.dep, mes: a.mes + x.mes, anio: a.anio + x.anio }), { dep: 0, mes: 0, anio: 0 });
     $('inv-v').textContent = usd.format(tot.dep);
@@ -1335,7 +1340,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
 
     // Cuentas por cobrar
-    const pagos = (id) => rows.filter((r) => r.casoId === id).reduce((s, r) => s + r.bruto, 0);
+    const pagos = (id) => rows.filter((r) => r.casoId === id && !r.registro).reduce((s, r) => s + r.bruto, 0);
     const cs = casos.map((c) => { const mv = pagos(c.id); const p = Math.round((mv + c.ajuste) * 100) / 100; const falta = Math.max(0, c.total - p); return { ...c, pagadoMov: mv, pagado: p, falta, pendiente: falta > 0 || (c.total === 0 && p === 0) }; })
       .sort((a, b) => { const na = parseFloat(a.archivo), nb = parseFloat(b.archivo); const ha = !isNaN(na), hb = !isNaN(nb); return (hb - ha) || (ha && hb ? na - nb : 0) || a.archivo.localeCompare(b.archivo, 'es', { numeric: true }) || a.nombre.localeCompare(b.nombre); });
     if (casoSort.col === 'archivo' && casoSort.dir === 'desc') { const sinNum = cs.filter((c) => isNaN(parseFloat(c.archivo))); const conNum = cs.filter((c) => !isNaN(parseFloat(c.archivo))).reverse(); cs.splice(0, cs.length, ...conNum, ...sinNum); }
@@ -1765,7 +1770,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const tr = document.createElement('tr');
       tr.appendChild(td(String(f.dia)));
       const det = document.createElement('td');
-      const tag = document.createElement('span'); tag.className = 'tag ' + colorOf(f.tipo); tag.textContent = f.categoria; det.appendChild(tag);
+      const tag = document.createElement('span'); tag.className = 'tag ' + colorOf(f.tipo); tag.textContent = f.categoria; det.appendChild(tag); if (f.registro) { const rg = document.createElement('span'); rg.className = 'tag c-reg'; rg.textContent = 'Solo registro'; rg.style.marginLeft = '6px'; det.appendChild(rg); }
       if (f.descripcion) { const d = document.createElement('div'); d.textContent = f.descripcion; d.style.marginTop = '2px'; det.appendChild(d); }
       tr.appendChild(det);
       tr.appendChild(td(signOf(f.tipo) + usd.format(f.monto), 'num ' + colorOf(f.tipo)));
@@ -1801,7 +1806,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       hist.replaceChildren(...lista.map((m) => {
         const rs = entriesFor(m);
         const i = sum(rs, 'Ingreso'), g = sum(rs, 'Gasto');
-        const h = rs.filter((r) => r.categoria === 'Honorarios por casos').reduce((s, r) => s + r.monto, 0);
+        const h = rs.filter((r) => r.categoria === 'Honorarios por casos' && !r.registro).reduce((s, r) => s + r.monto, 0);
         const tr = document.createElement('tr');
         tr.appendChild(td(mesLabel(m)));
         tr.appendChild(td(usd.format(i), 'num'));
@@ -1812,7 +1817,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }));
     }
     }
-    const hon = rows.filter((r) => r.categoria === 'Honorarios por casos');
+    const hon = rows.filter((r) => r.categoria === 'Honorarios por casos' && !r.registro);
     if (hon.length) {
       const first = hon.map((r) => r.fecha.slice(0, 7)).sort()[0];
       const n = monthsBetween(first, thisMonth > first ? thisMonth : first).length;
@@ -1844,7 +1849,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const wrap = document.createElement('div'); wrap.className = 'pies';
     [['Ingreso', 'Ingresos', PIE_IN], ['Gasto', 'Gastos', PIE_OUT]].forEach(([tipo, titulo, pal]) => {
       const tot = {};
-      data.forEach((d) => d.rs.filter((r) => r.tipo === tipo).forEach((r) => { const k = r.categoria || 'Otros'; tot[k] = (tot[k] || 0) + r.monto; }));
+      data.forEach((d) => d.rs.filter((r) => r.tipo === tipo && !r.registro).forEach((r) => { const k = r.categoria || 'Otros'; tot[k] = (tot[k] || 0) + r.monto; }));
       let parts = Object.entries(tot).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
       if (parts.length > pal.length) { const rest = parts.slice(pal.length - 1).reduce((s2, [, v]) => s2 + v, 0); parts = parts.slice(0, pal.length - 1).concat([['Otros', rest]]); }
       const total = parts.reduce((s2, [, v]) => s2 + v, 0);
@@ -1978,6 +1983,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (!fecha || !(monto > 0)) { setMsg('Pon una fecha y un monto mayor que cero.', true); return; }
     const base = { tipo: $('f-tipo').value, categoria: $('f-cat').value, descripcion: $('f-desc').value.trim(), monto, creado: new Date().toISOString() };
     const repetir = $('f-fijo').checked;
+    const soloReg = $('f-reg').checked;
+    if (soloReg) base.registro = true;
     const esHon = base.tipo === 'Ingreso' && base.categoria === HON;
     const casoNombre = $('f-caso').value.trim();
     const totalTxt = $('f-total').value;
@@ -1990,7 +1997,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (esInv && invNombre && tasa !== null && !(tasa >= 0 && tasa <= 100)) { setMsg('La tasa anual debe estar entre 0 y 100.', true); return; }
     $('f-btn').disabled = true;
     try {
-      if (esInv && invNombre) {
+      if (esInv && invNombre && !soloReg) {
         const ex = findInv(invNombre);
         if (ex) {
           if (tasa !== null && tasa !== ex.tasa) await col('inversiones').doc(ex.id).update({ tasa });
@@ -2000,7 +2007,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           base.inversionId = ref.id;
         }
       }
-      if (esHon && casoNombre && !repetir) {
+      if (esHon && casoNombre && !repetir && !soloReg) {
         const existente = findCaso(casoNombre);
         if (existente) {
           const upd = {};
@@ -2017,12 +2024,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       if (repetir) {
         await col('fijos').add({ ...base, dia: Number(fecha.slice(8, 10)), desde: fecha.slice(0, 7) });
-        setMsg(`Guardado como fijo mensual: ${base.categoria}, ${usd.format(monto)}.`);
+        setMsg(`Guardado como fijo mensual${soloReg ? ' (solo registro, no suma)' : ''}: ${base.categoria}, ${usd.format(monto)}.`);
       } else {
         await col('movimientos').add({ ...base, fecha });
-        setMsg(`Guardado: ${base.categoria}, ${usd.format(monto)}.`);
+        setMsg(`Guardado${soloReg ? ' como solo registro (no se suma)' : ''}: ${base.categoria}, ${usd.format(monto)}.`);
       }
-      $('f-monto').value = ''; $('f-desc').value = ''; $('f-fijo').checked = false; $('f-caso').value = ''; $('f-total').value = ''; CF.forEach((k) => { $('f-' + k).value = ''; }); $('f-inv').value = ''; $('f-tasa').value = '';
+      $('f-monto').value = ''; $('f-desc').value = ''; $('f-fijo').checked = false; $('f-reg').checked = false; $('f-caso').value = ''; $('f-total').value = ''; CF.forEach((k) => { $('f-' + k).value = ''; }); $('f-inv').value = ''; $('f-tasa').value = '';
       if ($('mes').value !== fecha.slice(0, 7)) { $('mes').value = fecha.slice(0, 7); userPickedMonth = true; render(); }
     } catch (e) {
       setMsg(e && e.code === 'quota_exceeded' ? 'El libro está lleno. Borra movimientos antiguos para seguir.' : 'No se pudo guardar. Intenta de nuevo.', true);
@@ -2554,7 +2561,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       renderPronto();
     }, lost);
   }
-  const mapMov = (d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', por: leerPor(x) }; };
+  const mapMov = (d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, por: leerPor(x) }; };
 
   function startInvitado(u, acc) {
     yoUid = u.uid;
@@ -2623,7 +2630,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       raw['movimientos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       rows = snap.docs.map((d) => {
         const x = d.data() || {};
-        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', por: leerPor(x) };
+        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, por: leerPor(x) };
       }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
       pickMonth(); renderPronto();
     }, lost);
@@ -2631,7 +2638,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       raw['fijos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       fijos = snap.docs.map((d) => {
         const x = d.data() || {};
-        return { id: d.id, tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, dia: Math.max(1, Math.min(31, Number(x.dia) || 1)), desde: String(x.desde || ''), hasta: x.hasta ? String(x.hasta) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
+        return { registro: !!x.registro, id: d.id, tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, dia: Math.max(1, Math.min(31, Number(x.dia) || 1)), desde: String(x.desde || ''), hasta: x.hasta ? String(x.hasta) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
       }).filter((f) => /^\d{4}-\d{2}$/.test(f.desde));
       pickMonth(); renderPronto();
     }, lost);
