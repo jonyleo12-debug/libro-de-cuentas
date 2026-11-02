@@ -483,6 +483,11 @@ body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minma
 .notas:empty { display: none; }
 .nota { --nc: #d9a400; display: grid; gap: 8px; align-content: start; padding: 14px 16px; border-radius: 18px; background: color-mix(in srgb, var(--nc) 13%, var(--panel)); box-shadow: var(--raise-sm); border-top: 4px solid var(--nc); min-height: 120px; }
 .nota.hecha { opacity: .55; }
+.nota { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.nota > *, .nota-arch li, .nota-resps li, .resp-caja { min-width: 0; max-width: 100%; }
+.nota-arch, .nota-resps { grid-template-columns: minmax(0, 1fr); }
+.nota .nota-adjs li { max-width: 100%; box-sizing: border-box; }
+.nota-pie .acts { min-width: 0; }
 .nota.hecha .nota-txt { text-decoration: line-through; }
 .nota-k { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--nc) 75%, var(--ink)); }
 .nota-txt { width: 100%; box-sizing: border-box; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; font: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); resize: none; min-height: 3em; field-sizing: content; }
@@ -2439,7 +2444,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('nota-para-l').hidden = !miembros.length;
   }
   function juntarNotas() { const m = {}; Object.values(notasPor).forEach((arr) => arr.forEach((n) => { m[n.id] = n; })); notas = Object.values(m); renderNotas(); }
-  const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [], respuestas: Array.isArray(x.respuestas) ? x.respuestas.filter((r) => r && r.texto) : [] }; };
+  const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [], respuestas: Array.isArray(x.respuestas) ? x.respuestas.filter((r) => r && (r.texto || (Array.isArray(r.archivos) && r.archivos.length))) : [] }; };
   let respAbierta = null, respDraft = '';
   { const sn = document.getElementById('sec-notas');
     sn.querySelectorAll('.doblez').forEach((b) => b.addEventListener('click', () => {
