@@ -799,11 +799,6 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     </div>
 
 
-  <div class="callout" id="prom">
-    <span>Promedio de honorarios por casos</span>
-    <b id="prom-v">—</b>
-    <span class="sub" id="prom-n" style="margin:0">Se calcula cuando registres tu primer honorario.</span>
-  </div>
 
   <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar">
     <div class="budget-row">
@@ -1873,11 +1868,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const first = hon.map((r) => r.fecha.slice(0, 7)).sort()[0];
       const n = monthsBetween(first, thisMonth > first ? thisMonth : first).length;
       const total = hon.reduce((s, r) => s + r.monto, 0);
-      $('prom-v').textContent = usd.format(total / n) + ' al mes';
-      $('prom-n').textContent = `${usd.format(total)} en ${n} ${n === 1 ? 'mes' : 'meses'}, contando los meses sin cobros.`;
+      if (!$('prom-v')) {} else $('prom-v').textContent = usd.format(total / n) + ' al mes';
+      if ($('prom-n')) $('prom-n').textContent = `${usd.format(total)} en ${n} ${n === 1 ? 'mes' : 'meses'}, contando los meses sin cobros.`;
     } else {
-      $('prom-v').textContent = '—';
-      $('prom-n').textContent = 'Se calcula cuando registres tu primer honorario.';
+      if ($('prom-v')) $('prom-v').textContent = '—';
+      if ($('prom-n')) $('prom-n').textContent = 'Se calcula cuando registres tu primer honorario.';
     }
   }
 
@@ -2439,7 +2434,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const sel = $('nota-para');
     if (invitado) { $('nota-para-l').hidden = true; const t = $('nota-para-txt'); t.hidden = false; t.textContent = 'Para ' + nombreDueno(); return; }
     const prev = sel.value;
-    sel.replaceChildren(...[['', 'Para mí'], ...miembros.map((m) => [m.id, m.nombre || usuarioDe(m.email)])].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
+    sel.replaceChildren(...[['', 'Para mí'], ...(miembros.length > 1 ? [['__todos', 'Todos']] : []), ...miembros.map((m) => [m.id, m.nombre || usuarioDe(m.email)])].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
     if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
     $('nota-para-l').hidden = !miembros.length;
   }
@@ -2658,6 +2653,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ? { texto, para: 'dueno', autor: yo, autorNombre: invitado.nombre || '', color: invitado.color || '', creado: new Date().toISOString(), hecha: false }
       : { texto, para: $('nota-para').value || '', autor: 'dueno', autorNombre: '', color: '', creado: new Date().toISOString(), hecha: false };
     if (archivos.length) d.archivos = archivos;
+    if (d.para === '__todos') { miembros.forEach((m) => libroRef.collection('notas').add({ ...d, para: m.id, todos: true })); $('nota-txt').value = ''; notaAdj = []; pintarAdjNota(); setMsg(`Nota enviada a todos (${miembros.length}).`); return; }
     libroRef.collection('notas').add(d);
     $('nota-txt').value = ''; notaAdj = []; pintarAdjNota();
     setMsg(d.para && d.para !== 'dueno' ? 'Nota enviada.' : 'Nota guardada.');
