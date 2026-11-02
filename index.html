@@ -27,17 +27,17 @@
   --accent-soft: #e3efea;
   --in: #1f6b57;
   --out: #a3402e;
-  --inv: #7a3fb8;
+  --inv: #3aa6dc;
   --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
   --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --r: 10px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #111816; --panel: #18211e; --fg: #e6ece9; --muted: #9aaaa5; --line: #2a3632;
-  --accent: #5cbf9f; --accent-soft: #1d3029; --in: #5cbf9f; --out: #ec8a76; --inv: #b48ef0; color-scheme: dark; } }
+  --accent: #5cbf9f; --accent-soft: #1d3029; --in: #5cbf9f; --out: #ec8a76; --inv: #8fd3f5; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #111816; --panel: #18211e; --fg: #e6ece9; --muted: #9aaaa5; --line: #2a3632;
-  --accent: #5cbf9f; --accent-soft: #1d3029; --in: #5cbf9f; --out: #ec8a76; --inv: #b48ef0; color-scheme: dark; }
+  --accent: #5cbf9f; --accent-soft: #1d3029; --in: #5cbf9f; --out: #ec8a76; --inv: #8fd3f5; color-scheme: dark; }
 
 body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
 .wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
@@ -75,9 +75,9 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tot-list li b { font: inherit; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tot[data-k="in"] .tot-list li b { color: var(--in); }
 .tot[data-k="out"] .tot-list li b { color: var(--out); }
-.totals { --oro: #7a3fb8; }
-:root[data-theme="dark"] .totals { --oro: #b48ef0; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .totals { --oro: #b48ef0; } }
+.totals { --oro: #3aa6dc; }
+:root[data-theme="dark"] .totals { --oro: #8fd3f5; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .totals { --oro: #8fd3f5; } }
 .totals #t-inv, .tot[data-k="inv"] .tot-list li b, .totals .tot-list li b.c-inv { color: var(--oro); }
 .tot-list li b.c-in { color: var(--in); } .tot-list li b.c-out { color: var(--out); } .tot-list li b.c-inv { color: var(--inv); }
 .tot-list li.tot-sep { border-top: 1px solid var(--line); padding-top: 5px; }
