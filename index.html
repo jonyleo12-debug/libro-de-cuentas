@@ -290,7 +290,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .arch-it { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--bg); }
 .arch-ic { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: #fff; overflow: hidden; text-decoration: none; }
 .arch-ic img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.arch-ic.t-pdf { background: #c0262d; } .arch-ic.t-doc { background: #2456a6; } .arch-ic.t-img { background: #1f8a4c; } .arch-ic.t-vid { background: #6a3fa0; }
+.arch-ic.t-pdf { background: #c0262d; } .arch-ic.t-doc { background: #2456a6; } .arch-ic.t-img { background: #0f7c86; } .arch-ic.t-xls { background: #1f8a4c; } .arch-ic.t-aud { background: #b4671a; } .arch-ic.t-vid { background: #6a3fa0; }
 .arch-nom { min-width: 0; display: grid; gap: 2px; font-size: 13px; }
 .arch-nom a { color: var(--ink); font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .arch-nom a:hover { text-decoration: underline; }
@@ -817,17 +817,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const esDelCaso = (x, c) => x.casoId ? x.casoId === c.id : x.caso.trim().toLowerCase() === c.nombre.trim().toLowerCase();
   const claseDe = (a) => a.clase === 'diligencia' || (!a.clase && /dilig/i.test(a.tipo || '')) ? 'diligencia' : 'audiencia';
   // Files attached to a case live in Firebase Storage under users/{owner}/casos/{caso}/; the case keeps the list.
-  const ACEPTA_ARCH = '.pdf,.doc,.docx,image/*,.heic,.mp4,.mov,video/mp4,video/quicktime';
-  const MAX_ARCH = 300 * 1024 * 1024;
-  const TIPOS_EXT = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/mp4' };
+  const ACEPTA_ARCH = '.pdf,.doc,.docx,.xls,.xlsx,.csv,image/*,.heic,audio/*,.mp3,.m4a,.wav,.aac,.ogg,.opus';
+  const MAX_ARCH = 50 * 1024 * 1024;
+  const TIPOS_EXT = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', csv: 'text/csv', mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', aac: 'audio/aac', ogg: 'audio/ogg', opus: 'audio/ogg' };
   const extDe = (n) => (String(n).toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '';
-  const tipoArchivo = (n, t) => { const e = extDe(n); t = String(t || ''); if (e === 'pdf' || t === 'application/pdf') return 'pdf'; if (e === 'doc' || e === 'docx' || /word/.test(t)) return 'doc'; if (/^image\//.test(t) || /^(jpe?g|png|gif|webp|heic|heif)$/.test(e)) return 'img'; if (/^video\//.test(t) || /^(mp4|mov|m4v)$/.test(e)) return 'vid'; return 'otro'; };
+  const tipoArchivo = (n, t) => { const e = extDe(n); t = String(t || ''); if (e === 'pdf' || t === 'application/pdf') return 'pdf'; if (e === 'doc' || e === 'docx' || /word/.test(t)) return 'doc'; if (/^(xlsx?|csv)$/.test(e) || /excel|spreadsheet|text\/csv/.test(t)) return 'xls'; if (/^image\//.test(t) || /^(jpe?g|png|gif|webp|heic|heif)$/.test(e)) return 'img'; if (/^audio\//.test(t) || /^(mp3|m4a|wav|aac|ogg|opus)$/.test(e)) return 'aud'; return 'otro'; };
   const tamTexto = (b) => { b = Number(b) || 0; if (!b) return ''; if (b < 1024 * 1024) return Math.max(1, Math.round(b / 1024)) + ' KB'; return (b / 1024 / 1024).toFixed(b < 10 * 1024 * 1024 ? 1 : 0).replace('.', ',') + ' MB'; };
   const subiendo = {};
   function subirArchivo(c, f) {
     const tipo = TIPOS_EXT[extDe(f.name)] || f.type || '';
-    if (tipoArchivo(f.name, tipo) === 'otro' || !tipo) { setMsg(`${f.name}: solo se aceptan PDF, Word, fotos y videos MP4 o MOV.`, true); return; }
-    if (f.size > MAX_ARCH) { setMsg(`${f.name} pesa más de 300 MB.`, true); return; }
+    if (tipoArchivo(f.name, tipo) === 'otro' || !tipo) { setMsg(`${f.name}: solo se aceptan PDF, Word, Excel, audios y fotos.`, true); return; }
+    if (f.size > MAX_ARCH) { setMsg(`${f.name} pesa más de 50 MB.`, true); return; }
     const dueno = invitado ? invitado.owner : yoUid;
     const limpio = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-120) || 'archivo';
     const ruta = `users/${dueno}/casos/${c.id}/${Date.now()}-${limpio}`;
@@ -1438,7 +1438,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             const li = document.createElement('li'); li.className = 'arch-it';
             const t = tipoArchivo(a.nombre, a.tipo);
             const ic = document.createElement('a'); ic.className = 'arch-ic t-' + t; ic.href = a.url; ic.target = '_blank'; ic.rel = 'noopener'; ic.setAttribute('aria-hidden', 'true'); ic.tabIndex = -1;
-            if (t === 'img') { const im = document.createElement('img'); im.src = a.url; im.alt = ''; im.loading = 'lazy'; ic.appendChild(im); } else ic.textContent = { pdf: 'PDF', doc: 'WORD', vid: 'VIDEO' }[t] || 'ARCH';
+            if (t === 'img') { const im = document.createElement('img'); im.src = a.url; im.alt = ''; im.loading = 'lazy'; ic.appendChild(im); } else ic.textContent = { pdf: 'PDF', doc: 'WORD', xls: 'EXCEL', aud: 'AUDIO' }[t] || 'ARCH';
             const nm = document.createElement('span'); nm.className = 'arch-nom';
             const ln = document.createElement('a'); ln.href = a.url; ln.target = '_blank'; ln.rel = 'noopener'; ln.textContent = a.nombre; ln.title = a.nombre;
             const sm = document.createElement('small'); sm.textContent = [tamTexto(a.tam), a.subido ? new Date(a.subido).toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' }) : '', a.porNombre ? 'subió ' + a.porNombre : ''].filter(Boolean).join(' · ');
@@ -1458,7 +1458,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const fi = document.createElement('input'); fi.type = 'file'; fi.multiple = true; fi.accept = ACEPTA_ARCH;
         fi.addEventListener('change', () => { const fl = [...fi.files]; fi.value = ''; fl.forEach((f) => subirArchivo(c, f)); });
         lb.append('Subir archivo', fi);
-        const ay = document.createElement('span'); ay.textContent = 'PDF, Word, fotos o videos MP4 / MOV (hasta 300 MB).';
+        const ay = document.createElement('span'); ay.textContent = 'PDF, Word, Excel, audios o fotos (hasta 50 MB).';
         sb.append(lb, ay); cArc.appendChild(sb);
       }
       const ed = document.createElement('div'); ed.className = 'det-acts';
