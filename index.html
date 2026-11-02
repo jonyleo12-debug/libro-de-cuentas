@@ -1542,10 +1542,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       if (c.ajuste) { const aj = document.createElement('p'); aj.className = 'det-nota'; aj.textContent = `Ajuste manual del pagado: ${c.ajuste > 0 ? '+' : ''}${usd.format(c.ajuste)} (no cuenta como ingreso del mes).`; cPag.appendChild(aj); }
       const gPag = document.createElement('div'); gPag.className = 'det-edit'; cPag.appendChild(gPag);
-      const cCli = tarjeta('Datos del cliente', 'c-cli');
+      const cCli = tarjeta('Datos del cliente y causa', 'c-cli');
       const gCli = document.createElement('div'); gCli.className = 'det-edit'; cCli.appendChild(gCli);
-      const cCau = tarjeta('Causa y observación', 'c-cau');
-      const gCau = document.createElement('div'); gCau.className = 'det-dos'; cCau.appendChild(gCau);
+      const gCau = document.createElement('div'); gCau.className = 'det-dos'; cCli.appendChild(gCau);
       const cSat = tarjeta('e-SATJE', 'c-sat');
       {
         const nums = causasDe(c);
