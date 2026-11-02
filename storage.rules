@@ -21,5 +21,10 @@ service firebase.storage {
       allow read, delete: if esDueno(uid) || esAsistente(uid);
       allow create: if (esDueno(uid) || esAsistente(uid)) && tipoValido();
     }
+    // Biblioteca y repositorio (modelos, normativa, etc.)
+    match /users/{uid}/biblioteca/{archivo} {
+      allow read, delete: if esDueno(uid) || esAsistente(uid);
+      allow create: if (esDueno(uid) || esAsistente(uid)) && tipoValido();
+    }
   }
 }

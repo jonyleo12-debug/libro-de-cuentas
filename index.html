@@ -431,6 +431,30 @@ body.invitado #sec-casos { display: grid !important; }
 #sec-notas { position: relative; perspective: 1600px; padding: 0; display: grid; grid-template-rows: 1fr; align-content: stretch; }
 .nf-in { position: relative; display: grid; grid-template-rows: 1fr; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
 #sec-notas.vuelta .nf-in { transform: rotateY(-180deg); }
+#sec-notas.vuelta.biblio .nf-in { transform: rotateY(180deg); }
+#sec-notas.vuelta .nf-cara, #sec-notas:not(.vuelta) .nf-dorso { pointer-events: none; }
+#sec-notas.vuelta.biblio { min-height: 470px; }
+.libros-btn { position: absolute; z-index: 2; left: 10px; bottom: 8px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
+.libros-btn:hover { color: #6e7178; transform: scale(1.08); }
+.nf-dorso.nf-biblio { grid-template-rows: auto auto minmax(0, 1fr) auto; align-content: stretch; padding-bottom: 46px; }
+.nf-biblio.soltar .nota-soltar { display: grid; }
+.bib-cab { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.bib-cab h2 { margin: 0; }
+.bib-cab input { flex: 1 1 140px; max-width: 220px; padding: 7px 12px; font-size: 13px; }
+.bib-tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; align-self: start; }
+.bib-tabs button { padding: 5px 12px; font-size: 12.5px; }
+.bib-lista { overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; min-height: 0; padding-right: 4px; }
+.bib-it { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 8px; border-radius: 12px; background: color-mix(in srgb, var(--bg) 60%, transparent); }
+.bib-it .arch-ic { width: 32px; height: 32px; border-radius: 8px; font-size: 8px; flex: none; }
+.bib-it .bib-nom { display: grid; min-width: 0; flex: 1; }
+.bib-it .bib-nom a { color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; }
+.bib-it .bib-nom a:hover { text-decoration: underline; }
+.bib-it small { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bib-it .ghost { padding: 4px 10px; font-size: 12px; flex: none; }
+.bib-sub { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.bib-sub select { padding: 7px 12px; font-size: 13px; width: auto; }
+.bib-up { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 14px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.bib-vacio { color: var(--muted); font-size: 13.5px; margin: 0; }
 .nf-cara, .nf-dorso { backface-visibility: hidden; -webkit-backface-visibility: hidden; padding: 26px; box-sizing: border-box; }
 @media (max-width: 640px) { .nf-cara, .nf-dorso { padding: 20px 16px; } }
 .nf-cara { position: relative; display: grid; gap: 18px; align-content: start; }
@@ -769,12 +793,24 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <ul class="nota-adjs" id="nota-adjs"></ul>
     </form>
     <div class="notas" id="notas"></div>
+    <button type="button" class="libros-btn" aria-label="Abrir biblioteca y repositorio" title="Biblioteca y repositorio"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 4h3.5v16H4zM8.5 4H12v16H8.5zM13.6 5.2l3.3-1 4.3 14.8-3.3 1z"/></svg></button>
     <button type="button" class="doblez" aria-label="Ver acciones a revisar"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button>
    </div>
    <div class="nf-dorso" aria-hidden="true">
     <h2>Acciones a revisar</h2>
     <div class="acc-box" id="acciones"></div>
     <button type="button" class="doblez" aria-label="Volver a notas"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button>
+   </div>
+   <div class="nf-dorso nf-biblio" id="biblio" aria-hidden="true" hidden>
+    <div class="bib-cab"><h2>Biblioteca y repositorio</h2><input type="search" id="bib-busca" placeholder="Buscar…" aria-label="Buscar en la biblioteca"></div>
+    <div class="bib-tabs" id="bib-tabs" role="tablist"></div>
+    <div class="bib-lista" id="bib-lista"></div>
+    <div class="bib-sub">
+      <select id="bib-cat" aria-label="Categoría del documento"></select>
+      <label class="ghost bib-up"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Subir<input type="file" id="bib-file" multiple hidden></label>
+    </div>
+    <div class="nota-soltar" aria-hidden="true">Suelta el documento aquí</div>
+    <button type="button" class="libros-btn" aria-label="Volver a notas" title="Volver a notas"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 4h3.5v16H4zM8.5 4H12v16H8.5zM13.6 5.2l3.3-1 4.3 14.8-3.3 1z"/></svg></button>
    </div>
    </div>
   </section>
@@ -1290,6 +1326,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   })));
   function render() {
     try { renderAcciones(); } catch (e) {}
+    try { renderBiblio(); } catch (e) {}
     { // only my share of each case payment counts as my income
       const pm = new Map(casos.map((c) => [c.id, c.parte]));
       rows.forEach((r) => { const pp = r.casoId && pm.has(r.casoId) ? pm.get(r.casoId) : 100; r.parte = pp; r.monto = Math.round(r.bruto * pp) / 100; });
@@ -2527,11 +2564,88 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [], respuestas: Array.isArray(x.respuestas) ? x.respuestas.filter((r) => r && (r.texto || (Array.isArray(r.archivos) && r.archivos.length))) : [] }; };
   let respAbierta = null, respDraft = '';
   { const sn = document.getElementById('sec-notas');
-    sn.querySelectorAll('.doblez').forEach((b) => b.addEventListener('click', () => {
-      const v = sn.classList.toggle('vuelta');
-      sn.querySelector('.nf-cara').setAttribute('aria-hidden', String(v)); sn.querySelector('.nf-dorso').setAttribute('aria-hidden', String(!v));
-      sn.querySelector(v ? '.nf-dorso .doblez' : '.nf-cara .doblez').focus({ preventScroll: true });
-    })); }
+    const cara = sn.querySelector('.nf-cara'), acc = sn.querySelector('.nf-dorso:not(.nf-biblio)'), bib = $('biblio');
+    const girar = (modo) => { // modo: null (notas), 'acc' or 'bib'
+      if (modo) { acc.hidden = modo !== 'acc'; bib.hidden = modo !== 'bib'; } sn.classList.toggle('biblio', modo === 'bib');
+      sn.classList.toggle('vuelta', !!modo);
+      cara.setAttribute('aria-hidden', String(!!modo)); acc.setAttribute('aria-hidden', String(modo !== 'acc')); bib.setAttribute('aria-hidden', String(modo !== 'bib'));
+      const f = modo === 'acc' ? acc.querySelector('.doblez') : modo === 'bib' ? bib.querySelector('.libros-btn') : cara.querySelector('.doblez');
+      if (f) f.focus({ preventScroll: true });
+    };
+    cara.querySelector('.doblez').addEventListener('click', () => girar('acc'));
+    acc.querySelector('.doblez').addEventListener('click', () => girar(null));
+    cara.querySelector('.libros-btn').addEventListener('click', () => girar('bib'));
+    bib.querySelector('.libros-btn').addEventListener('click', () => girar(null)); }
+  // Library: models of lawsuits, laws and other reference documents shared with the team.
+  const BIB_CATS = ['Modelos de demandas', 'Escritos y formatos', 'Normativa', 'Jurisprudencia', 'Otros'];
+  let biblio = [], bibTab = '', bibBusca = '', bibSubiendo = [];
+  { const sel = $('bib-cat'); sel.replaceChildren(...BIB_CATS.map((k) => { const o = document.createElement('option'); o.value = k; o.textContent = k; return o; })); }
+  $('bib-file').accept = ACEPTA_ARCH;
+  $('bib-busca').addEventListener('input', (e) => { bibBusca = e.target.value; renderBiblio(); });
+  function renderBiblio() {
+    const tabs = $('bib-tabs'); if (!tabs) return;
+    const cuenta = (k) => biblio.filter((d) => !k || d.categoria === k).length;
+    tabs.replaceChildren(...['', ...BIB_CATS].filter((k) => !k || cuenta(k)).map((k) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost' + (bibTab === k ? ' on' : ''); b.textContent = (k || 'Todos') + ` (${cuenta(k)})`; b.setAttribute('aria-pressed', String(bibTab === k)); b.addEventListener('click', () => { bibTab = k; if (k) $('bib-cat').value = k; renderBiblio(); }); return b; }));
+    if (bibTab && !cuenta(bibTab)) bibTab = '';
+    const q = window.__normBusca ? window.__normBusca(bibBusca) : bibBusca.toLowerCase();
+    const xs = biblio.filter((d) => (!bibTab || d.categoria === bibTab) && (!q || (window.__normBusca ? window.__normBusca(d.nombre + ' ' + d.categoria) : (d.nombre + ' ' + d.categoria).toLowerCase()).includes(q))).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    const items = xs.map((d) => {
+      const it = document.createElement('div'); it.className = 'bib-it';
+      const t = tipoArchivo(d.nombre, d.tipo);
+      const ic = document.createElement('a'); ic.className = 'arch-ic t-' + t; ic.href = d.url; ic.target = '_blank'; ic.rel = 'noopener'; ic.tabIndex = -1; ic.setAttribute('aria-hidden', 'true');
+      if (t === 'img') { const im = document.createElement('img'); im.src = d.url; im.alt = ''; im.loading = 'lazy'; ic.appendChild(im); } else ic.textContent = { pdf: 'PDF', doc: 'WORD', xls: 'EXCEL', aud: 'AUDIO' }[t] || 'ARCH';
+      const nm = document.createElement('span'); nm.className = 'bib-nom';
+      const ln = document.createElement('a'); ln.href = d.url; ln.target = '_blank'; ln.rel = 'noopener'; ln.textContent = d.nombre; ln.title = d.nombre;
+      const sm = document.createElement('small'); sm.textContent = [bibTab ? '' : d.categoria, tamTexto(d.tam), d.porNombre ? 'subió ' + d.porNombre : ''].filter(Boolean).join(' · ');
+      nm.append(ln, sm); it.append(ic, nm);
+      if (!invitado || d.por === yoUid) it.appendChild(delBtn('bib:' + d.id, async () => {
+        try { await deleteObject(sRef(storage, d.ruta)); } catch (e) { if (e && e.code !== 'storage/object-not-found') { setMsg('No se pudo borrar el documento. Intenta de nuevo.', true); return; } }
+        await libroRef.collection('biblioteca').doc(d.id).delete(); setMsg(`Se borró ${d.nombre}.`);
+      }, 'Borrar', '¿Borrar?'));
+      return it;
+    });
+    bibSubiendo.forEach((u) => { const p = document.createElement('p'); p.className = 'bib-vacio'; p.id = 'bu-' + u.key; p.textContent = `Subiendo ${u.nombre}… ${u.pct}%`; items.push(p); });
+    if (!items.length) { const p = document.createElement('p'); p.className = 'bib-vacio'; p.textContent = biblio.length ? 'No hay documentos que coincidan.' : 'Aún no hay documentos. Sube modelos de demandas, la Constitución, códigos y otras normas para tenerlos siempre a mano.'; items.push(p); }
+    $('bib-lista').replaceChildren(...items);
+  }
+  function subirBiblio(f) {
+    if (!libroRef) return;
+    const tipo = TIPOS_EXT[extDe(f.name)] || f.type || '';
+    if (tipoArchivo(f.name, tipo) === 'otro' || !tipo) { setMsg(`${f.name}: solo se aceptan PDF, Word, Excel, audios y fotos.`, true); return; }
+    if (f.size > MAX_ARCH) { setMsg(`${f.name} pesa más de 50 MB.`, true); return; }
+    const dueno = invitado ? invitado.owner : yoUid;
+    const limpio = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-120) || 'archivo';
+    const ruta = `users/${dueno}/biblioteca/${Date.now()}-${limpio}`;
+    const categoria = $('bib-cat').value || BIB_CATS[0];
+    const u = { key: Math.random().toString(36).slice(2), nombre: f.name, pct: 0 };
+    bibSubiendo.push(u); renderBiblio();
+    const tarea = uploadBytesResumable(sRef(storage, ruta), f, { contentType: tipo });
+    const fin = () => { bibSubiendo = bibSubiendo.filter((y) => y !== u); renderBiblio(); };
+    tarea.on('state_changed', (sn) => { u.pct = sn.totalBytes ? Math.floor(sn.bytesTransferred / sn.totalBytes * 100) : 0; const el = document.getElementById('bu-' + u.key); if (el) el.textContent = `Subiendo ${u.nombre}… ${u.pct}%`; },
+      (e) => { fin(); setMsg(e && e.code === 'storage/unauthorized' ? 'Falta permiso para la biblioteca. Actualiza las reglas de Storage en Firebase.' : `No se pudo subir ${f.name}.`, true); },
+      async () => {
+        try {
+          const url = await getDownloadURL(tarea.snapshot.ref);
+          await libroRef.collection('biblioteca').add({ nombre: f.name, ruta, url, tipo, tam: f.size, categoria, subido: new Date().toISOString(), por: invitado ? yoUid : 'dueno', porNombre: invitado ? (invitado.nombre || '') : '' });
+          setMsg(`${f.name} quedó en ${categoria}.`);
+        } catch (e) { setMsg(`No se pudo guardar ${f.name} en la biblioteca.`, true); }
+        fin();
+      });
+  }
+  $('bib-file').addEventListener('change', (e) => { const fl = [...e.target.files]; e.target.value = ''; fl.forEach(subirBiblio); });
+  { const caja = $('biblio'); let n = 0;
+    const tieneArch = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+    caja.addEventListener('dragenter', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n++; caja.classList.add('soltar'); });
+    caja.addEventListener('dragover', (e) => { if (!tieneArch(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    caja.addEventListener('dragleave', () => { n = Math.max(0, n - 1); if (!n) caja.classList.remove('soltar'); });
+    caja.addEventListener('drop', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n = 0; caja.classList.remove('soltar'); [...e.dataTransfer.files].forEach(subirBiblio); }); }
+  function suscribirBiblio() {
+    if (!libroRef) return;
+    libroRef.collection('biblioteca').onSnapshot((snap) => {
+      biblio = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Documento'), ruta: String(x.ruta || ''), url: String(x.url || ''), tipo: String(x.tipo || ''), tam: Number(x.tam) || 0, categoria: BIB_CATS.includes(x.categoria) ? x.categoria : 'Otros', por: String(x.por || ''), porNombre: String(x.porNombre || '') }; }).filter((d) => d.url);
+      renderBiblio();
+    }, () => { biblio = []; renderBiblio(); });
+  }
   function renderAcciones() {
     const box = document.getElementById('acciones'); if (!box) return;
     const grupos = [];
@@ -2800,7 +2914,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (v !== !!invitado.ocultarDinero) { invitado.ocultarDinero = v; ponerDinero(); render(); }
     }, () => {});
     suscribirCasos(lost);
-    suscribirNotas(lost);
+    suscribirNotas(lost); suscribirBiblio();
     render();
   }
 
@@ -2857,7 +2971,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       renderPronto();
     }, lost);
     suscribirCasos(lost);
-    suscribirNotas(lost);
+    suscribirNotas(lost); suscribirBiblio();
     col('miembros').onSnapshot((snap) => {
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();

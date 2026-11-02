@@ -28,6 +28,12 @@ service cloud.firestore {
         allow update: if esAsistente(uid) && (veDinero(uid)
           || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['total', 'totales', 'ajuste', 'pagadosExtra', 'parte']));
       }
+      // Biblioteca: el asistente ve todo, sube documentos y borra solo los suyos.
+      match /biblioteca/{id} {
+        allow read: if esAsistente(uid);
+        allow create: if esAsistente(uid) && request.resource.data.por == request.auth.uid;
+        allow delete: if esAsistente(uid) && resource.data.por == request.auth.uid;
+      }
       match /audiencias/{id} {
         allow read, write: if esAsistente(uid);
       }
