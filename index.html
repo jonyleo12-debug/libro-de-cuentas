@@ -457,6 +457,9 @@ body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minma
 .nota-form textarea { resize: vertical; min-height: 70px; }
 #sec-notas .nota-form textarea { height: 190px; resize: none; padding-bottom: 46px; }
 .nota-caja { position: relative; }
+.resp-caja .nota-resp-in { padding-right: 52px; width: 100%; box-sizing: border-box; }
+.resp-caja .nota-adj { right: 8px; bottom: 8px; width: 32px; height: 32px; }
+.nota-resps .nota-arch { margin-top: 4px; }
 .nota-adj { position: absolute; right: 12px; bottom: 12px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 99px; background: var(--panel); box-shadow: var(--raise-sm); color: var(--muted); cursor: pointer; text-transform: none; letter-spacing: 0; transition: color .2s, transform .2s; }
 .nota-adj:hover { color: var(--ink); transform: translateY(-1px); }
 .nota-adj input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
@@ -2508,7 +2511,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const acts = document.createElement('span'); acts.className = 'acts';
       const puedeMarcar = invitado ? n.para === yo : true;
       if (n.para) { const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ghost'; rb.textContent = respAbierta === n.id ? 'Cancelar' : 'Responder';
-        rb.addEventListener('click', () => { respAbierta = respAbierta === n.id ? null : n.id; respDraft = ''; renderNotas(); }); acts.appendChild(rb); }
+        rb.addEventListener('click', () => { soltarRespAdj(); respAbierta = respAbierta === n.id ? null : n.id; respDraft = ''; renderNotas(); }); acts.appendChild(rb); }
       if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Hecha';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
       if (esMia || !invitado) { const db = document.createElement('button'); db.type = 'button'; db.className = 'ghost'; db.textContent = 'Borrar';
@@ -2538,7 +2541,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           const b = document.createElement('b'); b.textContent = quien;
           const tx = document.createElement('span'); tx.textContent = r.texto;
           const fh = document.createElement('small'); fh.textContent = r.creado ? new Date(r.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-          li.append(b, tx, fh); ul.appendChild(li);
+          li.append(b); if (r.texto) li.append(tx);
+          if (Array.isArray(r.archivos) && r.archivos.length) {
+            const ua = document.createElement('ul'); ua.className = 'nota-arch';
+            r.archivos.forEach((a) => {
+              const la = document.createElement('li'); const ln = document.createElement('a'); ln.href = a.url; ln.target = '_blank'; ln.rel = 'noopener'; ln.title = a.nombre;
+              const tp = tipoArchivo(a.nombre, a.tipo); const ic = document.createElement('span'); ic.className = 'arch-ic t-' + tp;
+              if (tp === 'img') { const im = document.createElement('img'); im.src = a.url; im.alt = ''; im.loading = 'lazy'; ic.appendChild(im); } else ic.textContent = { pdf: 'PDF', doc: 'WORD', xls: 'EXCEL', aud: 'AUDIO' }[tp] || 'ARCH';
+              const nm = document.createElement('span'); nm.textContent = a.nombre;
+              ln.append(ic, nm); la.appendChild(ln); ua.appendChild(la);
+            });
+            li.append(ua);
+          }
+          li.append(fh); ul.appendChild(li);
         });
         card.append(ul);
       }
@@ -2547,15 +2562,33 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         ta.value = respDraft;
         ta.addEventListener('input', () => { respDraft = ta.value; });
         ta.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') { respAbierta = null; respDraft = ''; renderNotas(); return; }
+          if (e.key === 'Escape') { soltarRespAdj(); respAbierta = null; respDraft = ''; renderNotas(); return; }
           if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
           e.preventDefault();
-          const texto = ta.value.trim(); if (!texto) return;
+          if (respAdj.some((u) => !u.a)) { setMsg('Espera a que terminen de subir los documentos.', true); return; }
+          const archivos = respAdj.map((u) => u.a);
+          const texto = ta.value.trim(); if (!texto && !archivos.length) return;
           const r = { texto, autor: invitado ? yo : 'dueno', autorNombre: invitado ? (invitado.nombre || '') : '', color: invitado ? (invitado.color || '') : '', creado: new Date().toISOString() };
+          if (archivos.length) r.archivos = archivos;
           libroRef.collection('notas').doc(n.id).update({ respuestas: arrayUnion(r) });
-          respAbierta = null; respDraft = ''; renderNotas(); setMsg('Respuesta enviada.');
+          respAdj = []; respAbierta = null; respDraft = ''; renderNotas(); setMsg('Respuesta enviada.');
         });
-        card.append(ta);
+        const caja = document.createElement('div'); caja.className = 'nota-caja resp-caja';
+        const adj = document.createElement('label'); adj.className = 'nota-adj'; adj.title = 'Adjuntar documento'; adj.setAttribute('aria-label', 'Adjuntar documento a la respuesta');
+        adj.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>';
+        const fi = document.createElement('input'); fi.type = 'file'; fi.multiple = true; fi.accept = ACEPTA_ARCH; fi.hidden = true;
+        fi.addEventListener('change', () => { const fl = [...fi.files]; fi.value = ''; fl.forEach((f) => adjuntarANota(f, true)); ta.focus(); });
+        adj.appendChild(fi);
+        const sol = document.createElement('div'); sol.className = 'nota-soltar'; sol.setAttribute('aria-hidden', 'true'); sol.textContent = 'Suelta el documento aquí';
+        { let dn = 0; const tieneArch = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+          caja.addEventListener('dragenter', (e) => { if (!tieneArch(e)) return; e.preventDefault(); dn++; caja.classList.add('soltar'); });
+          caja.addEventListener('dragover', (e) => { if (!tieneArch(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+          caja.addEventListener('dragleave', () => { dn = Math.max(0, dn - 1); if (!dn) caja.classList.remove('soltar'); });
+          caja.addEventListener('drop', (e) => { if (!tieneArch(e)) return; e.preventDefault(); dn = 0; caja.classList.remove('soltar'); [...e.dataTransfer.files].forEach((f) => adjuntarANota(f, true)); }); }
+        caja.append(ta, adj, sol);
+        const ra = document.createElement('ul'); ra.className = 'nota-adjs'; ra.id = 'resp-adjs';
+        card.append(caja, ra);
+        pintarAdjResp();
         setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0);
       }
       card.append(pie);
@@ -2564,48 +2597,52 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   $('nota-txt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('nota-form').requestSubmit(); } });
   // Documents attached to a new note upload right away; the note keeps the finished ones when it is sent.
-  let notaAdj = [];
-  function pintarAdjNota() {
-    $('nota-adjs').replaceChildren(...notaAdj.map((u) => {
-      const li = document.createElement('li'); li.id = 'na-' + u.key;
-      const nm = document.createElement('span'); nm.textContent = u.nombre;
-      const st = document.createElement('small'); st.textContent = u.a ? '✓' : u.pct + '%';
-      const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Quitar ' + u.nombre);
-      x.addEventListener('click', () => { if (u.tarea && !u.a) u.tarea.cancel(); if (u.a) deleteObject(sRef(storage, u.a.ruta)).catch(() => {}); notaAdj = notaAdj.filter((y) => y !== u); pintarAdjNota(); });
-      li.append(nm, st, x); return li;
-    }));
-  }
-  function adjuntarANota(f) {
+  let notaAdj = [], respAdj = [];
+  const chipsAdj = (lista, quitar) => lista.map((u) => {
+    const li = document.createElement('li'); li.id = 'na-' + u.key;
+    const nm = document.createElement('span'); nm.textContent = u.nombre;
+    const st = document.createElement('small'); st.textContent = u.a ? '✓' : u.pct + '%';
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Quitar ' + u.nombre);
+    x.addEventListener('click', () => { if (u.tarea && !u.a) u.tarea.cancel(); if (u.a) deleteObject(sRef(storage, u.a.ruta)).catch(() => {}); quitar(u); });
+    li.append(nm, st, x); return li;
+  });
+  function pintarAdjNota() { $('nota-adjs').replaceChildren(...chipsAdj(notaAdj, (u) => { notaAdj = notaAdj.filter((y) => y !== u); pintarAdjNota(); })); }
+  function pintarAdjResp() { const ul = document.getElementById('resp-adjs'); if (ul) ul.replaceChildren(...chipsAdj(respAdj, (u) => { respAdj = respAdj.filter((y) => y !== u); pintarAdjResp(); })); }
+  function soltarRespAdj() { respAdj.forEach((u) => { if (u.tarea && !u.a) u.tarea.cancel(); if (u.a) deleteObject(sRef(storage, u.a.ruta)).catch(() => {}); }); respAdj = []; }
+  function adjuntarANota(f, esResp) {
     if (!libroRef) return;
     const tipo = TIPOS_EXT[extDe(f.name)] || f.type || '';
     if (tipoArchivo(f.name, tipo) === 'otro' || !tipo) { setMsg(`${f.name}: solo se aceptan PDF, Word, Excel, audios y fotos.`, true); return; }
     if (f.size > MAX_ARCH) { setMsg(`${f.name} pesa más de 50 MB.`, true); return; }
     const dueno = invitado ? invitado.owner : yoUid;
-    const limpio = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-120) || 'archivo';
+    const limpio = f.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-120) || 'archivo';
     const ruta = `users/${dueno}/notas/${Date.now()}-${limpio}`;
     const u = { key: Math.random().toString(36).slice(2), nombre: f.name, pct: 0, a: null };
-    notaAdj.push(u); pintarAdjNota();
+    const pintar = esResp ? pintarAdjResp : pintarAdjNota;
+    const sacar = () => { if (esResp) respAdj = respAdj.filter((y) => y !== u); else notaAdj = notaAdj.filter((y) => y !== u); };
+    if (esResp) respAdj.push(u); else notaAdj.push(u);
+    pintar();
     u.tarea = uploadBytesResumable(sRef(storage, ruta), f, { contentType: tipo });
     u.tarea.on('state_changed', (sn) => {
       u.pct = sn.totalBytes ? Math.floor(sn.bytesTransferred / sn.totalBytes * 100) : 0;
       const el = document.querySelector('#na-' + u.key + ' small'); if (el) el.textContent = u.pct + '%';
     }, (e) => {
-      notaAdj = notaAdj.filter((y) => y !== u); pintarAdjNota();
+      sacar(); pintar();
       if (!e || e.code !== 'storage/canceled') setMsg(e && e.code === 'storage/unauthorized' ? 'No tienes permiso para subir documentos. Revisa las reglas de Storage en Firebase.' : `No se pudo subir ${f.name}.`, true);
     }, async () => {
       try { const url = await getDownloadURL(u.tarea.snapshot.ref); u.a = { nombre: f.name, ruta, url, tipo, tam: f.size, subido: new Date().toISOString() }; }
-      catch (e) { notaAdj = notaAdj.filter((y) => y !== u); setMsg(`No se pudo terminar de subir ${f.name}.`, true); }
-      pintarAdjNota();
+      catch (e) { sacar(); setMsg(`No se pudo terminar de subir ${f.name}.`, true); }
+      pintar();
     });
   }
   $('nota-file').accept = ACEPTA_ARCH;
-  $('nota-file').addEventListener('change', (e) => { const fl = [...e.target.files]; e.target.value = ''; fl.forEach(adjuntarANota); $('nota-txt').focus(); });
+  $('nota-file').addEventListener('change', (e) => { const fl = [...e.target.files]; e.target.value = ''; fl.forEach((f) => adjuntarANota(f, false)); $('nota-txt').focus(); });
   { const caja = $('nota-caja'); let n = 0;
     const tieneArch = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
     caja.addEventListener('dragenter', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n++; caja.classList.add('soltar'); });
     caja.addEventListener('dragover', (e) => { if (!tieneArch(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
     caja.addEventListener('dragleave', () => { n = Math.max(0, n - 1); if (!n) caja.classList.remove('soltar'); });
-    caja.addEventListener('drop', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n = 0; caja.classList.remove('soltar'); [...e.dataTransfer.files].forEach(adjuntarANota); }); }
+    caja.addEventListener('drop', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n = 0; caja.classList.remove('soltar'); [...e.dataTransfer.files].forEach((f) => adjuntarANota(f, false)); }); }
   $('nota-form').addEventListener('submit', (e) => {
     e.preventDefault();
     if (notaAdj.some((u) => !u.a)) { setMsg('Espera a que terminen de subir los documentos.', true); return; }
