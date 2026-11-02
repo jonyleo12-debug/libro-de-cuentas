@@ -8,6 +8,12 @@
 <meta name="theme-color" content="#eeeeef">
 <title>Libro de cuentas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: a ledger. Month header and totals first, then the entry form, then the month's entries and the monthly history. */
@@ -762,8 +768,8 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 <script type="module">
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, onSnapshotsInSync, getDoc, query, where, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, onSnapshotsInSync, getDoc, query, where, arrayUnion, arrayRemove, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+// Firebase Storage loads only when a file is uploaded or deleted, so it does not slow down opening the app.
 
 // ⚙️ Configuración de Firebase (pega aquí la de tu proyecto)
 const firebaseConfig = {
@@ -783,7 +789,25 @@ const usuarioDe = (email) => String(email || '').endsWith('@' + DOMINIO_USR) ? S
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 auth.languageCode = 'es';
-const storage = getStorage(fbApp);
+let stCarga = null;
+const cargarStorage = () => stCarga || (stCarga = (window.__stMod ? Promise.resolve(window.__stMod) : import('https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js')).then((m) => ({ m, s: m.getStorage(fbApp) })));
+const storage = null;
+const sRef = (_, ruta) => ruta;
+const deleteObject = async (ruta) => { const { m, s } = await cargarStorage(); return m.deleteObject(m.ref(s, ruta)); };
+const getDownloadURL = async (ref) => { const { m } = await cargarStorage(); return m.getDownloadURL(ref); };
+const uploadBytesResumable = (ruta, archivo, meta) => {
+  let real = null, cancelado = false;
+  const t = {
+    snapshot: null,
+    on: (ev, prog, err, fin) => { cargarStorage().then(({ m, s }) => {
+      if (cancelado) { err({ code: 'storage/canceled' }); return; }
+      real = m.uploadBytesResumable(m.ref(s, ruta), archivo, meta); t.snapshot = real.snapshot;
+      real.on(ev, (sn) => { t.snapshot = sn; prog(sn); }, err, () => { t.snapshot = real.snapshot; fin(); });
+    }).catch(err); },
+    cancel: () => { cancelado = true; if (real) real.cancel(); },
+  };
+  return t;
+};
 const fs = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
 // Small wrapper so the book code can read and write the same way everywhere.
@@ -2040,9 +2064,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (!n) return;
     if (respaldos.some((r) => r.id === todayStr)) return;
     try {
-      await col('respaldos').doc(todayStr).set({ fecha: todayStr, creado: new Date().toISOString(), registros: n, datos: JSON.stringify(data) });
+      await col('respaldosDatos').doc(todayStr).set({ datos: JSON.stringify(data) });
+      await col('respaldos').doc(todayStr).set({ fecha: todayStr, creado: new Date().toISOString(), registros: n });
       const viejos = [...respaldos.map((r) => r.id), todayStr].filter((v, i, a) => a.indexOf(v) === i).sort().reverse().slice(KEEP);
-      await Promise.all(viejos.map((id) => col('respaldos').doc(id).delete()));
+      await Promise.all(viejos.flatMap((id) => [col('respaldos').doc(id).delete(), col('respaldosDatos').doc(id).delete()]));
     } catch (e) { console.error(e); }
   }
   function drawRespaldos() {
@@ -2054,7 +2079,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const t = document.createElement('span'); const [y, m, d] = r.id.split('-');
       t.textContent = `${Number(d)} ${MESES[Number(m) - 1]} ${y} · ${r.registros} registros`;
       const b = delBtn('rest:' + r.id, async () => {
-        const full = respaldos.find((x) => x.id === r.id); const data = JSON.parse(full.datos || '{}'); let n = 0;
+        let texto = '';
+        try { const sd = await getDoc(doc(fs, 'users/' + yoUid + '/respaldosDatos/' + r.id)); if (sd.exists()) texto = String((sd.data() || {}).datos || ''); } catch (e) {}
+        if (!texto) { const full = respaldos.find((x) => x.id === r.id); texto = full ? full.datos : ''; }
+        const data = JSON.parse(texto || '{}'); let n = 0;
         COLS.forEach((c) => Object.entries(data[c] || {}).forEach(([id, dd]) => { if (dd && typeof dd === 'object' && /^[A-Za-z0-9_-]{1,100}$/.test(id)) { col(c).doc(id).set(dd); n++; } }));
         $('resp-msg').textContent = `Se restauraron ${n} registros de la copia del ${Number(d)} ${MESES[Number(m) - 1]}.`; $('resp-msg').className = 'msg';
       }, 'Restaurar', '¿Restaurar? Toca otra vez');
@@ -2448,6 +2476,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     };
     col('respaldos').onSnapshot((snap) => {
       respaldos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, registros: Number(x.registros) || 0, datos: String(x.datos || '') }; }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.id));
+      // Old copies kept the whole book inside the list, so opening the app downloaded every copy. Move each body to its own place once.
+      respaldos.filter((r) => r.datos).forEach((r) => { col('respaldosDatos').doc(r.id).set({ datos: r.datos }); col('respaldos').doc(r.id).update({ datos: deleteField() }); });
       drawRespaldos();
     }, () => {});
     setTimeout(() => { autoRespaldo(); drawAviso(); }, 8000);
