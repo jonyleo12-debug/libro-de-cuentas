@@ -1,18 +1,25 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Archivos de cada caso: users/{dueño}/casos/{caso}/{archivo}
-    match /users/{uid}/casos/{casoId}/{archivo} {
-      function esDueno() { return request.auth != null && request.auth.uid == uid; }
-      function esAsistente() {
-        return request.auth != null
-          && firestore.exists(/databases/(default)/documents/users/$(uid)/miembros/$(request.auth.uid))
-          && firestore.get(/databases/(default)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.rol == 'asistente';
-      }
-      allow read, delete: if esDueno() || esAsistente();
-      allow create: if (esDueno() || esAsistente())
-        && request.resource.size < 50 * 1024 * 1024
+    function esDueno(uid) { return request.auth != null && request.auth.uid == uid; }
+    function esAsistente(uid) {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/users/$(uid)/miembros/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.rol == 'asistente';
+    }
+    function tipoValido() {
+      return request.resource.size < 50 * 1024 * 1024
         && request.resource.contentType.matches('application/pdf|application/msword|application/vnd[.]openxmlformats-officedocument[.]wordprocessingml[.]document|application/vnd[.]ms-excel|application/vnd[.]openxmlformats-officedocument[.]spreadsheetml[.]sheet|text/csv|image/.*|audio/.*');
+    }
+    // Archivos de cada caso
+    match /users/{uid}/casos/{casoId}/{archivo} {
+      allow read, delete: if esDueno(uid) || esAsistente(uid);
+      allow create: if (esDueno(uid) || esAsistente(uid)) && tipoValido();
+    }
+    // Documentos adjuntos a las notas
+    match /users/{uid}/notas/{archivo} {
+      allow read, delete: if esDueno(uid) || esAsistente(uid);
+      allow create: if (esDueno(uid) || esAsistente(uid)) && tipoValido();
     }
   }
 }

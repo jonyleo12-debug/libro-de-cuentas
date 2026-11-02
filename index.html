@@ -357,7 +357,7 @@ body.invitado #sec-casos { display: grid !important; }
 @media (max-width: 900px) { .fila-nuevo { grid-template-columns: minmax(0, 1fr); } .fila-nuevo > #sec-notas { border-left: 0; border-top: 1px solid var(--line); } }
 body.invitado .fila-nuevo > #sec-notas { border: 0; }
 body.invitado .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
-#sec-notas .notas { grid-template-columns: minmax(0, 1fr); max-height: 300px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
+#sec-notas .notas { grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; max-height: 300px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
 body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); max-height: none; }
 #sec-notas .nota-bar { justify-content: flex-start; }
 .notas-cab { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px 14px; }
@@ -367,7 +367,24 @@ body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minma
 .notas-cab select { width: 100%; padding: 7px 12px; font-size: 14px; }
 .nota-form { display: grid; gap: 10px; }
 .nota-form textarea { resize: vertical; min-height: 70px; }
-#sec-notas .nota-form textarea { height: 190px; }
+#sec-notas .nota-form textarea { height: 190px; resize: none; padding-bottom: 46px; }
+.nota-caja { position: relative; }
+.nota-adj { position: absolute; right: 12px; bottom: 12px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 99px; background: var(--panel); box-shadow: var(--raise-sm); color: var(--muted); cursor: pointer; text-transform: none; letter-spacing: 0; transition: color .2s, transform .2s; }
+.nota-adj:hover { color: var(--ink); transform: translateY(-1px); }
+.nota-adj input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.nota-soltar { position: absolute; inset: 0; display: none; place-items: center; border-radius: 22px; border: 2px dashed var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel)); color: var(--accent); font-weight: 600; font-size: 14px; pointer-events: none; }
+.nota-caja.soltar .nota-soltar { display: grid; }
+.nota-adjs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.nota-adjs:empty { display: none; }
+.nota-adjs li { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 6px 8px 6px 12px; border-radius: 99px; background: var(--bg); box-shadow: var(--raise-sm); font-size: 12.5px; }
+.nota-adjs li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nota-adjs li small { color: var(--muted); white-space: nowrap; }
+.nota-adjs li button { border: 0; background: transparent; box-shadow: none; padding: 0 4px; font-size: 16px; line-height: 1; color: var(--muted); cursor: pointer; }
+.nota-arch { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.nota-arch a { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; border-radius: 10px; background: color-mix(in srgb, var(--panel) 70%, transparent); color: var(--ink); text-decoration: none; font-size: 13px; }
+.nota-arch a:hover { text-decoration: underline; }
+.nota-arch a span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nota-arch .arch-ic { width: 30px; height: 30px; border-radius: 8px; font-size: 8px; flex: none; }
 .nota-bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; justify-content: flex-end; }
 .nota-para-l { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: auto; min-width: 180px; }
 .nota-bar .btn { width: auto; padding-left: 26px; padding-right: 26px; }
@@ -622,7 +639,12 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   <section class="panel" id="sec-notas" aria-labelledby="h-notas">
     <div class="notas-cab"><h2 id="h-notas">Notas</h2><span class="nota-para-l" id="nota-para-l"><select id="nota-para" aria-label="Para quién es la nota" form="nota-form"></select></span><span class="sub" style="margin:0" id="nota-para-txt" hidden></span><span class="sub" style="display:inline;margin:0 0 0 auto" id="notas-n"></span></div>
     <form class="nota-form" id="nota-form">
-      <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota y presiona Enter…" aria-label="Nueva nota" enterkeyhint="send"></textarea>
+      <div class="nota-caja" id="nota-caja">
+        <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota y presiona Enter… También puedes arrastrar documentos aquí." aria-label="Nueva nota" enterkeyhint="send"></textarea>
+        <label class="nota-adj" id="nota-adj" title="Adjuntar documento" aria-label="Adjuntar documento"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><input type="file" id="nota-file" multiple></label>
+        <div class="nota-soltar" aria-hidden="true">Suelta el documento aquí</div>
+      </div>
+      <ul class="nota-adjs" id="nota-adjs"></ul>
     </form>
     <div class="notas" id="notas"></div>
   </section>
@@ -2148,7 +2170,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('nota-para-l').hidden = !miembros.length;
   }
   function juntarNotas() { const m = {}; Object.values(notasPor).forEach((arr) => arr.forEach((n) => { m[n.id] = n; })); notas = Object.values(m); renderNotas(); }
-  const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true }; };
+  const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [] }; };
   function renderNotas() {
     const box = $('notas'); if (!box) return;
     const yo = yoUid;
@@ -2177,22 +2199,81 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const puedeMarcar = invitado ? n.para === yo : true;
       if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Hecha';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
-      if (esMia || !invitado) acts.appendChild(delBtn('nota:' + n.id, () => libroRef.collection('notas').doc(n.id).delete(), 'Borrar', '¿Borrar?'));
+      if (esMia || !invitado) acts.appendChild(delBtn('nota:' + n.id, () => { n.archivos.forEach((a) => { if (a.ruta) deleteObject(sRef(storage, a.ruta)).catch(() => {}); }); libroRef.collection('notas').doc(n.id).delete(); }, 'Borrar', '¿Borrar?'));
       pie.append(f, acts);
-      card.append(k, t, pie);
+      card.append(k);
+      if (n.texto || !n.archivos.length) card.append(t);
+      if (n.archivos.length) {
+        const ul = document.createElement('ul'); ul.className = 'nota-arch';
+        n.archivos.forEach((a) => {
+          const li = document.createElement('li'); const ln = document.createElement('a'); ln.href = a.url; ln.target = '_blank'; ln.rel = 'noopener'; ln.title = a.nombre;
+          const tp = tipoArchivo(a.nombre, a.tipo); const ic = document.createElement('span'); ic.className = 'arch-ic t-' + tp;
+          if (tp === 'img') { const im = document.createElement('img'); im.src = a.url; im.alt = ''; im.loading = 'lazy'; ic.appendChild(im); } else ic.textContent = { pdf: 'PDF', doc: 'WORD', xls: 'EXCEL', aud: 'AUDIO' }[tp] || 'ARCH';
+          const nm = document.createElement('span'); nm.textContent = a.nombre;
+          ln.append(ic, nm); li.appendChild(ln); ul.appendChild(li);
+        });
+        card.append(ul);
+      }
+      card.append(pie);
       return card;
     }));
   }
   $('nota-txt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('nota-form').requestSubmit(); } });
+  // Documents attached to a new note upload right away; the note keeps the finished ones when it is sent.
+  let notaAdj = [];
+  function pintarAdjNota() {
+    $('nota-adjs').replaceChildren(...notaAdj.map((u) => {
+      const li = document.createElement('li'); li.id = 'na-' + u.key;
+      const nm = document.createElement('span'); nm.textContent = u.nombre;
+      const st = document.createElement('small'); st.textContent = u.a ? '✓' : u.pct + '%';
+      const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Quitar ' + u.nombre);
+      x.addEventListener('click', () => { if (u.tarea && !u.a) u.tarea.cancel(); if (u.a) deleteObject(sRef(storage, u.a.ruta)).catch(() => {}); notaAdj = notaAdj.filter((y) => y !== u); pintarAdjNota(); });
+      li.append(nm, st, x); return li;
+    }));
+  }
+  function adjuntarANota(f) {
+    if (!libroRef) return;
+    const tipo = TIPOS_EXT[extDe(f.name)] || f.type || '';
+    if (tipoArchivo(f.name, tipo) === 'otro' || !tipo) { setMsg(`${f.name}: solo se aceptan PDF, Word, Excel, audios y fotos.`, true); return; }
+    if (f.size > MAX_ARCH) { setMsg(`${f.name} pesa más de 50 MB.`, true); return; }
+    const dueno = invitado ? invitado.owner : yoUid;
+    const limpio = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-120) || 'archivo';
+    const ruta = `users/${dueno}/notas/${Date.now()}-${limpio}`;
+    const u = { key: Math.random().toString(36).slice(2), nombre: f.name, pct: 0, a: null };
+    notaAdj.push(u); pintarAdjNota();
+    u.tarea = uploadBytesResumable(sRef(storage, ruta), f, { contentType: tipo });
+    u.tarea.on('state_changed', (sn) => {
+      u.pct = sn.totalBytes ? Math.floor(sn.bytesTransferred / sn.totalBytes * 100) : 0;
+      const el = document.querySelector('#na-' + u.key + ' small'); if (el) el.textContent = u.pct + '%';
+    }, (e) => {
+      notaAdj = notaAdj.filter((y) => y !== u); pintarAdjNota();
+      if (!e || e.code !== 'storage/canceled') setMsg(e && e.code === 'storage/unauthorized' ? 'No tienes permiso para subir documentos. Revisa las reglas de Storage en Firebase.' : `No se pudo subir ${f.name}.`, true);
+    }, async () => {
+      try { const url = await getDownloadURL(u.tarea.snapshot.ref); u.a = { nombre: f.name, ruta, url, tipo, tam: f.size, subido: new Date().toISOString() }; }
+      catch (e) { notaAdj = notaAdj.filter((y) => y !== u); setMsg(`No se pudo terminar de subir ${f.name}.`, true); }
+      pintarAdjNota();
+    });
+  }
+  $('nota-file').accept = ACEPTA_ARCH;
+  $('nota-file').addEventListener('change', (e) => { const fl = [...e.target.files]; e.target.value = ''; fl.forEach(adjuntarANota); $('nota-txt').focus(); });
+  { const caja = $('nota-caja'); let n = 0;
+    const tieneArch = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+    caja.addEventListener('dragenter', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n++; caja.classList.add('soltar'); });
+    caja.addEventListener('dragover', (e) => { if (!tieneArch(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    caja.addEventListener('dragleave', () => { n = Math.max(0, n - 1); if (!n) caja.classList.remove('soltar'); });
+    caja.addEventListener('drop', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n = 0; caja.classList.remove('soltar'); [...e.dataTransfer.files].forEach(adjuntarANota); }); }
   $('nota-form').addEventListener('submit', (e) => {
     e.preventDefault();
-    const texto = $('nota-txt').value.trim(); if (!texto || !libroRef) return;
+    if (notaAdj.some((u) => !u.a)) { setMsg('Espera a que terminen de subir los documentos.', true); return; }
+    const archivos = notaAdj.map((u) => u.a);
+    const texto = $('nota-txt').value.trim(); if ((!texto && !archivos.length) || !libroRef) return;
     const yo = yoUid;
     const d = invitado
       ? { texto, para: 'dueno', autor: yo, autorNombre: invitado.nombre || '', color: invitado.color || '', creado: new Date().toISOString(), hecha: false }
       : { texto, para: $('nota-para').value || '', autor: 'dueno', autorNombre: '', color: '', creado: new Date().toISOString(), hecha: false };
+    if (archivos.length) d.archivos = archivos;
     libroRef.collection('notas').add(d);
-    $('nota-txt').value = '';
+    $('nota-txt').value = ''; notaAdj = []; pintarAdjNota();
     setMsg(d.para && d.para !== 'dueno' ? 'Nota enviada.' : 'Nota guardada.');
   });
   function suscribirNotas(lost) {
