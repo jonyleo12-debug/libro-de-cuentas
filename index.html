@@ -466,6 +466,8 @@ button.por-chip:hover { background: color-mix(in srgb, var(--pc) 26%, var(--pane
 .hero:has(.hero-color:hover)::after, .hero:has(.hero-color[aria-expanded="true"])::after, .hero:has(.hero-color:focus-visible)::after { transform: scale(1.18); }
 @media (hover: none) { .hero::after { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .hero::after { transition: none; } }
+.det-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.det-top .arch-btn { padding: 8px 14px; font-size: 13px; color: var(--ink); }
 .arch-btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .det-edit .arch-btn, .det-acts .arch-btn { justify-self: center; align-self: end; padding: 10px 16px; font-size: 13px; }
 th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
@@ -1016,7 +1018,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   setTimeout(() => { try { renderUsuarios(); } catch (e) {} }, 0);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyColor);
   new MutationObserver(applyColor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  let drafts = {};
+  let drafts = {}; const autoT = {};
   let archDrafts = {};
   let casoSort = { col: 'archivo', dir: 'asc' }, casoFiltro = '', verArch = false, casoBusca = '';
   { const lb = document.getElementById('lupa-btn'), bi = document.getElementById('busca-caso');
@@ -1329,6 +1331,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const cbody = $('casos');
     const hoyF = new Date(); 
     if (cambio('casos', cbody, [csView, rows.filter((r) => r.casoId), auds, openCaso, openObs, editAud, verArch, casoFiltro, casoBusca, casoSort, (() => { try { return gcalOn; } catch (e) { return null; } })(), miembros, invitado ? [invitado.color, invitado.ocultarDinero] : 0, Object.entries(subiendo).map(([k, v]) => [k, v.map((u) => u.key)]), `${hoyF.toDateString()} ${hoyF.getHours()}`])) {
+    const foco = document.activeElement && cbody.contains(document.activeElement) && document.activeElement.id ? { id: document.activeElement.id, a: document.activeElement.selectionStart, b: document.activeElement.selectionEnd } : null;
     if (!cs.length) cbody.replaceChildren(emptyRow(6, invitado ? 'Todavía no hay casos. Crea uno con "+ Nuevo caso".' : 'Aún no tienes casos. Anota un honorario con su caso y total.'));
     else if (!csView.length) cbody.replaceChildren(emptyRow(6, casoBusca ? `No hay casos que coincidan con "${casoBusca}".` : verArch && !casoFiltro ? 'No tienes procesos archivados. Archiva uno desde su Detalle.' : 'No hay casos con ese estado.'));
     else cbody.replaceChildren(...csView.flatMap((c) => {
@@ -1638,7 +1641,34 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         eb.classList.add('elim-abonos');
         inputs.fpago.closest('label').after(eb);
       }
-      const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar datos';
+      // Client and case fields save themselves: a short pause after typing, or on leaving the field.
+      let ultimoGuardado = null;
+      const guardarCliente = async () => {
+        clearTimeout(autoT[c.id]);
+        const upd = {};
+        ['causa', 'observacion', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
+        upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
+        const nuevoNombre = inputs.nombre.value.trim().replace(/\s+/g, ' ');
+        if (nuevoNombre) upd.nombre = nuevoNombre;
+        const base = ultimoGuardado || { nombre: c.nombre, causa: String(c.causa || '').trim(), observacion: String(c.observacion || '').trim(), cedula: String(c.cedula || '').trim(), telefono: String(c.telefono || '').trim(), correo: String(c.correo || '').trim() };
+        Object.keys(upd).forEach((k) => { if (upd[k] === base[k]) delete upd[k]; });
+        if (!Object.keys(upd).length) return;
+        const nombreViejo = base.nombre;
+        const renombra = !!upd.nombre;
+        ultimoGuardado = { ...base, ...upd };
+        if (renombra || ['causa', 'cedula', 'telefono'].some((k) => k in upd)) gcalActualizarCaso(c.id, { nombre: ultimoGuardado.nombre, nombreViejo, causa: ultimoGuardado.causa, cedula: ultimoGuardado.cedula, telefono: ultimoGuardado.telefono });
+        try {
+          await col('casos').doc(c.id).update(upd);
+          if (renombra) await Promise.all(auds.filter((a) => esDelCaso(a, c)).map((a) => col('audiencias').doc(a.id).update({ caso: upd.nombre, casoId: c.id })));
+          setMsg('Guardado automáticamente.');
+        } catch (e) { ultimoGuardado = base; setMsg('No se pudieron guardar los cambios. Revisa tu conexión.', true); }
+      };
+      ['nombre', 'cedula', 'telefono', 'correo', 'causa', 'observacion'].forEach((k) => {
+        inputs[k].addEventListener('input', () => { clearTimeout(autoT[c.id]); autoT[c.id] = setTimeout(guardarCliente, 1200); });
+        inputs[k].addEventListener('change', guardarCliente);
+        if (k === 'nombre') inputs[k].addEventListener('blur', () => { if (!inputs.nombre.value.trim()) { inputs.nombre.value = (ultimoGuardado && ultimoGuardado.nombre) || c.nombre; drafts.nombre = inputs.nombre.value; setMsg('El nombre del cliente no puede quedar vacío.', true); } });
+      });
+      const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn solo-dinero'; sv.textContent = 'Registrar abono';
       sv.addEventListener('click', async () => {
         const sd = sinDinero();
         const raw = sd ? '' : inputs.abono.value.trim();
@@ -1648,19 +1678,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         if (v > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(fp)) { setMsg('Elige la fecha en que pagó.', true); return; }
         const upd = {};
         if (!sd) { const pv = parseFloat(String(inputs.parte.value).replace(',', '.')); if (!(pv >= 0 && pv <= 100)) { setMsg('Mi parte debe estar entre 0 y 100.', true); return; } upd.parte = Math.round(pv * 100) / 100; }
-        ['causa', 'observacion', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
-        upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
-        const nuevoNombre = inputs.nombre.value.trim().replace(/\s+/g, ' ');
-        if (!nuevoNombre) { setMsg('El nombre del cliente no puede quedar vacío.', true); return; }
-        const renombra = nuevoNombre !== c.nombre;
-        if (renombra) upd.nombre = nuevoNombre;
-        const cambiaGoogle = renombra || ['causa', 'cedula', 'telefono'].some((k) => upd[k] !== String(c[k] || '').trim());
-        if (cambiaGoogle) gcalActualizarCaso(c.id, { nombre: nuevoNombre, nombreViejo: c.nombre, causa: upd.causa, cedula: upd.cedula, telefono: upd.telefono });
+        await guardarCliente();
         try {
-          await col('casos').doc(c.id).update(upd);
-          if (renombra) await Promise.all(auds.filter((a) => esDelCaso(a, c)).map((a) => col('audiencias').doc(a.id).update({ caso: nuevoNombre, casoId: c.id })));
+          if (Object.keys(upd).length) await col('casos').doc(c.id).update(upd);
           if (v > 0) await col('movimientos').add({ fecha: fp, tipo: 'Ingreso', categoria: 'Honorarios por casos', descripcion: 'Abono', monto: v, casoId: c.id, creado: new Date().toISOString() });
-          drafts = {}; setMsg(v > 0 ? `Abono de ${usd.format(v)} registrado para ${c.nombre}.` : `Datos de ${c.nombre} guardados.`);
+          delete drafts.abono; delete drafts.fpago; delete drafts.parte; setMsg(v > 0 ? `Abono de ${usd.format(v)} registrado para ${c.nombre}.` : `Datos de ${c.nombre} guardados.`);
         }
         catch (e) { setMsg('No se pudieron guardar los datos. Intenta de nuevo.', true); }
       });
@@ -1672,12 +1694,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           try { await col('casos').doc(c.id).update({ archivado: !c.archivado }); openCaso = null; setMsg(c.archivado ? `${c.nombre} volvió a la lista de casos.` : `${c.nombre} pasó a Procesos archivados.`); render(); }
           catch (e) { setMsg('No se pudo archivar. Intenta de nuevo.', true); }
         });
-        ed.insertBefore(ab, sv); }
+        const top = document.createElement('div'); top.className = 'det-top'; cCli.insertBefore(top, cCli.firstChild); top.append(cCli.querySelector('.det-h'), ab); }
       wrap.appendChild(ed);
       if (c.pagado > c.total && !sinDinero()) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
       cell.appendChild(wrap); dr.appendChild(cell);
       return [tr, ...extra, dr];
     }));
+    if (foco) { const fe = document.getElementById(foco.id); if (fe) { fe.focus({ preventScroll: true }); try { if (foco.a != null) fe.setSelectionRange(foco.a, foco.b); } catch (e) {} } }
     }
 
     // Fixed items
