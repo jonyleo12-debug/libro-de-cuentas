@@ -304,6 +304,10 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .agenda.c-pag { color: #1f8a4c; } .agenda.c-cli { color: #2456a6; } .agenda.c-cau { color: #b4671a; } .agenda.c-arc { color: #0f7c86; } .agenda.c-sat { color: #5b4bb7; }
 .tag.c-sat { color: #5b4bb7; background: color-mix(in srgb, #5b4bb7 12%, var(--panel)); }
 .sat-tag { border: 0; cursor: pointer; font-family: inherit; line-height: inherit; } .sat-tag:hover { background: color-mix(in srgb, #5b4bb7 22%, var(--panel)); }
+.causa-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: stretch; }
+.sat-lado { display: flex; flex-direction: column; overflow: hidden; text-transform: none; letter-spacing: 0; }
+.sat-mini { border: 0; background: none; box-shadow: none; padding: 0 4px; font: inherit; font-size: 12.5px; font-weight: 600; color: #5b4bb7; cursor: pointer; white-space: nowrap; text-align: left; display: flex; align-items: center; }
+.sat-mini:hover { text-decoration: underline; }
 .sat-nums { display: flex; flex-wrap: wrap; gap: 8px; }
 .sat-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-variant-numeric: tabular-nums; }
 .sat-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
@@ -1549,15 +1553,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       {
         const nums = causasDe(c);
         if (nums.length) {
-          const fl = document.createElement('div'); fl.className = 'sat-nums';
-          nums.forEach((nm) => {
-            const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost sat-btn';
-            b.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
-            b.append(nm); b.title = 'Copiar ' + nm + ' y abrir la consulta de causas';
-            b.addEventListener('click', () => abrirEsatje(nm));
-            fl.appendChild(b);
-          });
-          cSat.appendChild(fl);
         } else { const p0 = document.createElement('p'); p0.className = 'det-nota'; p0.textContent = 'Agrega el número de causa (en "Causa y observación") para consultarlo en la Judicatura.'; cSat.appendChild(p0); }
         const gs = document.createElement('div'); gs.className = 'det-dos sat-grid';
         const la = document.createElement('label'); la.textContent = 'Última actuación';
@@ -1636,7 +1631,27 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           if (k === 'parte') { inp.min = '0'; inp.max = '100'; inp.step = '1'; inp.value = drafts[k] !== undefined ? drafts[k] : String(c.parte); }
         }
         inp.addEventListener('input', () => { drafts[k] = inp.value; });
-        lb.appendChild(inp); inputs[k] = inp;
+        if (k === 'causa') {
+          // Next to each case number, a button to look it up in e-SATJE; it follows what is typed.
+          const fila = document.createElement('div'); fila.className = 'causa-fila';
+          const lado = document.createElement('div'); lado.className = 'sat-lado';
+          const pintar = () => {
+            const cs = getComputedStyle(inp); const lh = parseFloat(cs.lineHeight) || 21;
+            lado.style.paddingTop = cs.paddingTop;
+            lado.replaceChildren(...inp.value.split('\n').map((ln) => {
+              const n = ln.trim();
+              if (!n) { const sp = document.createElement('span'); sp.style.height = lh + 'px'; return sp; }
+              const b = document.createElement('button'); b.type = 'button'; b.className = 'sat-mini'; b.style.height = lh + 'px';
+              b.textContent = 'Revisar en e-SATJE ↗'; b.title = 'Copiar ' + n + ' y abrir e-SATJE';
+              b.addEventListener('click', (e) => { e.preventDefault(); abrirEsatje(n); });
+              return b;
+            }));
+          };
+          inp.addEventListener('input', pintar);
+          inp.addEventListener('scroll', () => { lado.scrollTop = inp.scrollTop; });
+          fila.append(inp, lado); lb.appendChild(fila); inputs[k] = inp;
+          requestAnimationFrame(pintar);
+        } else { lb.appendChild(inp); inputs[k] = inp; }
         if (k === 'causa' || k === 'observacion') gCau.appendChild(lb);
         else if (k === 'abono' || k === 'fpago' || k === 'parte') gPag.appendChild(lb);
         else gCli.appendChild(lb);
