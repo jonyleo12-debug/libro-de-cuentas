@@ -897,10 +897,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const causasDe = (c) => String(c.causa || '').split(/\n|\s+\/\s+/).map((x) => x.trim()).filter(Boolean);
   const diasDesde = (ymd) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd || '')) return Infinity; const [y, m, d] = ymd.split('-').map(Number); const h = new Date(); return Math.floor((new Date(h.getFullYear(), h.getMonth(), h.getDate()) - new Date(y, m - 1, d)) / 864e5); };
   const hoyYmd = () => { const h = new Date(); return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`; };
-  async function abrirEsatje(num) {
+  function copiarTexto(t) {
+    // Copy while the click is still active and before the new tab takes focus (Safari and Chrome both need this).
+    let ok = false;
+    try { const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length); ok = document.execCommand('copy'); ta.remove(); } catch (e) {}
+    try { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(t).catch(() => {}); ok = true; } } catch (e) {}
+    return ok;
+  }
+  function abrirEsatje(num) {
+    const ok = copiarTexto(num);
     const a = document.createElement('a'); a.href = ESATJE_URL; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
-    let ok = false; try { await navigator.clipboard.writeText(num); ok = true; } catch (e) {}
-    setMsg(ok ? `Número ${num} copiado. En la página de la Judicatura pégalo en "Número de causa" con Cmd+V (en el celular: mantén presionado y Pegar).` : `Escribe el número ${num} en la página de la Judicatura.`);
+    setMsg(ok ? `Número ${num} copiado. En la página de la Judicatura haz clic en "Número de causa" y pega con Cmd+V (en el celular: mantén presionado y Pegar).` : `Escribe el número ${num} en la página de la Judicatura.`);
   }
   const ACEPTA_ARCH = '.pdf,.doc,.docx,.xls,.xlsx,.csv,image/*,.heic,audio/*,.mp3,.m4a,.wav,.aac,.ogg,.opus';
   const MAX_ARCH = 50 * 1024 * 1024;
