@@ -705,7 +705,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <label for="f-telefono" class="caso-f" hidden>Teléfono<input type="tel" id="f-telefono" maxlength="20" placeholder="09…"></label>
       <label for="f-correo" class="caso-f" hidden>Correo<input type="email" id="f-correo" maxlength="120" placeholder="cliente@correo.com"></label>
       <label for="f-desc" class="wide">Detalle<input type="text" id="f-desc" maxlength="120" placeholder="Ej.: Caso García, divorcio – 1.ª cuota"></label>
-      <div class="checks"><label class="check" for="f-fijo"><input type="checkbox" id="f-fijo"> Repetir cada mes</label><label class="check" for="f-reg" title="Se guarda en la lista, pero no se suma a ingresos, gastos ni inversiones"><input type="checkbox" id="f-reg"> Solo registro (no suma)</label></div>
+      <div class="checks"><label class="check" for="f-fijo"><input type="checkbox" id="f-fijo"> Repetir cada mes</label><label class="check" for="f-reg" title="Se guarda en la lista, pero no se suma a ingresos, gastos ni inversiones"><input type="checkbox" id="f-reg"> Solo registro</label></div>
       <button class="btn" id="f-btn" type="submit">Agregar</button>
     </form>
     <p class="msg" id="f-msg" role="status"></p>
@@ -762,7 +762,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar">
     <div class="budget-row">
       <div class="casos-tit"><h2 id="h-cobrar">Casos</h2><button type="button" class="ghost nuevo-caso-btn" id="nuevo-caso-btn">+ Nuevo caso</button></div>
-      <span class="solo-dinero"><span class="sub" style="display:inline">Por cobrar</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
+      <span class="solo-dinero"><span class="sub" style="display:inline">Por cobrar:</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
     </div>
     <form class="nuevo-caso" id="nuevo-caso" hidden>
       <label>Nombre del cliente<input type="text" id="nc-nombre" maxlength="120" required></label>
