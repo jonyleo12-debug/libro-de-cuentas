@@ -85,7 +85,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tot-list li b.c-in { color: var(--in); } .tot-list li b.c-out { color: var(--out); } .tot-list li b.c-inv { color: var(--inv); }
 .tot-list li.tot-sep { border-top: 1px solid var(--line); padding-top: 5px; }
 .tot-list li.vacio { color: var(--muted); }
-.doblez { position: absolute; right: 0; bottom: 0; width: 30px; height: 30px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; color: #a3a6ad; border-radius: 0 0 16px 0; transition: color .2s, transform .2s; }
+.doblez { position: absolute; z-index: 2; right: 0; bottom: 0; width: 30px; height: 30px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; color: #a3a6ad; border-radius: 0 0 16px 0; transition: color .2s, transform .2s; }
 .doblez svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 .doblez:hover { color: #6e7178; transform: scale(1.08); }
 .tot small.c-in { color: var(--in); font-weight: 600; font-size: 13px; }
@@ -419,6 +419,23 @@ body.invitado #sec-casos { display: grid !important; }
 .fila-nuevo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0; align-items: stretch; background: var(--panel); border-radius: var(--r); box-shadow: var(--raise); min-width: 0; }
 .fila-nuevo > .panel { background: transparent; box-shadow: none; border: 0; border-radius: 0; }
 .fila-nuevo > #sec-notas { border-left: 1px solid var(--line); }
+#sec-notas { position: relative; perspective: 1600px; padding: 0; }
+.nf-in { position: relative; height: 100%; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
+#sec-notas.vuelta .nf-in { transform: rotateY(-180deg); }
+.nf-cara, .nf-dorso { backface-visibility: hidden; -webkit-backface-visibility: hidden; padding: 26px; box-sizing: border-box; }
+@media (max-width: 640px) { .nf-cara, .nf-dorso { padding: 20px 16px; } }
+.nf-cara { position: relative; min-height: 100%; display: grid; gap: 18px; align-content: start; }
+.nf-dorso { position: absolute; inset: 0; transform: rotateY(180deg); display: grid; grid-template-rows: auto 1fr; gap: 12px; overflow: hidden; background: var(--panel); border-radius: 0 var(--r) var(--r) 0; }
+.nf-dorso h2 { margin: 0; }
+.acc-box { overflow-y: auto; display: grid; gap: 14px; align-content: start; padding-right: 26px; min-height: 0; }
+.acc-g h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.acc-g ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.acc-g li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13.5px; }
+.acc-g li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-g li small { color: var(--muted); white-space: nowrap; font-size: 12px; }
+.acc-g .link { font-size: 12.5px; white-space: nowrap; }
+.acc-vacio { color: var(--muted); font-size: 13.5px; margin: 0; }
+@media (max-width: 900px) { .nf-dorso { border-radius: 0 0 var(--r) var(--r); } }
 @media (max-width: 900px) { .fila-nuevo { grid-template-columns: minmax(0, 1fr); } .fila-nuevo > #sec-notas { border-left: 0; border-top: 1px solid var(--line); } }
 body.invitado .fila-nuevo > #sec-notas { border: 0; }
 body.invitado .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
@@ -716,6 +733,8 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <p class="msg" id="f-msg" role="status"></p>
   </section>
   <section class="panel" id="sec-notas" aria-labelledby="h-notas">
+   <div class="nf-in">
+   <div class="nf-cara">
     <div class="notas-cab"><h2 id="h-notas">Notas</h2><span class="nota-para-l" id="nota-para-l"><select id="nota-para" aria-label="Para quién es la nota" form="nota-form"></select></span><span class="sub" style="margin:0" id="nota-para-txt" hidden></span><span class="sub" style="display:inline;margin:0 0 0 auto" id="notas-n"></span></div>
     <form class="nota-form" id="nota-form">
       <div class="nota-caja" id="nota-caja">
@@ -726,6 +745,14 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <ul class="nota-adjs" id="nota-adjs"></ul>
     </form>
     <div class="notas" id="notas"></div>
+    <button type="button" class="doblez" aria-label="Ver acciones a revisar"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button>
+   </div>
+   <div class="nf-dorso" aria-hidden="true">
+    <h2>Acciones a revisar</h2>
+    <div class="acc-box" id="acciones"></div>
+    <button type="button" class="doblez" aria-label="Volver a notas"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button>
+   </div>
+   </div>
   </section>
 </div>
 
@@ -1242,6 +1269,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     t.querySelector(v ? '.dorso .doblez' : '.cara .doblez').focus({ preventScroll: true });
   })));
   function render() {
+    try { renderAcciones(); } catch (e) {}
     { // only my share of each case payment counts as my income
       const pm = new Map(casos.map((c) => [c.id, c.parte]));
       rows.forEach((r) => { const pp = r.casoId && pm.has(r.casoId) ? pm.get(r.casoId) : 100; r.parte = pp; r.monto = Math.round(r.bruto * pp) / 100; });
@@ -2404,12 +2432,35 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function juntarNotas() { const m = {}; Object.values(notasPor).forEach((arr) => arr.forEach((n) => { m[n.id] = n; })); notas = Object.values(m); renderNotas(); }
   const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [], respuestas: Array.isArray(x.respuestas) ? x.respuestas.filter((r) => r && r.texto) : [] }; };
   let respAbierta = null, respDraft = '';
+  { const sn = document.getElementById('sec-notas');
+    sn.querySelectorAll('.doblez').forEach((b) => b.addEventListener('click', () => {
+      const v = sn.classList.toggle('vuelta');
+      sn.querySelector('.nf-cara').setAttribute('aria-hidden', String(v)); sn.querySelector('.nf-dorso').setAttribute('aria-hidden', String(!v));
+      sn.querySelector(v ? '.nf-dorso .doblez' : '.nf-cara .doblez').focus({ preventScroll: true });
+    })); }
+  function renderAcciones() {
+    const box = document.getElementById('acciones'); if (!box) return;
+    const grupos = [];
+    const grupo = (titulo, items) => { if (!items.length) return; const g = document.createElement('div'); g.className = 'acc-g'; const h = document.createElement('h3'); h.textContent = `${titulo} (${items.length})`; const ul = document.createElement('ul'); ul.append(...items); g.append(h, ul); grupos.push(g); };
+    const item = (txt, extra) => { const li = document.createElement('li'); const a = document.createElement('span'); a.textContent = txt; a.title = txt; li.append(a); if (extra) li.append(extra); return li; };
+    const peq = (t) => { const sm = document.createElement('small'); sm.textContent = t; return sm; };
+    const yo = yoUid;
+    grupo('Notas pendientes', notas.filter((n) => !n.hecha && (invitado ? n.para === yo : n.para === '' || n.para === 'dueno')).sort((a, b) => b.creado.localeCompare(a.creado)).map((n) => item(String(n.texto || '').split('\n')[0] || 'Nota con documento', peq(n.creado ? new Date(n.creado).toLocaleDateString('es-EC', { day: 'numeric', month: 'short' }) : ''))));
+    const ahora = Date.now(), semana = ahora + 7 * 864e5;
+    grupo('Audiencias y diligencias en 7 días', auds.filter((a) => { const t = Date.parse(a.inicio); return t >= ahora - 36e5 && t <= semana; }).sort((a, b) => a.inicio.localeCompare(b.inicio)).map((a) => { const d = new Date(a.inicio); return item(a.caso || a.tipo || 'Audiencia', peq(d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }))); }));
+    try {
+      grupo('Revisar en e-SATJE', casos.filter((c) => !c.archivado && causasDe(c).length && diasDesde(c.revisado) > DIAS_REVISAR).map((c) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'link'; b.textContent = 'Revisar ↗'; b.addEventListener('click', () => { abrirEsatje(causasDe(c)[0], c); }); return item(c.nombre, b); }));
+    } catch (e) {}
+    if (!grupos.length) { const p = document.createElement('p'); p.className = 'acc-vacio'; p.textContent = 'No tienes acciones pendientes. Todo al día.'; box.replaceChildren(p); }
+    else box.replaceChildren(...grupos);
+  }
   function renderNotas() {
     const box = $('notas'); if (!box) return;
     const yo = yoUid;
     const lista = notas.slice().sort((a, b) => (a.hecha - b.hecha) || b.creado.localeCompare(a.creado));
     const pend = lista.filter((n) => !n.hecha && (invitado ? n.para === yo : n.para === '' || n.para === 'dueno')).length;
     $('notas-n').textContent = pend ? `${pend} ${pend === 1 ? 'pendiente' : 'pendientes'}` : '';
+    renderAcciones();
     box.replaceChildren(...lista.map((n) => {
       const card = document.createElement('div'); card.className = 'nota' + (n.hecha ? ' hecha' : '');
       let etiqueta = 'Personal', colorK = '';
