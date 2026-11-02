@@ -73,6 +73,10 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tot-list li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .tot-list li small { color: var(--muted); margin-right: 6px; font-size: 11.5px; }
 .tot-list li b { font: inherit; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tot[data-k="in"] .tot-list li b { color: var(--in); }
+.tot[data-k="out"] .tot-list li b { color: var(--out); }
+.tot[data-k="inv"] .tot-list li b { color: var(--inv); }
+.tot-list li b.c-in { color: var(--in); } .tot-list li b.c-out { color: var(--out); } .tot-list li b.c-inv { color: var(--inv); }
 .tot-list li.tot-sep { border-top: 1px solid var(--line); padding-top: 5px; }
 .tot-list li.vacio { color: var(--muted); }
 .doblez { position: absolute; right: 0; bottom: 0; width: 30px; height: 30px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; color: #a3a6ad; border-radius: 0 0 16px 0; transition: color .2s, transform .2s; }
@@ -1246,6 +1250,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       lista('d-out', 'Gasto', 'Sin gastos este mes.');
       lista('d-inv', 'Inversión', 'No apartaste dinero este mes.');
       $('d-disp').replaceChildren(fila('Ingresos', usd.format(ing)), fila('Gastos', '− ' + usd.format(gas)), fila('Disponible', usd.format(disp), 'tot-sep'), fila('Invertido / ahorrado', usd.format(inv)), fila('Te queda libre', usd.format(disp - inv), 'tot-sep'));
+      { const bs = $('d-disp').querySelectorAll('b'); ['c-in', 'c-out', disp < 0 ? 'c-out' : '', 'c-inv', disp - inv < 0 ? 'c-out' : ''].forEach((k, i) => { if (k) bs[i].classList.add(k); }); }
     }
     $('t-in').textContent = usd.format(ing);
     $('t-out').textContent = usd.format(gas);
