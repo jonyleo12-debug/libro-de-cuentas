@@ -402,7 +402,13 @@ body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minma
 .nota-txt { width: 100%; box-sizing: border-box; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; font: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); resize: none; min-height: 3em; field-sizing: content; }
 .nota-txt:focus { outline: 2px solid color-mix(in srgb, var(--nc) 45%, transparent); outline-offset: 4px; border-radius: 6px; }
 .nota-pie { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); }
-.nota-pie .acts { display: inline-flex; gap: 6px; }
+.nota-pie .acts { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.nota-resps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.nota-resps li { --rc: var(--muted); display: grid; gap: 2px; padding: 7px 10px; border-radius: 12px; background: color-mix(in srgb, var(--panel) 75%, transparent); border-left: 3px solid var(--rc); font-size: 13px; color: var(--ink); }
+.nota-resps b { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: color-mix(in srgb, var(--rc) 80%, var(--ink)); }
+.nota-resps span { white-space: pre-wrap; overflow-wrap: anywhere; }
+.nota-resps small { font-size: 11px; color: var(--muted); }
+.nota-resp-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; padding: 9px 12px; border-radius: 12px; resize: none; }
 .nota-pie .ghost { padding: 4px 10px; font-size: 12px; }
 body.invitado .hero-mes-btn { pointer-events: none; }
 tr.por-cambio > td, .tone .tbox tbody tr.por-cambio:not(.det-row) > td { background: color-mix(in srgb, var(--pc) 9%, transparent) !important; }
@@ -2188,7 +2194,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('nota-para-l').hidden = !miembros.length;
   }
   function juntarNotas() { const m = {}; Object.values(notasPor).forEach((arr) => arr.forEach((n) => { m[n.id] = n; })); notas = Object.values(m); renderNotas(); }
-  const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [] }; };
+  const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [], respuestas: Array.isArray(x.respuestas) ? x.respuestas.filter((r) => r && r.texto) : [] }; };
+  let respAbierta = null, respDraft = '';
   function renderNotas() {
     const box = $('notas'); if (!box) return;
     const yo = yoUid;
@@ -2215,6 +2222,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const f = document.createElement('span'); f.textContent = n.creado ? new Date(n.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
       const acts = document.createElement('span'); acts.className = 'acts';
       const puedeMarcar = invitado ? n.para === yo : true;
+      if (n.para) { const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ghost'; rb.textContent = respAbierta === n.id ? 'Cancelar' : 'Responder';
+        rb.addEventListener('click', () => { respAbierta = respAbierta === n.id ? null : n.id; respDraft = ''; renderNotas(); }); acts.appendChild(rb); }
       if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Hecha';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
       if (esMia || !invitado) { const db = document.createElement('button'); db.type = 'button'; db.className = 'ghost'; db.textContent = 'Borrar';
@@ -2232,6 +2241,37 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           ln.append(ic, nm); li.appendChild(ln); ul.appendChild(li);
         });
         card.append(ul);
+      }
+      if (n.respuestas.length) {
+        const ul = document.createElement('ul'); ul.className = 'nota-resps';
+        n.respuestas.slice().sort((a, b) => String(a.creado || '').localeCompare(String(b.creado || ''))).forEach((r) => {
+          const li = document.createElement('li');
+          const mio = r.autor === (invitado ? yo : 'dueno');
+          let quien = mio ? 'Tú' : r.autor === 'dueno' ? (invitado ? nombreDueno() : 'Tú') : (() => { const m = miembros.find((x) => x.id === r.autor); return m ? (m.nombre || usuarioDe(m.email)) : (r.autorNombre || 'Usuario'); })();
+          const ck = r.autor === 'dueno' ? colorKey : (miembros.find((x) => x.id === r.autor) || {}).color || r.color;
+          if (ck && COLORS[ck]) li.style.setProperty('--rc', COLORS[ck].light[0]);
+          const b = document.createElement('b'); b.textContent = quien;
+          const tx = document.createElement('span'); tx.textContent = r.texto;
+          const fh = document.createElement('small'); fh.textContent = r.creado ? new Date(r.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+          li.append(b, tx, fh); ul.appendChild(li);
+        });
+        card.append(ul);
+      }
+      if (respAbierta === n.id) {
+        const ta = document.createElement('textarea'); ta.className = 'nota-resp-in'; ta.rows = 2; ta.maxLength = 1000; ta.placeholder = 'Escribe tu respuesta y presiona Enter…'; ta.setAttribute('aria-label', 'Responder nota');
+        ta.value = respDraft;
+        ta.addEventListener('input', () => { respDraft = ta.value; });
+        ta.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { respAbierta = null; respDraft = ''; renderNotas(); return; }
+          if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+          e.preventDefault();
+          const texto = ta.value.trim(); if (!texto) return;
+          const r = { texto, autor: invitado ? yo : 'dueno', autorNombre: invitado ? (invitado.nombre || '') : '', color: invitado ? (invitado.color || '') : '', creado: new Date().toISOString() };
+          libroRef.collection('notas').doc(n.id).update({ respuestas: arrayUnion(r) });
+          respAbierta = null; respDraft = ''; renderNotas(); setMsg('Respuesta enviada.');
+        });
+        card.append(ta);
+        setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0);
       }
       card.append(pie);
       return card;

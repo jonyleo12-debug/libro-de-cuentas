@@ -38,7 +38,7 @@ service cloud.firestore {
         allow create: if esAsistente(uid) && request.resource.data.autor == request.auth.uid && request.resource.data.para == 'dueno';
         allow update: if esAsistente(uid) && (
           (resource.data.autor == request.auth.uid && request.resource.data.autor == request.auth.uid && request.resource.data.para == resource.data.para)
-          || (resource.data.para == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hecha', 'hechaEn'])));
+          || (resource.data.para == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hecha', 'hechaEn', 'respuestas'])));
         allow delete: if esAsistente(uid) && resource.data.autor == request.auth.uid;
       }
       match /movimientos/{id} {
