@@ -60,6 +60,24 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tot span { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .tot b { font-family: var(--font-display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; }
 .tot small { color: var(--muted); font-size: 12px; }
+.tot.flip { background: none; padding: 0; box-shadow: none; perspective: 1200px; }
+.tot-in { position: relative; height: 100%; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
+.tot.flip.vuelta .tot-in { transform: rotateY(180deg); }
+.tot .cara, .tot .dorso { background: var(--panel); border-radius: 22px; padding: 18px 20px; box-shadow: var(--raise); display: grid; gap: 4px; align-content: start; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-width: 0; }
+.tot .cara { height: 100%; box-sizing: border-box; }
+.tot .dorso { position: absolute; inset: 0; transform: rotateY(180deg); overflow: hidden; grid-template-rows: auto 1fr; padding-bottom: 14px; }
+.tot-list { list-style: none; margin: 0; padding: 0 22px 0 0; overflow-y: auto; font-size: 12.5px; display: grid; gap: 5px; align-content: start; min-height: 0; }
+.tot-list { grid-template-columns: minmax(0, 1fr); }
+.tot-list li { display: flex; justify-content: space-between; gap: 10px; color: var(--ink); min-width: 0; }
+.tot .tot-list li span { text-transform: none; letter-spacing: 0; font-size: inherit; font-weight: 400; color: inherit; }
+.tot-list li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tot-list li small { color: var(--muted); margin-right: 6px; font-size: 11.5px; }
+.tot-list li b { font: inherit; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tot-list li.tot-sep { border-top: 1px solid var(--line); padding-top: 5px; }
+.tot-list li.vacio { color: var(--muted); }
+.doblez { position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; color: #a3a6ad; border-radius: 0 0 16px 0; transition: color .2s, transform .2s; }
+.doblez svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.doblez:hover { color: #6e7178; transform: scale(1.08); }
 .tot small.c-in { color: var(--in); font-weight: 600; font-size: 13px; }
 .c-in { color: var(--in); } .c-out { color: var(--out); } .c-inv { color: var(--inv); }
 
@@ -644,10 +662,10 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <span class="acts"><button type="button" class="btn" id="aviso-desc">Descargar ahora</button><button type="button" class="ghost" id="aviso-luego">Más tarde</button></span>
   </div>
   <section class="totals" aria-label="Totales del mes">
-    <div class="tot"><span>Ingresos</span><b class="c-in" id="t-in">—</b><small id="t-in-n"></small></div>
-    <div class="tot"><span>Gastos</span><b class="c-out" id="t-out">—</b><small id="t-out-n"></small></div>
-    <div class="tot"><span>Disponible</span><b id="t-disp">—</b><small id="t-tasa"></small></div>
-    <div class="tot"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small id="t-inv-rinde" class="c-in" hidden></small><small>Lo que apartaste este mes</small></div>
+    <div class="tot flip" data-k="in"><div class="tot-in"><div class="cara"><span>Ingresos</span><b class="c-in" id="t-in">—</b><small id="t-in-n"></small><button type="button" class="doblez" aria-label="Ver detalle de ingresos"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Ingresos del mes</span><ul class="tot-list" id="d-in"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div></div></div>
+    <div class="tot flip" data-k="out"><div class="tot-in"><div class="cara"><span>Gastos</span><b class="c-out" id="t-out">—</b><small id="t-out-n"></small><button type="button" class="doblez" aria-label="Ver detalle de gastos"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Gastos del mes</span><ul class="tot-list" id="d-out"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div></div></div>
+    <div class="tot flip" data-k="disp"><div class="tot-in"><div class="cara"><span>Disponible</span><b id="t-disp">—</b><small id="t-tasa"></small><button type="button" class="doblez" aria-label="Ver detalle de disponible"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Cómo se calcula</span><ul class="tot-list" id="d-disp"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div></div></div>
+    <div class="tot flip" data-k="inv"><div class="tot-in"><div class="cara"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small id="t-inv-rinde" class="c-in" hidden></small><small>Lo que apartaste este mes</small><button type="button" class="doblez" aria-label="Ver detalle de invertido"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Invertido este mes</span><ul class="tot-list" id="d-inv"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M30 6 C30 20 20 30 6 30"/><path d="M30 14 C30 23 23 30 14 30"/></svg></button></div></div></div>
   </section>
 
 <div class="fila-nuevo" id="fila-nuevo">
@@ -1202,6 +1220,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let pintaPend = false;
   const renderPronto = () => { if (pintaPend) return; pintaPend = true; requestAnimationFrame(() => { pintaPend = false; render(); }); };
 
+  document.querySelectorAll('.tot.flip').forEach((t) => t.querySelectorAll('.doblez').forEach((b) => b.addEventListener('click', () => {
+    const v = t.classList.toggle('vuelta');
+    t.querySelector('.cara').setAttribute('aria-hidden', String(v)); t.querySelector('.dorso').setAttribute('aria-hidden', String(!v));
+    t.querySelector(v ? '.dorso .doblez' : '.cara .doblez').focus({ preventScroll: true });
+  })));
   function render() {
     { // only my share of each case payment counts as my income
       const pm = new Map(casos.map((c) => [c.id, c.parte]));
@@ -1212,6 +1235,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const delMes = entriesFor(mes).sort((a, b) => b.fecha.localeCompare(a.fecha));
     const ing = sum(delMes, 'Ingreso'), gas = sum(delMes, 'Gasto'), inv = sum(delMes, 'Inversión');
     const disp = ing - gas;
+    {
+      const nomCaso = new Map(casos.map((c) => [c.id, c.nombre]));
+      const fila = (izq, der, cls, peq) => { const li = document.createElement('li'); if (cls) li.className = cls; const a = document.createElement('span'); if (peq) { const sm = document.createElement('small'); sm.textContent = peq; a.appendChild(sm); } a.append(izq); const b = document.createElement('b'); b.textContent = der; li.append(a, b); return li; };
+      const lista = (id, tipo, vacio) => {
+        const xs = delMes.filter((r) => r.tipo === tipo).sort((a, b) => b.fecha.localeCompare(a.fecha));
+        $(id).replaceChildren(...(xs.length ? xs.map((r) => fila((r.casoId && nomCaso.get(r.casoId)) || r.descripcion || r.inversion || r.categoria, usd.format(r.monto), '', r.fecha.slice(8, 10) + ' ' + MESES[Number(r.fecha.slice(5, 7)) - 1])) : [fila(vacio, '', 'vacio')]));
+      };
+      lista('d-in', 'Ingreso', 'Sin ingresos este mes.');
+      lista('d-out', 'Gasto', 'Sin gastos este mes.');
+      lista('d-inv', 'Inversión', 'No apartaste dinero este mes.');
+      $('d-disp').replaceChildren(fila('Ingresos', usd.format(ing)), fila('Gastos', '− ' + usd.format(gas)), fila('Disponible', usd.format(disp), 'tot-sep'), fila('Invertido / ahorrado', usd.format(inv)), fila('Te queda libre', usd.format(disp - inv), 'tot-sep'));
+    }
     $('t-in').textContent = usd.format(ing);
     $('t-out').textContent = usd.format(gas);
     $('t-disp').textContent = usd.format(disp);
