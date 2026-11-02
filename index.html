@@ -434,8 +434,9 @@ body.invitado #sec-casos { display: grid !important; }
 #sec-notas.vuelta.biblio .nf-in { transform: rotateY(180deg); }
 #sec-notas.vuelta .nf-cara, #sec-notas:not(.vuelta) .nf-dorso { pointer-events: none; }
 #sec-notas.vuelta.biblio { min-height: 470px; }
-.libros-btn { position: absolute; z-index: 2; left: 10px; bottom: 8px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
-.libros-btn:hover { color: #6e7178; transform: scale(1.08); }
+.libros-btn { position: absolute; z-index: 2; left: 12px; bottom: 10px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
+.libros-btn:hover { transform: scale(1.08); }
+.libros-btn svg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
 .nf-dorso.nf-biblio { grid-template-rows: auto auto minmax(0, 1fr) auto; align-content: stretch; padding-bottom: 46px; }
 .nf-biblio.soltar .nota-soltar { display: grid; }
 .bib-cab { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
@@ -793,7 +794,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <ul class="nota-adjs" id="nota-adjs"></ul>
     </form>
     <div class="notas" id="notas"></div>
-    <button type="button" class="libros-btn" aria-label="Abrir biblioteca y repositorio" title="Biblioteca y repositorio"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 4h3.5v16H4zM8.5 4H12v16H8.5zM13.6 5.2l3.3-1 4.3 14.8-3.3 1z"/></svg></button>
+    <button type="button" class="libros-btn" aria-label="Abrir biblioteca y repositorio" title="Biblioteca y repositorio"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="var(--accent)"/><path fill="#fff" d="M10 13.2h1.6v13.2c2.6-.5 5.2-.2 7.6 1.1-2.6-.7-6-.8-9.2 0zM30 13.2h-1.6v13.2c-2.6-.5-5.2-.2-7.6 1.1 2.6-.7 6-.8 9.2 0z"/><path fill="#fff" d="M12.6 11.6c2.5-.4 4.9 0 6.9 1.3v13.4c-2-1.1-4.4-1.4-6.9-1.1zM27.4 11.6c-2.5-.4-4.9 0-6.9 1.3v13.4c2-1.1 4.4-1.4 6.9-1.1z"/></svg></button>
     <button type="button" class="doblez" aria-label="Ver acciones a revisar"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button>
    </div>
    <div class="nf-dorso" aria-hidden="true">
@@ -810,7 +811,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <label class="ghost bib-up"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Subir<input type="file" id="bib-file" multiple hidden></label>
     </div>
     <div class="nota-soltar" aria-hidden="true">Suelta el documento aquí</div>
-    <button type="button" class="libros-btn" aria-label="Volver a notas" title="Volver a notas"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 4h3.5v16H4zM8.5 4H12v16H8.5zM13.6 5.2l3.3-1 4.3 14.8-3.3 1z"/></svg></button>
+    <button type="button" class="libros-btn" aria-label="Volver a notas" title="Volver a notas"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="var(--accent)"/><path fill="#fff" d="M10 13.2h1.6v13.2c2.6-.5 5.2-.2 7.6 1.1-2.6-.7-6-.8-9.2 0zM30 13.2h-1.6v13.2c-2.6-.5-5.2-.2-7.6 1.1 2.6-.7 6-.8 9.2 0z"/><path fill="#fff" d="M12.6 11.6c2.5-.4 4.9 0 6.9 1.3v13.4c-2-1.1-4.4-1.4-6.9-1.1zM27.4 11.6c-2.5-.4-4.9 0-6.9 1.3v13.4c2-1.1 4.4-1.4 6.9-1.1z"/></svg></button>
    </div>
    </div>
   </section>
