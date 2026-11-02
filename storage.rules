@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Archivos de cada caso: users/{dueño}/casos/{caso}/{archivo}
+    match /users/{uid}/casos/{casoId}/{archivo} {
+      function esDueno() { return request.auth != null && request.auth.uid == uid; }
+      function esAsistente() {
+        return request.auth != null
+          && firestore.exists(/databases/(default)/documents/users/$(uid)/miembros/$(request.auth.uid))
+          && firestore.get(/databases/(default)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.rol == 'asistente';
+      }
+      allow read, delete: if esDueno() || esAsistente();
+      allow create: if (esDueno() || esAsistente())
+        && request.resource.size < 300 * 1024 * 1024
+        && request.resource.contentType.matches('application/pdf|application/msword|application/vnd[.]openxmlformats-officedocument[.]wordprocessingml[.]document|image/.*|video/mp4|video/quicktime');
+    }
+  }
+}
