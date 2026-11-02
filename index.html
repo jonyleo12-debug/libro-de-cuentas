@@ -909,8 +909,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     try { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(t).catch(() => {}); ok = true; } } catch (e) {}
     return ok;
   }
-  function abrirEsatje(num) {
+  function abrirEsatje(num, caso) {
     const ok = copiarTexto(num);
+    if (caso && caso.revisado !== hoyYmd()) col('casos').doc(caso.id).update({ revisado: hoyYmd() });
     const a = document.createElement('a'); a.href = ESATJE_URL; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
     setMsg(ok ? `Número ${num} copiado. En la página de la Judicatura haz clic en "Número de causa" y pega con Cmd+V (en el celular: mantén presionado y Pegar).` : `Escribe el número ${num} en la página de la Judicatura.`);
   }
@@ -1364,7 +1365,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       est.appendChild(ei);
       if (!c.archivado && causasDe(c).length && diasDesde(c.revisado) > DIAS_REVISAR) { const t = document.createElement('button'); t.type = 'button'; t.className = 'tag c-sat estado sat-tag'; t.textContent = 'Revisar e-SATJE ↗'; t.title = 'Copiar ' + causasDe(c)[0] + ' y abrir e-SATJE' + (c.revisado ? ` · última revisión ${c.revisado.split('-').reverse().join('/')}` : '');
-        t.addEventListener('click', () => { abrirEsatje(causasDe(c)[0]); if (openCaso !== c.id) { openCaso = c.id; openObs = null; obsDraft = null; obsAud = {}; drafts = {}; render(); } }); est.appendChild(t); }
+        t.addEventListener('click', () => abrirEsatje(causasDe(c)[0], c)); est.appendChild(t); }
       if (!c.pendiente) { const t = document.createElement('span'); t.className = 'tag c-in estado'; t.textContent = 'Pagado'; est.appendChild(t); }
       else if (c.total === 0 && c.pagado === 0) { const t = document.createElement('span'); t.className = 'tag c-pend estado'; t.textContent = 'Pendiente'; est.appendChild(t); }
       { const ahora = new Date().toISOString();
@@ -1549,35 +1550,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const cCli = tarjeta('Datos del cliente y causa', 'c-cli');
       const gCli = document.createElement('div'); gCli.className = 'det-edit'; cCli.appendChild(gCli);
       const gCau = document.createElement('div'); gCau.className = 'det-dos'; cCli.appendChild(gCau);
-      const cSat = tarjeta('e-SATJE', 'c-sat');
-      {
-        const nums = causasDe(c);
-        if (nums.length) {
-        } else { const p0 = document.createElement('p'); p0.className = 'det-nota'; p0.textContent = 'Agrega el número de causa (en "Causa y observación") para consultarlo en la Judicatura.'; cSat.appendChild(p0); }
-        const gs = document.createElement('div'); gs.className = 'det-dos sat-grid';
-        const la = document.createElement('label'); la.textContent = 'Última actuación';
-        const ta = document.createElement('textarea'); ta.className = 'obs'; ta.rows = 2; ta.maxLength = 1000; ta.id = 'sat-act-' + c.id; ta.placeholder = 'Ej.: Providencia: se convoca a audiencia preliminar';
-        ta.value = drafts.ultActuacion !== undefined ? drafts.ultActuacion : c.ultActuacion;
-        ta.addEventListener('input', () => { drafts.ultActuacion = ta.value; });
-        la.appendChild(ta);
-        const lf = document.createElement('label'); lf.textContent = 'Fecha de la actuación';
-        const fi = document.createElement('input'); fi.type = 'date'; fi.id = 'sat-fec-' + c.id;
-        fi.value = drafts.ultActFecha !== undefined ? drafts.ultActFecha : c.ultActFecha;
-        fi.addEventListener('input', () => { drafts.ultActFecha = fi.value; });
-        lf.appendChild(fi);
-        gs.append(la, lf); cSat.appendChild(gs);
-        const pie = document.createElement('div'); pie.className = 'sat-pie';
-        const st = document.createElement('span'); const dd = diasDesde(c.revisado);
-        st.textContent = !c.revisado ? 'Aún no lo has marcado como revisado.' : dd === 0 ? 'Revisado hoy.' : dd === 1 ? 'Revisado ayer.' : `Revisado hace ${dd} días (${c.revisado.split('-').reverse().join('/')}).`;
-        if (nums.length && dd > DIAS_REVISAR) st.className = 'c-pend';
-        const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ghost'; rb.textContent = 'Guardar y marcar revisado hoy';
-        rb.addEventListener('click', () => {
-          const upd = { ultActuacion: ta.value.trim(), ultActFecha: /^\d{4}-\d{2}-\d{2}$/.test(fi.value) ? fi.value : '', revisado: hoyYmd() };
-          col('casos').doc(c.id).update(upd); delete drafts.ultActuacion; delete drafts.ultActFecha;
-          setMsg(`${c.nombre}: revisado hoy en e-SATJE.`); render();
-        });
-        pie.append(st, rb); cSat.appendChild(pie);
-      }
+      wrap.insertBefore(cCli, cPag);
       const cArc = tarjeta('Archivos', 'c-arc');
       {
         const lista = c.archivos.slice().sort((a, b) => String(b.subido || '').localeCompare(String(a.subido || '')));
@@ -1643,7 +1616,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
               if (!n) { const sp = document.createElement('span'); sp.style.height = lh + 'px'; return sp; }
               const b = document.createElement('button'); b.type = 'button'; b.className = 'sat-mini'; b.style.height = lh + 'px';
               b.textContent = 'Revisar en e-SATJE ↗'; b.title = 'Copiar ' + n + ' y abrir e-SATJE';
-              b.addEventListener('click', (e) => { e.preventDefault(); abrirEsatje(n); });
+              b.addEventListener('click', (e) => { e.preventDefault(); abrirEsatje(n, c); });
               return b;
             }));
           };
