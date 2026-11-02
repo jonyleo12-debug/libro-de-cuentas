@@ -2199,7 +2199,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const puedeMarcar = invitado ? n.para === yo : true;
       if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Hecha';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
-      if (esMia || !invitado) acts.appendChild(delBtn('nota:' + n.id, () => { n.archivos.forEach((a) => { if (a.ruta) deleteObject(sRef(storage, a.ruta)).catch(() => {}); }); libroRef.collection('notas').doc(n.id).delete(); }, 'Borrar', '¿Borrar?'));
+      if (esMia || !invitado) { const db = document.createElement('button'); db.type = 'button'; db.className = 'ghost'; db.textContent = 'Borrar';
+        db.addEventListener('click', () => { n.archivos.forEach((a) => { if (a.ruta) deleteObject(sRef(storage, a.ruta)).catch(() => {}); }); libroRef.collection('notas').doc(n.id).delete(); setMsg('Nota borrada.'); }); acts.appendChild(db); }
       pie.append(f, acts);
       card.append(k);
       if (n.texto || !n.archivos.length) card.append(t);
