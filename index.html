@@ -160,7 +160,10 @@ img { max-width: 100%; }
   --ink: #0f1012; --ink-fg: #f5f5f7; --sh-hi: #292a2f; --sh-lo: #121315; }
 
 body { font-size: 15px; letter-spacing: -.005em; }
-.fondo { position: fixed; inset: -100px; width: calc(100% + 200px); height: calc(100% + 200px); z-index: -1; pointer-events: none; display: block; }
+.fondo { position: fixed; inset: -100px; z-index: -1; pointer-events: none; overflow: hidden; contain: strict; }
+.fondo-base, .ola, .ola svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* Each curve is its own GPU layer that only moves, so scrolling and the animation never repaint the page. */
+.ola { will-change: transform; backface-visibility: hidden; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fondo { opacity: .06; } }
 :root[data-theme="dark"] .fondo { opacity: .06; }
 .wrap { gap: 30px; padding-block: 32px 64px; }
@@ -313,13 +316,12 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @keyframes ola1 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-40px, 30px) rotate(-3deg); } }
 @keyframes ola2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(36px, -34px) scale(1.06); } }
 @keyframes ola3 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(30px, 40px) rotate(3.5deg); } }
-.fondo path { transform-box: fill-box; transform-origin: center; will-change: transform; }
-.fondo path:nth-of-type(1) { animation: ola1 14s ease-in-out infinite; }
-.fondo path:nth-of-type(2) { animation: ola2 17s ease-in-out infinite; }
-.fondo path:nth-of-type(3) { animation: ola3 15s ease-in-out infinite; }
-.fondo path:nth-of-type(4) { animation: ola2 19s ease-in-out infinite reverse; }
-.fondo path:nth-of-type(5) { animation: ola1 13s ease-in-out infinite reverse; }
-@media (prefers-reduced-motion: reduce) { .fondo path { animation: none !important; } }
+.ola1 { transform-origin: 82% 62%; animation: ola1 14s ease-in-out infinite; }
+.ola2 { transform-origin: 88% 78%; animation: ola2 17s ease-in-out infinite; }
+.ola3 { transform-origin: 14% 14%; animation: ola3 15s ease-in-out infinite; }
+.ola4 { transform-origin: 18% 75%; animation: ola2 19s ease-in-out infinite reverse; }
+.ola5 { transform-origin: 8% 92%; animation: ola1 13s ease-in-out infinite reverse; }
+@media (prefers-reduced-motion: reduce) { .ola { animation: none !important; } }
 .panel.plegable { position: relative; }
 .plegar { touch-action: none; }
 .arrastrando { position: relative; z-index: 5; transform: scale(1.01); box-shadow: 0 24px 50px -20px rgba(0,0,0,.35); opacity: .96; transition: transform .15s, box-shadow .15s; border-radius: var(--r); }
@@ -568,7 +570,8 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   </form>
 </div>
 
-<svg class="fondo" aria-hidden="true" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+<div class="fondo" aria-hidden="true">
+  <svg class="fondo-base" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="fb0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f7f6"/><stop offset="1" style="stop-color:color-mix(in srgb, var(--accent) 7%, #e4e3e1)"/></linearGradient>
     <linearGradient id="fb1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbfbfa"/><stop offset="1" style="stop-color:color-mix(in srgb, var(--accent) 11%, #ecebe9)"/></linearGradient>
@@ -577,12 +580,13 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <filter id="fs" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#000" flood-opacity=".09"/><feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#fff" flood-opacity=".9"/></filter>
   </defs>
   <rect width="1600" height="1000" fill="url(#fb0)"/>
-  <path filter="url(#fs)" fill="url(#fb2)" d="M1600 120 C1380 210 1180 380 1120 560 C1060 740 1140 880 1240 1000 L1600 1000 Z"/>
-  <path filter="url(#fs)" fill="url(#fb1)" d="M1600 380 C1460 440 1360 560 1350 700 C1340 830 1400 920 1440 1000 L1600 1000 Z"/>
-  <path filter="url(#fs)" fill="url(#fb3)" d="M0 0 L520 0 C500 120 430 230 330 290 C230 350 110 360 0 350 Z"/>
-  <path filter="url(#fs)" fill="url(#fb1)" d="M0 410 C170 400 300 470 380 590 C450 700 470 820 560 920 C600 960 640 985 680 1000 L0 1000 Z"/>
-  <path filter="url(#fs)" fill="url(#fb3)" d="M0 820 C90 840 170 900 210 1000 L0 1000 Z"/>
-</svg>
+  </svg>
+  <div class="ola ola1"><svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><path filter="url(#fs)" fill="url(#fb2)" d="M1600 120 C1380 210 1180 380 1120 560 C1060 740 1140 880 1240 1000 L1600 1000 Z"/></svg></div>
+  <div class="ola ola2"><svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><path filter="url(#fs)" fill="url(#fb1)" d="M1600 380 C1460 440 1360 560 1350 700 C1340 830 1400 920 1440 1000 L1600 1000 Z"/></svg></div>
+  <div class="ola ola3"><svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><path filter="url(#fs)" fill="url(#fb3)" d="M0 0 L520 0 C500 120 430 230 330 290 C230 350 110 360 0 350 Z"/></svg></div>
+  <div class="ola ola4"><svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><path filter="url(#fs)" fill="url(#fb1)" d="M0 410 C170 400 300 470 380 590 C450 700 470 820 560 920 C600 960 640 985 680 1000 L0 1000 Z"/></svg></div>
+  <div class="ola ola5"><svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><path filter="url(#fs)" fill="url(#fb3)" d="M0 820 C90 840 170 900 210 1000 L0 1000 Z"/></svg></div>
+</div>
 <div class="wrap" id="app" hidden>
   <nav class="side menu" aria-label="Menú">
     <div class="usr">
