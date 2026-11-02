@@ -419,21 +419,27 @@ body.invitado #sec-casos { display: grid !important; }
 .fila-nuevo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0; align-items: stretch; background: var(--panel); border-radius: var(--r); box-shadow: var(--raise); min-width: 0; }
 .fila-nuevo > .panel { background: transparent; box-shadow: none; border: 0; border-radius: 0; }
 .fila-nuevo > #sec-notas { border-left: 1px solid var(--line); }
-#sec-notas { position: relative; perspective: 1600px; padding: 0; }
-.nf-in { position: relative; height: 100%; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
+#sec-notas { position: relative; perspective: 1600px; padding: 0; display: grid; grid-template-rows: 1fr; align-content: stretch; }
+.nf-in { position: relative; display: grid; grid-template-rows: 1fr; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
 #sec-notas.vuelta .nf-in { transform: rotateY(-180deg); }
 .nf-cara, .nf-dorso { backface-visibility: hidden; -webkit-backface-visibility: hidden; padding: 26px; box-sizing: border-box; }
 @media (max-width: 640px) { .nf-cara, .nf-dorso { padding: 20px 16px; } }
-.nf-cara { position: relative; min-height: 100%; display: grid; gap: 18px; align-content: start; }
+.nf-cara { position: relative; display: grid; gap: 18px; align-content: start; }
 .nf-dorso { position: absolute; inset: 0; transform: rotateY(180deg); display: grid; grid-template-rows: auto 1fr; gap: 12px; overflow: hidden; background: var(--panel); border-radius: 0 var(--r) var(--r) 0; }
 .nf-dorso h2 { margin: 0; }
-.acc-box { overflow-y: auto; display: grid; gap: 14px; align-content: start; padding-right: 26px; min-height: 0; }
+.acc-g { min-width: 0; }
+.acc-check label { flex: 1 1 auto; }
+.acc-box { overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; padding-right: 26px; min-height: 0; }
 .acc-g h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
-.acc-g ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.acc-g ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .acc-g li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13.5px; }
 .acc-g li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acc-g li small { color: var(--muted); white-space: nowrap; font-size: 12px; }
+.acc-g li small { flex: none; color: var(--muted); white-space: nowrap; font-size: 12px; }
 .acc-g .link { font-size: 12.5px; white-space: nowrap; }
+.acc-check label { display: flex; align-items: center; gap: 8px; min-width: 0; text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--ink); cursor: pointer; }
+.acc-check label span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-check input { width: 17px; height: 17px; flex: none; margin: 0; }
+.acc-check.hecho label span { text-decoration: line-through; color: var(--muted); }
 .acc-vacio { color: var(--muted); font-size: 13.5px; margin: 0; }
 @media (max-width: 900px) { .nf-dorso { border-radius: 0 0 var(--r) var(--r); } }
 @media (max-width: 900px) { .fila-nuevo { grid-template-columns: minmax(0, 1fr); } .fila-nuevo > #sec-notas { border-left: 0; border-top: 1px solid var(--line); } }
@@ -1242,7 +1248,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const real = rows.filter((r) => r.fecha.slice(0, 7) === m);
     const fx = fijos.filter((f) => f.desde <= m && (!f.hasta || m <= f.hasta)).map((f) => ({
       id: 'fijo:' + f.id, fijo: true, fecha: `${m}-${pad(Math.min(f.dia, lastDay(m)))}`,
-      tipo: f.tipo, categoria: f.categoria, descripcion: f.descripcion, monto: f.monto, registro: f.registro,
+      tipo: f.tipo, categoria: f.categoria, descripcion: f.descripcion, monto: f.monto, registro: f.registro, fijoId: f.id, accHecho: !!(f.accHecho && f.accHecho[m]),
     }));
     return [...real, ...fx];
   }
@@ -2445,6 +2451,26 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const item = (txt, extra) => { const li = document.createElement('li'); const a = document.createElement('span'); a.textContent = txt; a.title = txt; li.append(a); if (extra) li.append(extra); return li; };
     const peq = (t) => { const sm = document.createElement('small'); sm.textContent = t; return sm; };
     const yo = yoUid;
+    if (!invitado && !sinDinero()) {
+      const mA = (document.getElementById('mes') && document.getElementById('mes').value) || thisMonth;
+      const arr = entriesFor(mA).filter((r) => r.tipo === 'Ingreso' && /arriend/i.test(r.categoria + ' ' + r.descripcion)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+      grupo(`Pagos de arriendo · ${MESES[Number(mA.slice(5, 7)) - 1]}`, arr.map((r) => {
+        const li = document.createElement('li'); li.className = 'acc-check' + (r.accHecho ? ' hecho' : '');
+        const lb = document.createElement('label');
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = r.accHecho;
+        cb.addEventListener('change', async () => {
+          li.classList.toggle('hecho', cb.checked);
+          try {
+            if (r.fijo) await col('fijos').doc(r.fijoId).update({ ['accHecho.' + mA]: cb.checked });
+            else await col('movimientos').doc(r.id).update({ accHecho: cb.checked });
+          } catch (e) { cb.checked = !cb.checked; li.classList.toggle('hecho', cb.checked); setMsg('No se pudo guardar. Intenta de nuevo.', true); }
+        });
+        const tx = document.createElement('span'); tx.textContent = r.descripcion || r.categoria; tx.title = tx.textContent;
+        lb.append(cb, tx);
+        li.append(lb, peq(usd.format(r.monto))); li.title = `${r.descripcion || r.categoria} · ${r.fecha.slice(8, 10)} ${MESES[Number(r.fecha.slice(5, 7)) - 1]}`;
+        return li;
+      }));
+    }
     grupo('Notas pendientes', notas.filter((n) => !n.hecha && (invitado ? n.para === yo : n.para === '' || n.para === 'dueno')).sort((a, b) => b.creado.localeCompare(a.creado)).map((n) => item(String(n.texto || '').split('\n')[0] || 'Nota con documento', peq(n.creado ? new Date(n.creado).toLocaleDateString('es-EC', { day: 'numeric', month: 'short' }) : ''))));
     const ahora = Date.now(), semana = ahora + 7 * 864e5;
     grupo('Audiencias y diligencias en 7 días', auds.filter((a) => { const t = Date.parse(a.inicio); return t >= ahora - 36e5 && t <= semana; }).sort((a, b) => a.inicio.localeCompare(b.inicio)).map((a) => { const d = new Date(a.inicio); return item(a.caso || a.tipo || 'Audiencia', peq(d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }))); }));
@@ -2621,7 +2647,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       renderPronto();
     }, lost);
   }
-  const mapMov = (d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, por: leerPor(x) }; };
+  const mapMov = (d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, accHecho: !!x.accHecho, por: leerPor(x) }; };
 
   function startInvitado(u, acc) {
     yoUid = u.uid;
@@ -2690,7 +2716,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       raw['movimientos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       rows = snap.docs.map((d) => {
         const x = d.data() || {};
-        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, por: leerPor(x) };
+        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, accHecho: !!x.accHecho, por: leerPor(x) };
       }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
       pickMonth(); renderPronto();
     }, lost);
@@ -2698,7 +2724,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       raw['fijos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       fijos = snap.docs.map((d) => {
         const x = d.data() || {};
-        return { registro: !!x.registro, id: d.id, tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, dia: Math.max(1, Math.min(31, Number(x.dia) || 1)), desde: String(x.desde || ''), hasta: x.hasta ? String(x.hasta) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
+        return { registro: !!x.registro, accHecho: (x.accHecho && typeof x.accHecho === 'object') ? x.accHecho : {}, id: d.id, tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, dia: Math.max(1, Math.min(31, Number(x.dia) || 1)), desde: String(x.desde || ''), hasta: x.hasta ? String(x.hasta) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
       }).filter((f) => /^\d{4}-\d{2}$/.test(f.desde));
       pickMonth(); renderPronto();
     }, lost);
