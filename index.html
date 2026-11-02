@@ -447,7 +447,10 @@ button.por-chip:hover { background: color-mix(in srgb, var(--pc) 26%, var(--pane
 .det-acts .btn { width: auto; padding-left: 28px; padding-right: 28px; }
 .agenda .det-h { color: inherit; }
 .agenda .det-edit, .agenda label { color: var(--muted); }
-.ghost.elim-abonos { justify-self: start; align-self: end; padding: 10px 16px; font-size: 13px; color: var(--out); }
+.c-pag .det-edit { grid-template-columns: repeat(3, minmax(0, 1fr)) auto auto; }
+.c-pag .det-edit > .btn { width: auto; align-self: end; padding: 10px 24px; white-space: nowrap; }
+@media (max-width: 760px) { .c-pag .det-edit { grid-template-columns: 1fr 1fr; } .c-pag .det-edit > span:empty { display: none; } }
+.ghost.elim-abonos { white-space: nowrap; justify-self: start; align-self: end; padding: 10px 16px; font-size: 13px; color: var(--out); }
 .seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .seg .ghost { padding: 5px 12px; }
 .seg .ghost.on { background: var(--ink); color: var(--ink-fg); }
@@ -1587,7 +1590,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         sb.append(lb, ay); cArc.appendChild(sb);
       }
       const ed = document.createElement('div'); ed.className = 'det-acts';
-      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Mi parte (%)', 'number'], ['nombre', 'Nombre del cliente', 'text'], ['causa', 'Números de causa', 'text'], ['observacion', 'Observación', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
+      const FIELDS = [['abono', 'Valores abonados (USD)', 'number'], ['fpago', 'Fecha de pago', 'date'], ['parte', 'Porcentaje (%)', 'number'], ['nombre', 'Nombre del cliente', 'text'], ['causa', 'Números de causa', 'text'], ['observacion', 'Observación', 'text'], ['cedula', 'Cédula', 'text'], ['telefono', 'Teléfono', 'tel'], ['correo', 'Correo', 'email']];
       const inputs = {};
       FIELDS.forEach(([k, label, type]) => {
         const lb = document.createElement('label'); lb.htmlFor = 'det-' + k; lb.textContent = label;
@@ -1632,14 +1635,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         else if (k === 'abono' || k === 'fpago' || k === 'parte') gPag.appendChild(lb);
         else gCli.appendChild(lb);
       });
-      if (ps.length || c.ajuste) {
-        const eb = delBtn('abonos:' + c.id, async () => {
-          await Promise.all(ps.map((r) => col('movimientos').doc(r.id).delete()));
-          if (c.ajuste) await col('casos').doc(c.id).update({ ajuste: 0 });
-          setMsg(`Se eliminaron los abonos de ${c.nombre}.`);
-        }, 'Eliminar abonos', `¿Eliminar ${ps.length} ${ps.length === 1 ? 'abono' : 'abonos'}? Toca otra vez`);
+      // Deletes one payment at a time, starting with the most recently entered one.
+      const ultimoAbono = ps.slice().sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || '')) || b.fecha.localeCompare(a.fecha))[0];
+      let eb = null;
+      if (ultimoAbono || c.ajuste) {
+        eb = ultimoAbono
+          ? delBtn('abono:' + ultimoAbono.id, async () => {
+              await col('movimientos').doc(ultimoAbono.id).delete();
+              setMsg(`Se eliminó el abono de ${usd.format(ultimoAbono.bruto)} del ${ultimoAbono.fecha.slice(8, 10)} ${MESES[Number(ultimoAbono.fecha.slice(5, 7)) - 1]}.`);
+            }, 'Eliminar abono', `¿Eliminar ${usd.format(ultimoAbono.bruto)}? Toca otra vez`)
+          : delBtn('ajuste:' + c.id, async () => { await col('casos').doc(c.id).update({ ajuste: 0 }); setMsg('Se quitó el ajuste manual del pagado.'); }, 'Quitar ajuste', '¿Quitar ajuste? Toca otra vez');
         eb.classList.add('elim-abonos');
-        inputs.fpago.closest('label').after(eb);
+        if (ultimoAbono) eb.title = 'Elimina el último abono registrado';
       }
       // Client and case fields save themselves: a short pause after typing, or on leaving the field.
       let ultimoGuardado = null;
@@ -1686,7 +1693,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         }
         catch (e) { setMsg('No se pudieron guardar los datos. Intenta de nuevo.', true); }
       });
-      ed.appendChild(sv);
+      if (eb) gPag.appendChild(eb); else gPag.appendChild(document.createElement('span'));
+      gPag.appendChild(sv);
       { const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'ghost arch-btn';
         ab.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg>';
         const tx = document.createElement('span'); tx.textContent = c.archivado ? 'Desarchivar proceso' : 'Archivar proceso'; ab.appendChild(tx);
@@ -1695,7 +1703,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           catch (e) { setMsg('No se pudo archivar. Intenta de nuevo.', true); }
         });
         const top = document.createElement('div'); top.className = 'det-top'; cCli.insertBefore(top, cCli.firstChild); top.append(cCli.querySelector('.det-h'), ab); }
-      wrap.appendChild(ed);
+      if (ed.children.length) wrap.appendChild(ed);
       if (c.pagado > c.total && !sinDinero()) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
       cell.appendChild(wrap); dr.appendChild(cell);
       return [tr, ...extra, dr];
