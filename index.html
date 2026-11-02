@@ -301,7 +301,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @media (prefers-reduced-motion: reduce) { #casos .tag.c-dil.aviso { animation: none; box-shadow: 0 0 0 2px #6a3fa0; } }
 .agenda { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--panel); box-shadow: var(--raise-sm); border-left: 4px solid currentColor; }
 .agenda.c-aud { color: #c0262d; } .agenda.c-dil { color: #6a3fa0; }
-.agenda.c-pag { color: #1f8a4c; } .agenda.c-cli { color: #2456a6; } .agenda.c-cau { color: #b4671a; } .agenda.c-arc { color: #0f7c86; } .agenda.c-sat { color: #5b4bb7; }
+.agenda.c-pag { color: #1f8a4c; } .agenda.c-cli { color: var(--accent); } #sec-casos.archivados .agenda.c-cli { color: color-mix(in srgb, var(--accent) 68%, #000); } #sec-casos.archivados .det-row td { background: color-mix(in srgb, var(--accent-soft) 82%, var(--accent)); } .agenda.c-cau { color: #b4671a; } .agenda.c-arc { color: #0f7c86; } .agenda.c-sat { color: #5b4bb7; }
 .tag.c-sat { color: #5b4bb7; background: color-mix(in srgb, #5b4bb7 12%, var(--panel)); }
 .sat-tag { border: 0; cursor: pointer; font-family: inherit; line-height: inherit; } .sat-tag:hover { background: color-mix(in srgb, #5b4bb7 22%, var(--panel)); }
 .causa-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: stretch; }
@@ -1319,7 +1319,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const casosAct = cs.filter((c) => !c.archivado);
     const nArch = cs.length - casosAct.length;
     $('h-cobrar').textContent = verArch ? 'Procesos archivados' : 'Casos';
-    $('ver-arch').setAttribute('aria-pressed', String(verArch)); $('ver-arch').classList.toggle('on', verArch);
+    $('ver-arch').setAttribute('aria-pressed', String(verArch)); $('sec-casos').classList.toggle('archivados', verArch); $('ver-arch').classList.toggle('on', verArch);
     $('ver-arch-t').textContent = verArch ? 'Volver a casos' : `Archivados${nArch ? ' (' + nArch + ')' : ''}`;
     $('ver-arch').title = verArch ? 'Volver a la lista de casos' : 'Ver procesos archivados';
     const qb = window.__normBusca(casoBusca);
