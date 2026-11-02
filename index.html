@@ -2506,7 +2506,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (colorK && COLORS[colorK]) card.style.setProperty('--nc', COLORS[colorK].light[0]);
       const k = document.createElement('div'); k.className = 'nota-k';
       const kt = document.createElement('span'); kt.textContent = etiqueta; k.appendChild(kt);
-      if (n.hecha) { const h = document.createElement('span'); h.textContent = 'Hecha ✓'; k.appendChild(h); }
+      if (n.hecha) { const h = document.createElement('span'); h.textContent = 'Revisado ✓'; k.appendChild(h); }
       const esMia = invitado ? n.autor === yo : n.autor === 'dueno';
       const t = document.createElement('textarea'); t.className = 'nota-txt'; t.value = n.texto; t.rows = Math.min(12, Math.max(2, n.texto.split('\n').length));
       t.readOnly = !esMia; t.setAttribute('aria-label', 'Nota');
@@ -2514,10 +2514,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const pie = document.createElement('div'); pie.className = 'nota-pie';
       const f = document.createElement('span'); f.textContent = n.creado ? new Date(n.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
       const acts = document.createElement('span'); acts.className = 'acts';
-      const puedeMarcar = invitado ? n.para === yo : true;
+      const puedeMarcar = !invitado;
       if (n.para) { const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ghost'; rb.textContent = respAbierta === n.id ? 'Cancelar' : 'Responder';
         rb.addEventListener('click', () => { soltarRespAdj(); respAbierta = respAbierta === n.id ? null : n.id; respDraft = ''; renderNotas(); }); acts.appendChild(rb); }
-      if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Hecha';
+      if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Revisado';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
       if (esMia || !invitado) { const db = document.createElement('button'); db.type = 'button'; db.className = 'ghost'; db.textContent = 'Borrar';
         db.addEventListener('click', () => { n.archivos.forEach((a) => { if (a.ruta) deleteObject(sRef(storage, a.ruta)).catch(() => {}); }); libroRef.collection('notas').doc(n.id).delete(); setMsg('Nota borrada.'); }); acts.appendChild(db); }
