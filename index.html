@@ -290,7 +290,7 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .arch-it { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--bg); }
 .arch-ic { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: #fff; overflow: hidden; text-decoration: none; }
 .arch-ic img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.arch-ic.t-pdf { background: #c0262d; } .arch-ic.t-doc { background: #2456a6; } .arch-ic.t-img { background: #0f7c86; } .arch-ic.t-xls { background: #1f8a4c; } .arch-ic.t-aud { background: #b4671a; } .arch-ic.t-vid { background: #6a3fa0; }
+.arch-ic.t-pdf { background: #c0262d; } .arch-ic.t-doc { background: #2456a6; } .arch-ic.t-img { background: #0f7c86; } .arch-ic.t-xls { background: #1f8a4c; } .arch-ic.t-aud { background: #b4671a; } .arch-ic.t-vid { background: #6a3fa0; } .arch-ic.t-otro { background: #8a8f98; }
 .arch-nom { min-width: 0; display: grid; gap: 2px; font-size: 13px; }
 .arch-nom a { color: var(--ink); font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .arch-nom a:hover { text-decoration: underline; }
@@ -343,6 +343,11 @@ body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none 
 .dlg-usr::backdrop { background: rgba(10,12,20,.35); backdrop-filter: blur(3px); }
 .dlg-usr form { display: grid; gap: 12px; }
 .dlg-usr h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 20px; }
+body.sin-dinero .solo-dinero { display: none !important; }
+body.sin-dinero #sec-casos table th:nth-child(n+3):nth-child(-n+5), body.sin-dinero #sec-casos table tr:not(.det-row) > td:nth-child(n+3):nth-child(-n+5) { display: none !important; }
+.dlg-usr label.usr-check { display: flex; align-items: flex-start; gap: 10px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); cursor: pointer; }
+.usr-check input { width: 18px; height: 18px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+.usr-check small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
 .dlg-usr label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .btn.peligro { background: #c0262d; color: #fff; }
 .casos-tit { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -688,15 +693,15 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar">
     <div class="budget-row">
       <div class="casos-tit"><h2 id="h-cobrar">Casos</h2><button type="button" class="ghost nuevo-caso-btn" id="nuevo-caso-btn">+ Nuevo caso</button></div>
-      <span><span class="sub" style="display:inline">Por cobrar</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
+      <span class="solo-dinero"><span class="sub" style="display:inline">Por cobrar</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span>
     </div>
     <form class="nuevo-caso" id="nuevo-caso" hidden>
       <label>Nombre del cliente<input type="text" id="nc-nombre" maxlength="120" required></label>
       <label>N.º de archivo<input type="text" id="nc-archivo" maxlength="20"></label>
-      <label>Total (USD)<input type="number" id="nc-total" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+      <label class="solo-dinero">Total (USD)<input type="number" id="nc-total" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
       <button type="submit" class="btn">Crear caso</button>
     </form>
-    <p class="sub" style="margin:0" id="casos-ayuda">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
+    <p class="sub solo-dinero" style="margin:0" id="casos-ayuda">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
     <div class="tbox">
       <table>
         <thead><tr><th><span class="th-f">Archivo<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="archivo" aria-label="Ordenar o filtrar por Archivo"><option value="asc">Menor a mayor</option><option value="desc">Mayor a menor</option></select></span></th><th><span class="th-f">Caso<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="caso" aria-label="Ordenar o filtrar por Caso"><option value="">Todos</option><option value="az">A → Z</option><option value="za">Z → A</option><optgroup label="Estado" data-fijo="1"><option value="pagados">Pagado</option><option value="pendientes">Pendiente</option><option value="saldo">Con saldo por cobrar</option><option value="audiencia">Audiencia</option><option value="diligencia">Diligencia</option></optgroup></select></span><button type="button" class="th-lupa" id="lupa-btn" aria-label="Buscar caso por nombre" aria-expanded="false"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button><input type="search" id="busca-caso" class="busca-caso" placeholder="Buscar nombre…" aria-label="Buscar caso por nombre" hidden></th><th class="num"><span class="th-f">Total<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="total" aria-label="Ordenar o filtrar por Total"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Pagado<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="pagado" aria-label="Ordenar o filtrar por Pagado"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><span class="th-f">Falta<span class="th-arrow" aria-hidden="true">▾</span><select class="th-sel" data-col="falta" aria-label="Ordenar o filtrar por Falta"><option value="">—</option><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select></span></th><th class="num"><button type="button" class="ghost arch-btn" id="ver-arch" aria-pressed="false" title="Ver procesos archivados"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg><span id="ver-arch-t">Archivados</span></button></th></tr></thead>
@@ -875,6 +880,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     });
   }
   let libroRef = null;
+  const sinDinero = () => !!(invitado && invitado.ocultarDinero);
   let invitado = null; // { owner, rol, color, nombre, ownerEmail } when signed in as someone else's assistant
   let miembros = [];
   // When an assistant writes, every case-related change carries their mark ("por") so the owner sees who did it.
@@ -1432,7 +1438,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const wrap = document.createElement('div'); wrap.className = 'det';
       const ps = rows.filter((r) => r.casoId === c.id).sort((a, b) => a.fecha.localeCompare(b.fecha));
       const tarjeta = (titulo, color) => { const g = document.createElement('div'); g.className = 'agenda ' + color; const gh = document.createElement('p'); gh.className = 'det-h'; gh.textContent = titulo; g.appendChild(gh); wrap.appendChild(g); return g; };
-      const cPag = tarjeta('Pagos', 'c-pag');
+      const cPag = tarjeta('Pagos', 'c-pag'); cPag.classList.add('solo-dinero');
       const h = document.createElement('p'); h.className = 'det-nota'; h.textContent = ps.length ? `Pagos recibidos (${ps.length})` : 'Aún no hay pagos registrados para este caso.';
       cPag.appendChild(h);
       if (ps.length) {
@@ -1520,13 +1526,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn'; sv.textContent = 'Guardar datos';
       sv.addEventListener('click', async () => {
-        const raw = inputs.abono.value.trim();
+        const sd = sinDinero();
+        const raw = sd ? '' : inputs.abono.value.trim();
         const v = raw ? Math.round(parseFloat(raw.replace(',', '.')) * 100) / 100 : 0;
         if (!(v >= 0)) { setMsg('El valor abonado debe ser un número.', true); return; }
         const fp = inputs.fpago.value;
         if (v > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(fp)) { setMsg('Elige la fecha en que pagó.', true); return; }
         const upd = {};
-        { const pv = parseFloat(String(inputs.parte.value).replace(',', '.')); if (!(pv >= 0 && pv <= 100)) { setMsg('Mi parte debe estar entre 0 y 100.', true); return; } upd.parte = Math.round(pv * 100) / 100; }
+        if (!sd) { const pv = parseFloat(String(inputs.parte.value).replace(',', '.')); if (!(pv >= 0 && pv <= 100)) { setMsg('Mi parte debe estar entre 0 y 100.', true); return; } upd.parte = Math.round(pv * 100) / 100; }
         ['causa', 'observacion', 'cedula', 'telefono', 'correo'].forEach((k) => { upd[k] = inputs[k].value.trim(); });
         upd.causa = upd.causa.split('\n').map((x) => x.trim()).filter(Boolean).join('\n');
         const nuevoNombre = inputs.nombre.value.trim().replace(/\s+/g, ' ');
@@ -1553,7 +1560,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         });
         ed.insertBefore(ab, sv); }
       wrap.appendChild(ed);
-      if (c.pagado > c.total) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
+      if (c.pagado > c.total && !sinDinero()) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
       cell.appendChild(wrap); dr.appendChild(cell);
       return [tr, ...extra, dr];
     }));
@@ -2098,11 +2105,21 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('usr-sub').textContent = m ? `Rol: ${ROLES[m.rol] || m.rol}. Entra con el usuario "${usuarioDe(m.email)}".` : 'Esta persona entrará con el usuario y la contraseña que pongas aquí, y solo verá lo que permite su rol.';
     ['usr-nombre', 'usr-email', 'usr-pass'].forEach((id) => { const el = $(id); el.value = ''; el.closest('label').hidden = !!m; el.required = !m; });
     $('usr-rol').closest('label').hidden = !!m;
+    $('usr-oculta').checked = !!(m && m.ocultarDinero);
     $('usr-ok').textContent = m ? 'Quitar acceso' : 'Crear usuario';
     $('usr-ok').classList.toggle('peligro', !!m);
     if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
   }
   const cerrarDlg = () => { if (dlg.open) dlg.close(); };
+  // For an existing user the checkbox saves at once.
+  $('usr-oculta').addEventListener('change', () => {
+    const m = usrActual; if (!m) return;
+    const v = $('usr-oculta').checked;
+    libroRef.collection('miembros').doc(m.id).update({ ocultarDinero: v });
+    db.doc('accesos/' + m.id).update({ ocultarDinero: v });
+    m.ocultarDinero = v;
+    setMsg(v ? `${m.nombre || 'Ese usuario'} ya no verá los datos contables.` : `${m.nombre || 'Ese usuario'} vuelve a ver los datos contables.`);
+  });
   $('usr-cancel').addEventListener('click', cerrarDlg);
   $('usr-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -2138,9 +2155,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     } catch (er) { if (app2) deleteApp(app2).catch(() => {}); return fallo(er.message); }
     deleteApp(app2).catch(() => {});
     if (guid === auth.currentUser.uid) return fallo('Ese es tu propio usuario.');
-    const datos = { nombre, email, usuario, rol, color: usrColor, creado: new Date().toISOString() };
+    const ocultarDinero = $('usr-oculta').checked;
+    const datos = { nombre, email, usuario, rol, color: usrColor, ocultarDinero, creado: new Date().toISOString() };
     libroRef.collection('miembros').doc(guid).set(datos);
-    db.doc('accesos/' + guid).set({ owner: auth.currentUser.uid, ownerEmail: auth.currentUser.email || '', rol, color: usrColor, nombre });
+    db.doc('accesos/' + guid).set({ owner: auth.currentUser.uid, ownerEmail: auth.currentUser.email || '', rol, color: usrColor, nombre, ocultarDinero });
     ok.disabled = false; cerrarDlg();
     setMsg(`Listo: ${nombre} ya puede entrar con el usuario "${usuario}" y la contraseña que pusiste.`);
   });
@@ -2151,7 +2169,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     e.preventDefault();
     const nombre = $('nc-nombre').value.trim().replace(/\s+/g, ' '); if (!nombre) return;
     const tv = parseFloat(String($('nc-total').value).replace(',', '.'));
-    await col('casos').add({ nombre, archivo: $('nc-archivo').value.trim(), total: tv >= 0 ? Math.round(tv * 100) / 100 : 0, creado: new Date().toISOString() });
+    await col('casos').add({ nombre, archivo: $('nc-archivo').value.trim(), total: tv >= 0 && !sinDinero() ? Math.round(tv * 100) / 100 : 0, creado: new Date().toISOString() });
     $('nc-nombre').value = ''; $('nc-archivo').value = ''; $('nc-total').value = ''; $('nuevo-caso').hidden = true;
     setMsg(`Caso de ${nombre} creado.`);
   });
@@ -2317,10 +2335,22 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     db = fireDb;
     libroRef = db.doc('users/' + acc.owner);
     const lost = () => setMsg('No se pudo abrir el libro compartido. Puede que te hayan quitado el acceso; recarga la página.', true);
-    libroRef.collection('movimientos').onSnapshotDeCasos((snap) => {
-      rows = snap.docs.map(mapMov).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
-      render();
-    }, lost);
+    let paraMov = null;
+    const ponerDinero = () => {
+      document.body.classList.toggle('sin-dinero', sinDinero());
+      if (sinDinero()) { if (paraMov) { paraMov(); paraMov = null; } rows = []; }
+      else if (!paraMov) paraMov = libroRef.collection('movimientos').onSnapshotDeCasos((snap) => {
+        rows = snap.docs.map(mapMov).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
+        render();
+      }, lost);
+    };
+    ponerDinero();
+    // The owner can switch "Ocultar datos contables" at any time; follow it live.
+    db.doc('accesos/' + u.uid).onSnapshot((snap) => {
+      const x = snap.exists ? (snap.data() || {}) : {};
+      const v = x.ocultarDinero === true;
+      if (v !== !!invitado.ocultarDinero) { invitado.ocultarDinero = v; ponerDinero(); render(); }
+    }, () => {});
     suscribirCasos(lost);
     suscribirNotas(lost);
     render();
@@ -2379,7 +2409,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     suscribirCasos(lost);
     suscribirNotas(lost);
     col('miembros').onSnapshot((snap) => {
-      miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || '') }; });
+      miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
     }, () => {});
   }
@@ -2394,6 +2424,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <label>Contraseña<input type="text" id="usr-pass" minlength="6" maxlength="60" required autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>
     <div class="usr-col-l" id="usr-col-l"><span>Color</span><div class="swatches" id="usr-colores" role="radiogroup" aria-label="Color del usuario"></div></div>
     <label>Rol<select id="usr-rol"><option value="asistente">Asistente: solo la tabla de Casos</option></select></label>
+    <label class="usr-check"><input type="checkbox" id="usr-oculta"><span>Ocultar datos contables<small>No verá el total, lo pagado, lo que falta ni los pagos de cada caso, y no podrá cambiarlos.</small></span></label>
     <p class="msg" id="usr-msg" role="status"></p>
     <div class="det-acts"><button type="button" class="ghost" id="usr-cancel">Cancelar</button><button type="submit" class="btn" id="usr-ok">Crear usuario</button></div>
   </form>

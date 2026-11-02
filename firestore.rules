@@ -9,6 +9,10 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid))
         && get(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.rol == 'asistente';
     }
+    // "Ocultar datos contables": ese usuario no ve ni cambia montos.
+    function veDinero(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.get('ocultarDinero', false) != true;
+    }
 
     match /users/{uid} {
       // El dueño lee y escribe todo su libro.
@@ -18,7 +22,11 @@ service cloud.firestore {
       }
       // El asistente solo trabaja en Casos y su Agenda...
       match /casos/{id} {
-        allow read, write: if esAsistente(uid);
+        allow read, delete: if esAsistente(uid);
+        allow create: if esAsistente(uid) && (veDinero(uid)
+          || (request.resource.data.get('total', 0) == 0 && !request.resource.data.keys().hasAny(['ajuste', 'parte'])));
+        allow update: if esAsistente(uid) && (veDinero(uid)
+          || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['total', 'ajuste', 'parte']));
       }
       match /audiencias/{id} {
         allow read, write: if esAsistente(uid);
@@ -34,8 +42,8 @@ service cloud.firestore {
         allow delete: if esAsistente(uid) && resource.data.autor == request.auth.uid;
       }
       match /movimientos/{id} {
-        allow read, delete: if esAsistente(uid) && resource.data.casoId > '';
-        allow create: if esAsistente(uid) && request.resource.data.casoId > ''
+        allow read, delete: if esAsistente(uid) && veDinero(uid) && resource.data.casoId > '';
+        allow create: if esAsistente(uid) && veDinero(uid) && request.resource.data.casoId > ''
           && request.resource.data.tipo == 'Ingreso' && request.resource.data.categoria == 'Honorarios por casos';
       }
     }
