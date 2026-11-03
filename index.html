@@ -804,9 +804,27 @@ body.invitado .ajustes-btn { display: none; }
 .mapa-busca { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .mapa-busca input { flex: 1 1 220px; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; }
 .mapa-box { border-radius: 16px; overflow: hidden; box-shadow: var(--raise-sm); background: var(--accent-soft); aspect-ratio: 16 / 9; min-height: 280px; }
-.mapa-box iframe { width: 100%; height: 100%; border: 0; display: block; }
-.mapa-abrir { justify-self: end; font-size: 13.5px; color: var(--accent); text-decoration: none; }
-.mapa-abrir:hover { text-decoration: underline; }
+.mapa-lf { width: 100%; height: 100%; min-height: 280px; z-index: 0; }
+.mapa-lf.marcando, .mapa-lf.marcando .leaflet-interactive { cursor: crosshair; }
+.mapa-casa-btn.on { background: var(--accent); color: #fff; }
+.mapa-aviso { margin: 0; font-size: 13.5px; color: var(--accent); }
+.mapa-nueva { display: flex; gap: 8px; flex-wrap: wrap; }
+.mapa-nueva input { flex: 1 1 200px; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+.mapa-nueva[hidden] { display: none; }
+.mapa-casas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.mapa-casas:empty { display: none; }
+.mapa-chip { border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 5px 12px; font: 13px var(--font-body); cursor: pointer; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mapa-chip:hover { border-color: var(--accent); color: var(--accent); }
+.casa-ico { background: none; border: 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+.casa-ico.nueva { opacity: .75; }
+.casa-pop { font: 13.5px var(--font-body); display: grid; gap: 6px; min-width: 180px; }
+.casa-pop b { font-size: 15px; }
+.casa-pop p { margin: 0; color: #444; }
+.casa-pop small { color: #777; }
+.casa-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.casa-acts a { color: var(--accent); }
+.casa-acts button { border: 1px solid #ddd; background: #fff; border-radius: 999px; padding: 3px 10px; font: 12.5px var(--font-body); cursor: pointer; }
+.casa-acts .casa-del.armado { background: #a3402e; color: #fff; border-color: #a3402e; }
 @media (max-width: 640px) { .mapa-box { aspect-ratio: 4 / 5; } }
 </style>
 </head>
@@ -1013,10 +1031,18 @@ body.invitado .ajustes-btn { display: none; }
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca una calle, barrio o lugar de Puyo" aria-label="Buscar en el mapa">
       <button type="submit" class="btn">Buscar</button>
-      <button type="button" class="ghost" id="mapa-reset" hidden>Ver todo Puyo</button>
+      <button type="button" class="ghost mapa-casa-btn" id="mapa-casa" aria-pressed="false">🏠 Marcar casa</button>
+      <button type="button" class="ghost" id="mapa-capa" aria-pressed="false">Satélite</button>
     </form>
-    <div class="mapa-box"><iframe id="mapa-frame" title="Mapa de Puyo, Pastaza" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src="https://maps.google.com/maps?q=Puyo%2C%20Pastaza%2C%20Ecuador&amp;z=14&amp;output=embed"></iframe></div>
-    <a class="mapa-abrir" id="mapa-abrir" href="https://www.google.com/maps/search/?api=1&amp;query=Puyo%2C%20Pastaza%2C%20Ecuador" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>
+    <p class="mapa-aviso" id="mapa-aviso" role="status" hidden></p>
+    <div class="mapa-box"><div id="mapa" class="mapa-lf" aria-label="Mapa de Puyo, Pastaza"></div></div>
+    <form class="mapa-nueva" id="mapa-nueva" hidden>
+      <input type="text" id="mapa-nombre" maxlength="60" placeholder="Nombre (ej.: Casa Barrio Obrero)" aria-label="Nombre de la casa" required>
+      <input type="text" id="mapa-nota" maxlength="200" placeholder="Nota (precio, dueño, teléfono…)" aria-label="Nota">
+      <button type="submit" class="btn">Guardar casa</button>
+      <button type="button" class="ghost" id="mapa-cancelar">Cancelar</button>
+    </form>
+    <ul class="mapa-casas" id="mapa-casas"></ul>
   </section>
 
   <section class="panel tone" id="sec-inv" aria-labelledby="h-inv">
@@ -1479,17 +1505,104 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Reorder blocks below Nuevo movimiento by long-pressing a collapse button
   const appEl = document.getElementById('app');
   const nuevoEl = document.getElementById('fila-nuevo');
-  { // Map of Puyo: searches stay inside the parish so "Calle 9 de Octubre" finds the one in Puyo.
-    const base = 'Puyo, Pastaza, Ecuador';
-    const ir = (q) => {
-      const full = q ? `${q}, ${base}` : base, e = encodeURIComponent(full);
-      $('mapa-frame').src = `https://maps.google.com/maps?q=${e}&z=${q ? 17 : 14}&output=embed`;
-      $('mapa-abrir').href = `https://www.google.com/maps/search/?api=1&query=${e}`;
-      $('mapa-reset').hidden = !q;
-    };
-    $('mapa-form').addEventListener('submit', (e) => { e.preventDefault(); ir($('mapa-txt').value.trim()); });
-    $('mapa-reset').addEventListener('click', () => { $('mapa-txt').value = ''; ir(''); });
+  // ── Mapa de Puyo con casas marcadas ──
+  // Leaflet + OpenStreetMap (free, no key). Each house is a record in the business's "lugares" collection.
+  const PUYO = [-1.4924, -78.0024];
+  let mapaL = null, mapaCapas = null, casasCapa = null, lugares = [], marcando = false, puntoNuevo = null, marcaNueva = null, lugaresUnsub = null;
+  let leafletP = null;
+  const cargarLeaflet = () => leafletP || (leafletP = new Promise((ok, mal) => {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css);
+    const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'; sc.onload = () => ok(window.L); sc.onerror = () => { leafletP = null; mal(new Error('leaflet')); }; document.head.appendChild(sc);
+  }));
+  const avisoMapa = (t) => { const a = $('mapa-aviso'); a.textContent = t || ''; a.hidden = !t; };
+  const iconoCasa = (L, nueva) => L.divIcon({ className: 'casa-ico' + (nueva ? ' nueva' : ''), iconSize: [34, 40], iconAnchor: [17, 38], popupAnchor: [0, -34],
+    html: '<svg viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" fill="var(--accent)" stroke="#fff" stroke-width="2"/><path d="M9.5 18.2 17 11.8l7.5 6.4V25a1 1 0 0 1-1 1h-4.2v-4.6h-4.6V26h-4.2a1 1 0 0 1-1-1z" fill="#fff"/></svg>' });
+  const gmaps = (x) => `https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lng}`;
+  function pintarCasas() {
+    $('mapa-casas').replaceChildren(...lugares.map((x) => {
+      const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.className = 'mapa-chip';
+      b.textContent = '🏠 ' + x.nombre; b.title = x.nota || x.nombre;
+      b.addEventListener('click', () => { if (!mapaL) return; mapaL.flyTo([x.lat, x.lng], 18); const m = x._m; if (m) setTimeout(() => m.openPopup(), 600); });
+      li.appendChild(b); return li;
+    }));
+    if (!mapaL || !casasCapa) return;
+    const L = window.L; casasCapa.clearLayers();
+    lugares.forEach((x) => {
+      const m = L.marker([x.lat, x.lng], { icon: iconoCasa(L), draggable: true, title: x.nombre, keyboard: true });
+      const div = document.createElement('div'); div.className = 'casa-pop';
+      const h = document.createElement('b'); h.textContent = x.nombre; div.appendChild(h);
+      if (x.nota) { const n = document.createElement('p'); n.textContent = x.nota; div.appendChild(n); }
+      const acts = document.createElement('div'); acts.className = 'casa-acts';
+      const g = document.createElement('a'); g.href = gmaps(x); g.target = '_blank'; g.rel = 'noopener'; g.textContent = 'Google Maps ↗';
+      const ed = document.createElement('button'); ed.type = 'button'; ed.textContent = 'Editar';
+      ed.addEventListener('click', () => { const nn = prompt('Nombre de la casa', x.nombre); if (nn == null) return; const nt = prompt('Nota', x.nota || ''); if (nt == null) return; col('lugares').doc(x.id).update({ nombre: nn.trim().slice(0, 60) || x.nombre, nota: nt.trim().slice(0, 200) }); });
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'casa-del'; del.textContent = 'Borrar';
+      del.addEventListener('click', () => { if (!del.classList.contains('armado')) { del.classList.add('armado'); del.textContent = '¿Seguro?'; return; } col('lugares').doc(x.id).delete(); mapaL.closePopup(); });
+      acts.append(g, ed, del); div.appendChild(acts);
+      const sm = document.createElement('small'); sm.textContent = 'Arrastra la casita para moverla.'; div.appendChild(sm);
+      m.bindPopup(div);
+      m.on('dragend', () => { const ll = m.getLatLng(); col('lugares').doc(x.id).update({ lat: ll.lat, lng: ll.lng }); });
+      m.addTo(casasCapa); x._m = m;
+    });
   }
+  function suscribirLugares() {
+    if (lugaresUnsub || invitado) return;
+    try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
+      try { raw['lugares'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
+      lugares = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, lat: Number(v.lat), lng: Number(v.lng), nombre: String(v.nombre || 'Casa'), nota: String(v.nota || ''), creado: String(v.creado || '') }; })
+        .filter((x) => isFinite(x.lat) && isFinite(x.lng)).sort((a, b) => a.creado.localeCompare(b.creado));
+      pintarCasas();
+    }, () => {}); } catch (e) {}
+  }
+  const setMarcando = (v) => { marcando = v; $('mapa-casa').setAttribute('aria-pressed', String(v)); $('mapa-casa').classList.toggle('on', v); $('mapa').classList.toggle('marcando', v); avisoMapa(v ? 'Toca en el mapa el lugar de la casa.' : ''); };
+  function quitarNueva() { if (marcaNueva) { marcaNueva.remove(); marcaNueva = null; } puntoNuevo = null; $('mapa-nueva').hidden = true; }
+  async function iniciarMapa() {
+    if (mapaL) return;
+    let L; try { L = await cargarLeaflet(); } catch (e) { avisoMapa('No se pudo cargar el mapa. Revisa tu internet y recarga la página.'); return; }
+    mapaL = L.map('mapa', { zoomControl: true, scrollWheelZoom: false }).setView(PUYO, 14);
+    mapaCapas = {
+      calles: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }),
+      sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imágenes © Esri' })
+    };
+    mapaCapas.calles.addTo(mapaL);
+    casasCapa = L.layerGroup().addTo(mapaL);
+    mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
+    mapaL.on('click', (e) => {
+      if (!marcando) return;
+      setMarcando(false); puntoNuevo = e.latlng;
+      if (marcaNueva) marcaNueva.remove();
+      marcaNueva = L.marker(e.latlng, { icon: iconoCasa(L, true) }).addTo(mapaL);
+      $('mapa-nueva').hidden = false; $('mapa-nombre').value = ''; $('mapa-nota').value = ''; $('mapa-nombre').focus();
+    });
+    pintarCasas();
+  }
+  $('mapa-casa').addEventListener('click', async () => { if (invitado) return; await iniciarMapa(); quitarNueva(); setMarcando(!marcando); });
+  $('mapa-cancelar').addEventListener('click', quitarNueva);
+  $('mapa-nueva').addEventListener('submit', (e) => {
+    e.preventDefault(); if (!puntoNuevo) return;
+    const nombre = $('mapa-nombre').value.trim().slice(0, 60); if (!nombre) return;
+    col('lugares').add({ lat: puntoNuevo.lat, lng: puntoNuevo.lng, nombre, nota: $('mapa-nota').value.trim().slice(0, 200), creado: new Date().toISOString() });
+    quitarNueva(); avisoMapa(`Se guardó "${nombre}".`); setTimeout(() => avisoMapa(''), 2500);
+  });
+  $('mapa-capa').addEventListener('click', async () => {
+    await iniciarMapa(); if (!mapaL) return;
+    const sat = !mapaL.hasLayer(mapaCapas.sat);
+    mapaL.removeLayer(sat ? mapaCapas.calles : mapaCapas.sat); (sat ? mapaCapas.sat : mapaCapas.calles).addTo(mapaL);
+    $('mapa-capa').textContent = sat ? 'Calles' : 'Satélite'; $('mapa-capa').setAttribute('aria-pressed', String(sat));
+  });
+  // Search: OpenStreetMap's free geocoder, limited to the Puyo area.
+  $('mapa-form').addEventListener('submit', async (e) => {
+    e.preventDefault(); const q = $('mapa-txt').value.trim(); await iniciarMapa(); if (!mapaL) return;
+    if (!q) { mapaL.flyTo(PUYO, 14); return; }
+    avisoMapa('Buscando…');
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ec&viewbox=-78.10,-1.42,-77.92,-1.56&bounded=1&q=${encodeURIComponent(q + ', Puyo')}`, { headers: { 'Accept-Language': 'es' } });
+      const j = await r.json();
+      if (j && j[0]) { mapaL.flyTo([Number(j[0].lat), Number(j[0].lon)], 17); avisoMapa(''); }
+      else avisoMapa(`No encontré "${q}" en Puyo. Prueba con otro nombre o mueve el mapa a mano.`);
+    } catch (er) { avisoMapa('No se pudo buscar. Revisa tu internet.'); }
+  });
+  { const el = $('mapa'); if ('IntersectionObserver' in window) { const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { io.disconnect(); iniciarMapa(); } }, { rootMargin: '300px' }); io.observe(el); } else iniciarMapa(); }
   const claveBloque = (el) => el.classList.contains('grid2') ? 'b-grid' : el.id === 'prom' ? 'b-prom' : (el.querySelector('h2') || {}).id || '';
   const bloques = () => { const arr = [...appEl.children]; return arr.slice(arr.indexOf(nuevoEl) + 1).filter((el) => claveBloque(el)); };
   const bloqueDe = (sec) => { let el = sec; while (el.parentElement && el.parentElement !== appEl) el = el.parentElement; return el; };
@@ -1569,7 +1682,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const base = libroRef.collection('negocios').doc(n.id);
     const leer = (c) => new Promise((ok) => { let un = null, listo = false; un = c.onSnapshot((snap) => { if (listo) return; listo = true; ok(snap.docs.map((d) => { const x = d.data() || {}; if (x.ruta) { try { deleteObject(sRef(storage, String(x.ruta))).catch(() => {}); } catch (e) {} } return d.id; })); setTimeout(() => { try { un && un(); } catch (e) {} }, 0); }, () => { if (!listo) { listo = true; ok([]); } }); });
     negocios = negocios.filter((x) => x.id !== n.id); borrarNeg = null; guardarNegs();
-    for (const name of ['movimientos', 'fijos', 'inversiones', 'casos', 'audiencias', 'respaldos', 'biblioteca']) {
+    for (const name of ['movimientos', 'fijos', 'inversiones', 'casos', 'audiencias', 'respaldos', 'biblioteca', 'lugares']) {
       const c = base.collection(name); const ids = await leer(c);
       ids.forEach((id) => { try { c.doc(id).delete(); } catch (e) {} });
     }
@@ -2718,7 +2831,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     try { if (gcalToken && window.google) google.accounts.oauth2.revoke(gcalToken, () => {}); sessionStorage.removeItem('libro-gtoken'); } catch (e) {}
     gcalToken = null; setMsg('Google Calendar desconectado.'); render();
   }
-  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias'];
+  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias', 'lugares'];
   const raw = {};
   // Automatic daily copies, kept inside the account (last 30)
   let respaldos = [], ultimaDescarga = '', autoHecho = false;
@@ -3330,7 +3443,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       renderPronto();
     }, lost);
     suscribirCasos(lost);
-    suscribirNotas(lost); suscribirBiblio(); suscribirCats();
+    suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares();
     col('miembros').onSnapshot((snap) => {
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
