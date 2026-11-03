@@ -838,9 +838,10 @@ body.invitado .ajustes-btn { display: none; }
 .prop-foto, .prop-mini-foto { position: relative; border-radius: 12px; overflow: hidden; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; aspect-ratio: 4 / 3; }
 .prop-foto img, .prop-mini-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prop-foto > svg, .prop-mini-foto > svg { width: 40%; height: 40%; opacity: .7; }
-.prop-op { position: absolute; top: 6px; left: 6px; font: 600 11px var(--font-body); letter-spacing: .02em; padding: 3px 8px; border-radius: 999px; background: #1f6b57; color: #fff; }
-.prop-op.arr { background: #2f5fa8; }
-.prop-card.cerrada .prop-op { background: #666; }
+:root { --arriendo: #c62828; }
+.prop-op { position: absolute; top: 6px; left: 6px; font: 600 11px var(--font-body); letter-spacing: .02em; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
+.prop-op.arr { background: var(--arriendo); }
+.prop-op.cer { background: #8a8a8a; }
 .prop-info { display: grid; gap: 4px; min-width: 0; align-content: start; padding-right: 22px; }
 .prop-info b { font-size: 15.5px; line-height: 1.25; overflow-wrap: anywhere; }
 .prop-info small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -859,6 +860,7 @@ body.invitado .ajustes-btn { display: none; }
 .prop-pill:hover, .prop-pill.hover, .prop-pill.sel { z-index: 2; }
 .prop-pill:hover .pin-svg, .prop-pill.hover .pin-svg, .prop-pill.sel .pin-svg { transform: scale(1.15); }
 .prop-pill:hover .pill-t, .prop-pill.hover .pill-t, .prop-pill.sel .pill-t { background: var(--accent); color: #fff; }
+.prop-pill.arr:hover .pill-t, .prop-pill.arr.hover .pill-t, .prop-pill.arr.sel .pill-t { background: var(--arriendo); }
 .prop-pill.cerrada .pill-t { background: #ddd; color: #666; }
 .ico-tipo { width: 1.1em; height: 1.1em; flex: none; vertical-align: -0.18em; }
 .prop-info small .ico-tipo { margin-right: 4px; color: var(--accent); }
@@ -1650,8 +1652,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   };
   const glifo = (t) => GLIFOS[t] != null ? GLIFOS[t] : GLIFOS['Otro'];
   const icoTipo = (t) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifo(t)}"/></svg>`;
-  const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.op === 'Arriendo' ? '#2f5fa8' : '#1f6b57';
-  const pinSvg = (x) => `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" fill="${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifo(x.tipo || 'Casa')}"/></svg>`;
+  const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.op === 'Arriendo' ? 'var(--arriendo)' : 'var(--accent)';
+  const pinSvg = (x) => `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" style="fill:${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifo(x.tipo || 'Casa')}"/></svg>`;
   // Native selects can't show icons, so the type selects get a small menu with an icon per option.
   function iconSelect(sel) {
     const w = document.createElement('span'); w.className = 'isel';
@@ -1688,7 +1690,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const f = document.createElement('div'); f.className = cls;
     if (x.fotos[0]) { const img = document.createElement('img'); img.src = x.fotos[0].url; img.alt = ''; img.loading = 'lazy'; f.appendChild(img); }
     else f.innerHTML = icoTipo(x.tipo || 'Casa');
-    const t = document.createElement('span'); t.className = 'prop-op ' + (x.op === 'Arriendo' ? 'arr' : 'ven'); t.textContent = cerrada(x) ? x.estado : x.estado === 'Reservada' ? 'Reservada' : x.op; f.appendChild(t);
+    const t = document.createElement('span'); t.className = 'prop-op ' + (x.op === 'Arriendo' ? 'arr' : 'ven') + (cerrada(x) ? ' cer' : ''); t.textContent = cerrada(x) ? x.estado : x.estado === 'Reservada' ? 'Reservada' : x.op; f.appendChild(t);
     return f;
   }
   function miniCard(x) {
@@ -1747,7 +1749,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function marcarPills() { document.querySelectorAll('.prop-pill').forEach((p) => { p.classList.toggle('sel', p.dataset.id === propSel); p.classList.toggle('hover', p.dataset.id === propHover); }); }
   function pillEl(x) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'prop-pill' + (cerrada(x) ? ' cerrada' : '') + (x.op === 'Arriendo' ? ' arr' : ''); b.dataset.id = x.id;
-    b.innerHTML = pinSvg(x); const t = document.createElement('span'); t.className = 'pill-t'; t.textContent = precioTxt(x, true); b.appendChild(t); b.title = (x.tipo ? x.tipo + ': ' : '') + x.nombre;
+    b.innerHTML = pinSvg(x); if (x.precio) { const t = document.createElement('span'); t.className = 'pill-t'; t.textContent = precioTxt(x, true); b.appendChild(t); } b.title = (x.tipo ? x.tipo + ': ' : '') + x.nombre;
     b.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(x.id, false); });
     return b;
   }
