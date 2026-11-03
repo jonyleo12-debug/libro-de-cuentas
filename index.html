@@ -898,6 +898,8 @@ body.invitado .ajustes-btn { display: none; }
 .prop-mini.arr .prop-mini-precio strong { color: var(--arriendo); }
 .prop-mini > * { min-width: 0; }
 .mapa-lf .gm-style-iw-d { overflow-x: hidden !important; }
+.mapa-lf .gm-style-iw-chr { display: none; }
+.mapa-lf .gm-style-iw.gm-style-iw-c { padding-top: 12px !important; }
 .prop-dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 6px; z-index: 1; }
 .prop-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.6); box-shadow: 0 0 0 1px rgba(0,0,0,.15); cursor: pointer; transition: transform .15s, background .15s; }
 .prop-dots button::before { content: ''; position: absolute; inset: -6px; }
@@ -1829,7 +1831,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       vs.forEach((x) => {
         const m = L.marker([x.lat, x.lng], { icon: L.divIcon({ className: 'prop-pin-l', html: '', iconSize: [0, 0] }), keyboard: false });
         m.on('add', () => { const el = m.getElement(); if (el) { el.replaceChildren(pillEl(x)); } });
-        m.bindPopup(() => miniCard(x), { maxWidth: 600, minWidth: 200, offset: [0, -34], autoPanPadding: [12, 12] });
+        m.bindPopup(() => miniCard(x), { maxWidth: 600, minWidth: 200, offset: [0, -34], autoPanPadding: [12, 12], closeButton: false });
         m.addTo(casasCapa); x._m = m;
       });
     }
@@ -1977,6 +1979,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   async function direccionDe(lat, lng) { let t = motor === 'g' ? await dirGoogle(lat, lng) : ''; if (!t) t = await dirOsm(lat, lng); return t; }
   // Right click (or a long press on the phone) on the map: a new property right there.
+  // The property popup closes with a click anywhere outside it (the map itself already does this).
+  document.addEventListener('click', (e) => {
+    const t = e.target; if (!(t instanceof Element) || !t.isConnected) return;
+    if (t.closest('.gm-style-iw, .leaflet-popup, .prop-pill, .prop-card, dialog')) return;
+    if (infoG) infoG.close(); if (mapaL) mapaL.closePopup();
+  });
   function nuevaEn(lat, lng) {
     if (invitado || !isFinite(lat) || !isFinite(lng)) return;
     if (dlgP.open) return;
@@ -2001,7 +2009,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           await cargarGmaps(gmapsKey);
           motor = 'g';
           mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
-          infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -40), maxWidth: 600 });
+          infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -40), maxWidth: 600, headerDisabled: true });
           mapaG.addListener('click', (e) => { if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
           mapaG.addListener('contextmenu', (e) => { if (e.latLng) nuevaEn(e.latLng.lat(), e.latLng.lng()); });
           pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins(); return;
