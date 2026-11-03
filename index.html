@@ -1506,7 +1506,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const appEl = document.getElementById('app');
   const nuevoEl = document.getElementById('fila-nuevo');
   // ── Mapa de Puyo con casas marcadas ──
-  // Leaflet + CARTO Voyager tiles (free, no key). Each house is a record in the business's "lugares" collection.
+  // Leaflet + Esri street tiles (free, no key), OpenStreetMap as fallback. Each house is a record in the business's "lugares" collection.
   const PUYO = [-1.4924, -78.0024];
   let mapaL = null, mapaCapas = null, casasCapa = null, lugares = [], marcando = false, puntoNuevo = null, marcaNueva = null, lugaresUnsub = null;
   let leafletP = null;
@@ -1561,10 +1561,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     let L; try { L = await cargarLeaflet(); } catch (e) { avisoMapa('No se pudo cargar el mapa. Revisa tu internet y recarga la página.'); return; }
     mapaL = L.map('mapa', { zoomControl: true, scrollWheelZoom: false }).setView(PUYO, 14);
     mapaCapas = {
-      calles: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 20, subdomains: 'abcd', attribution: '© OpenStreetMap · © CARTO' }),
+      calles: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Mapa © Esri' }),
       sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imágenes © Esri' })
     };
     mapaCapas.calles.addTo(mapaL);
+    // If the street tiles fail to load, fall back to OpenStreetMap so the map is never blank.
+    { let fallas = 0; mapaCapas.calles.on('tileerror', () => { if (++fallas !== 4) return; const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }); const on = mapaL.hasLayer(mapaCapas.calles); if (on) mapaL.removeLayer(mapaCapas.calles); mapaCapas.calles = osm; if (on) osm.addTo(mapaL); }); }
     casasCapa = L.layerGroup().addTo(mapaL);
     mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
     mapaL.on('click', (e) => {
