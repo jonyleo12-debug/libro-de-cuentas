@@ -902,6 +902,15 @@ body.invitado .ajustes-btn { display: none; }
 .mapa-lf .gm-style-iw.gm-style-iw-c { padding: 12px !important; }
 .mapa-lf .gm-style-iw-d { overflow: hidden !important; padding: 0 !important; max-height: none !important; }
 .leaflet-popup-content:has(> .prop-mini) { margin: 12px; }
+/* Property popup in liquid glass: translucent, blurring the map behind it (the photo stays solid). */
+.mapa-lf .gm-style-iw.gm-style-iw-c:has(.prop-mini), .leaflet-popup-content-wrapper:has(.prop-mini) {
+  background: linear-gradient(160deg, rgba(255,255,255,.66), rgba(255,255,255,.34) 55%, rgba(255,255,255,.5)) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%); backdrop-filter: blur(20px) saturate(190%);
+  box-shadow: 0 18px 44px -14px rgba(20,20,40,.4), inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(255,255,255,.5) !important; border-radius: 22px !important; }
+.mapa-lf .gm-style-iw-tc::after, .leaflet-popup:has(.prop-mini) .leaflet-popup-tip { background: rgba(255,255,255,.55) !important; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.mapa-lf .gm-style .gm-style-iw-d, .mapa-lf .gm-style-iw-d > div { background: transparent !important; }
+.prop-mini .prop-datos.caja { border-color: rgba(255,255,255,.75); background: rgba(255,255,255,.28); }
+.prop-mini .casa-acts button { background: rgba(255,255,255,.55); border-color: rgba(255,255,255,.8); }
 .prop-dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 6px; z-index: 1; }
 .prop-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.6); box-shadow: 0 0 0 1px rgba(0,0,0,.15); cursor: pointer; transition: transform .15s, background .15s; }
 .prop-dots button::before { content: ''; position: absolute; inset: -6px; }
@@ -1751,7 +1760,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function miniCard(x) {
     const d = document.createElement('div'); d.className = 'prop-mini' + (x.op === 'Arriendo' ? ' arr' : '');
     // Fit the popup inside the map box; narrow maps get the compact layout.
-    const w = Math.max(240, Math.min(520, ($('mapa').clientWidth || 600) - (motor === 'g' ? 120 : 70))); d.style.width = w + 'px'; if (w < 380) d.classList.add('compacto');
+    const w = Math.max(240, Math.min(520, ($('mapa').clientWidth || 600) - (motor === 'g' ? 150 : 70))); d.style.width = w + 'px'; if (w < 380) d.classList.add('compacto');
     d.appendChild(fotoEl(x, 'prop-mini-foto'));
     const c = document.createElement('div'); c.className = 'prop-mini-c';
     const tp = document.createElement('small'); tp.className = 'prop-mini-tipo'; tp.innerHTML = icoTipo(x.tipo || 'Casa'); tp.append(x.tipo || 'Propiedad'); c.appendChild(tp);
