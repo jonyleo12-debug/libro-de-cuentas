@@ -3222,7 +3222,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     async function errorDe(res) {
       let det = ''; try { const j = await res.json(); det = (j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
       const s = res.status;
-      const e = new Error(s === 401 || s === 403 ? 'La clave no es válida o no tiene permiso. Revísala en Conectar IA.' : s === 429 ? 'El proveedor rechazó la consulta por límite de uso o falta de saldo en tu cuenta. Intenta en un momento o revisa tu saldo.' : s === 404 ? `El modelo "${modeloAct()}" no existe en ${IA_PROV[iaCfg.prov].corto}. Cámbialo en Conectar IA.` : `El proveedor respondió con un error (${s}).${det ? ' ' + det : ''}`);
+      const e = new Error(s === 401 || s === 403 ? 'La clave no es válida o no tiene permiso. Revísala en Conectar IA.' : s === 402 ? (iaCfg.prov === 'gemini' ? 'Esta clave pertenece a un proyecto de Google con facturación activada y sin saldo. Crea una clave nueva en un proyecto sin facturación para usar el plan gratuito, o recarga saldo en AI Studio.' : 'Tu cuenta del proveedor no tiene saldo. Recárgalo en su página e intenta de nuevo.') : s === 429 ? 'El proveedor rechazó la consulta por límite de uso o falta de saldo en tu cuenta. Intenta en un momento o revisa tu saldo.' : s === 404 ? `El modelo "${modeloAct()}" no existe en ${IA_PROV[iaCfg.prov].corto}. Cámbialo en Conectar IA.` : `El proveedor respondió con un error (${s}).${det ? ' ' + det : ''}`);
       e.det = det; return e;
     }
     async function enviar(q) {
