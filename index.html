@@ -734,10 +734,22 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .hero-fecha .hero-mes-btn { font-size: 13px; letter-spacing: .06em; opacity: .75; gap: 5px; padding: 1px 4px; }
 .hero-fecha .hero-mes-btn:hover { opacity: 1; }
 .hero-fecha .hero-caret { font-size: .75em; transform: none; }
-.hero-neg-btn { white-space: nowrap; background: none; border: 0; padding: 0 4px; margin-left: -4px; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: baseline; gap: 8px; border-radius: 10px; }
+.hero-neg-btn { white-space: normal; text-align: left; overflow-wrap: anywhere; background: none; border: 0; padding: 0 4px; margin-left: -4px; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: baseline; gap: 8px; border-radius: 10px; }
 .hero-neg-btn:hover { background: rgba(255,255,255,.06); }
 .neg-pop { position: absolute; z-index: 40; top: calc(100% + 8px); left: 24px; display: grid; gap: 2px; padding: 8px; border-radius: 16px; background: var(--panel); box-shadow: 0 12px 34px rgba(0,0,0,.2); min-width: 220px; }
 .neg-pop[hidden] { display: none; }
+.neg-fila { display: flex; align-items: center; gap: 2px; }
+.neg-fila .neg-sel { flex: 1; min-width: 0; }
+.neg-sel span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.neg-pop .neg-lapiz { flex: none; color: var(--muted); font-size: 15px; padding: 8px 10px; }
+.neg-pop .neg-nuevo { color: var(--accent); font-weight: 600; border-top: 1px solid var(--line); border-radius: 0 0 10px 10px; margin-top: 4px; padding-top: 11px; }
+.neg-edit { display: flex; gap: 6px; padding: 4px; }
+.neg-edit input { flex: 1; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--accent); border-radius: 8px; padding: 7px 9px; }
+.neg-pop .neg-ok { flex: none; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; padding: 7px 12px; }
+.neg-pop .neg-ok:hover { background: var(--accent); }
+.neg-mas { vertical-align: middle; margin-left: 6px; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.35); background: none; color: var(--ink-fg); font: 300 20px/1 var(--font-body); cursor: pointer; display: inline-grid; place-items: center; padding: 0 0 2px; opacity: .7; position: relative; top: -3px; }
+.neg-mas:hover { opacity: 1; background: rgba(255,255,255,.08); }
+body.invitado .neg-mas { display: none; }
 .neg-pop button { text-align: left; border: 0; background: none; color: var(--fg); font: 15px var(--font-body); padding: 9px 12px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
 .neg-pop button:hover { background: var(--accent-soft); }
 .neg-pop button[aria-checked="true"] { font-weight: 600; color: var(--accent); }
@@ -798,7 +810,7 @@ body.inmob #sec-casos, body.inmob .caso-f { display: none !important; }
             <button type="button" class="hero-mes-btn" id="hero-mes-btn" aria-label="Elegir mes"><span id="hero-mes">Mis finanzas</span><span class="hero-caret" aria-hidden="true">▾</span></button>
             <button type="button" class="hero-nav" id="mes-next" aria-label="Mes siguiente">›</button>
           </div>
-          <h1><button type="button" class="hero-neg-btn" id="neg-btn" aria-haspopup="true" aria-expanded="false" aria-controls="neg-pop"><span id="neg-nombre">Consorcio Jurídico</span><span class="hero-caret" aria-hidden="true">▾</span></button></h1>
+          <h1><button type="button" class="hero-neg-btn" id="neg-btn" aria-haspopup="true" aria-expanded="false" aria-controls="neg-pop"><span id="neg-nombre">Consorcio Jurídico</span><span class="hero-caret" aria-hidden="true">▾</span></button><button type="button" class="neg-mas" id="neg-mas" aria-label="Crear otro negocio" title="Crear otro negocio">+</button></h1>
           <input type="month" id="mes" class="mes-oculto" tabindex="-1" aria-label="Mes">
           <button type="button" class="hero-color" id="hero-color" aria-label="Cambiar color" aria-expanded="false" aria-controls="color-pop">
           </button>
@@ -1175,9 +1187,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const FIRMADAS = ['casos', 'audiencias', 'movimientos'];
   const firma = () => ({ color: invitado.color || '', nombre: invitado.nombre || '', fecha: new Date().toISOString() });
   // Each business keeps its own book: the law firm uses the original collections, the real-estate agency a separate copy under negocios/inmobiliaria.
-  const NEGOCIOS = { juridico: 'Consorcio Jurídico', inmobiliaria: 'Inmobiliaria' };
+  // The list of businesses (id + name the owner chose) lives on the book document and is cached in this browser.
+  const NEG_DEF = [{ id: 'juridico', nombre: 'Consorcio Jurídico' }, { id: 'inmobiliaria', nombre: 'Inmobiliaria' }];
+  const limpiarNegs = (xs) => { const v = Array.isArray(xs) ? xs.filter((x) => x && /^[a-z0-9]{2,30}$/.test(String(x.id))).map((x) => ({ id: String(x.id), nombre: String(x.nombre || '').trim().slice(0, 40) || 'Sin nombre' })) : []; if (!v.some((x) => x.id === 'juridico')) v.unshift({ ...NEG_DEF[0] }); return v; };
+  let negocios = NEG_DEF.map((x) => ({ ...x }));
+  try { const c = JSON.parse(localStorage.getItem('libro-negocios') || 'null'); if (c) negocios = limpiarNegs(c); } catch (e) {}
+  const nombreNeg = (id) => (negocios.find((x) => x.id === id) || {}).nombre || 'Consorcio Jurídico';
   let negocio = 'juridico';
-  try { const n = localStorage.getItem('libro-negocio'); if (NEGOCIOS[n]) negocio = n; } catch (e) {}
+  try { const n = localStorage.getItem('libro-negocio'); if (n && /^[a-z0-9]{2,30}$/.test(n)) negocio = n; } catch (e) {}
   const baseNegocio = (name) => (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
   const col = (name) => {
     const c = baseNegocio(name).collection(name);
@@ -1374,21 +1391,50 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   });
   const pop = $('color-pop'), hc = $('hero-color');
   // Business switcher in the header.
+  let editNeg = null; // id being renamed, or 'nuevo'
   function pintarNegocio() {
-    $('neg-nombre').textContent = NEGOCIOS[negocio];
-    document.body.classList.toggle('inmob', negocio === 'inmobiliaria');
-    document.title = NEGOCIOS[negocio] + ' · Libro de cuentas';
+    if (!invitado && !negocios.some((x) => x.id === negocio)) { negocio = 'juridico'; try { localStorage.setItem('libro-negocio', 'juridico'); } catch (e) {} location.reload(); return; }
+    $('neg-nombre').textContent = nombreNeg(negocio);
+    document.body.classList.toggle('inmob', negocio !== 'juridico');
+    document.title = nombreNeg(negocio) + ' · Libro de cuentas';
+    pintarMenuNeg();
+  }
+  function guardarNegs() {
+    try { localStorage.setItem('libro-negocios', JSON.stringify(negocios)); } catch (e) {}
+    if (libroRef && !invitado) libroRef.set({ negocios }).catch(() => {});
+  }
+  const negPop = $('neg-pop'), negBtn = $('neg-btn');
+  const setNeg = (open) => { if (!open) editNeg = null; negPop.hidden = !open; negBtn.setAttribute('aria-expanded', String(open)); if (open) pintarMenuNeg(); };
+  function campoNeg(valor, alGuardar) {
+    const f = document.createElement('form'); f.className = 'neg-edit';
+    const i = document.createElement('input'); i.type = 'text'; i.maxLength = 40; i.value = valor; i.placeholder = 'Nombre del negocio'; i.setAttribute('aria-label', 'Nombre del negocio');
+    const ok = document.createElement('button'); ok.type = 'submit'; ok.className = 'neg-ok'; ok.textContent = 'Guardar';
+    f.append(i, ok);
+    f.addEventListener('submit', (e) => { e.preventDefault(); const v = i.value.trim().replace(/\s+/g, ' '); if (!v) { i.focus(); return; } alGuardar(v); });
+    i.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); editNeg = null; pintarMenuNeg(); negBtn.focus(); } });
+    setTimeout(() => { i.focus(); i.select(); }, 0);
+    return f;
+  }
+  function pintarMenuNeg() {
+    const kids = negocios.map((n) => {
+      if (editNeg === n.id) return campoNeg(n.nombre, (v) => { n.nombre = v; editNeg = null; guardarNegs(); pintarNegocio(); });
+      const fila = document.createElement('div'); fila.className = 'neg-fila';
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'neg-sel'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(n.id === negocio));
+      const t = document.createElement('span'); t.textContent = n.nombre; const ck = document.createElement('span'); ck.setAttribute('aria-hidden', 'true'); ck.textContent = n.id === negocio ? '✓' : ''; b.append(t, ck);
+      b.addEventListener('click', () => { setNeg(false); if (n.id === negocio) return; try { localStorage.setItem('libro-negocio', n.id); } catch (e) {} location.reload(); });
+      const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'neg-lapiz'; ed.textContent = '✎'; ed.title = 'Cambiar nombre'; ed.setAttribute('aria-label', 'Cambiar nombre de ' + n.nombre);
+      ed.addEventListener('click', (e) => { e.stopPropagation(); editNeg = n.id; pintarMenuNeg(); });
+      fila.append(b, ed); return fila;
+    });
+    if (editNeg === 'nuevo') kids.push(campoNeg('', (v) => { const id = 'n' + Date.now().toString(36); negocios.push({ id, nombre: v }); guardarNegs(); try { localStorage.setItem('libro-negocio', id); } catch (e) {} location.reload(); }));
+    else { const nu = document.createElement('button'); nu.type = 'button'; nu.className = 'neg-nuevo'; nu.textContent = '+ Nuevo negocio'; nu.addEventListener('click', (e) => { e.stopPropagation(); editNeg = 'nuevo'; pintarMenuNeg(); }); kids.push(nu); }
+    negPop.replaceChildren(...kids);
   }
   pintarNegocio();
-  {
-    const nb = $('neg-btn'), np = $('neg-pop');
-    const setNeg = (open) => { np.hidden = !open; nb.setAttribute('aria-expanded', String(open)); };
-    np.replaceChildren(...Object.entries(NEGOCIOS).map(([k, v]) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(k === negocio)); b.innerHTML = '<span></span><span aria-hidden="true">' + (k === negocio ? '✓' : '') + '</span>'; b.firstChild.textContent = v;
-      b.addEventListener('click', () => { setNeg(false); if (k === negocio) return; try { localStorage.setItem('libro-negocio', k); } catch (e) {} location.reload(); }); return b; }));
-    nb.addEventListener('click', (e) => { e.stopPropagation(); if (invitado) return; setNeg(np.hidden); });
-    document.addEventListener('pointerdown', (e) => { if (!np.hidden && !np.contains(e.target) && !nb.contains(e.target)) setNeg(false); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !np.hidden) { setNeg(false); nb.focus(); } });
-  }
+  negBtn.addEventListener('click', (e) => { e.stopPropagation(); if (invitado) return; setNeg(negPop.hidden); });
+  $('neg-mas').addEventListener('click', (e) => { e.stopPropagation(); if (invitado) return; editNeg = 'nuevo'; negPop.hidden = false; negBtn.setAttribute('aria-expanded', 'true'); pintarMenuNeg(); });
+  document.addEventListener('pointerdown', (e) => { if (!negPop.hidden && !negPop.contains(e.target) && !negBtn.contains(e.target) && !$('neg-mas').contains(e.target)) setNeg(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !negPop.hidden) { setNeg(false); negBtn.focus(); } });
   const setPop = (open) => { pop.hidden = !open; hc.setAttribute('aria-expanded', String(open)); };
   hc.addEventListener('click', (e) => { e.stopPropagation(); setPop(pop.hidden); });
   document.addEventListener('click', (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target !== hc) setPop(false); });
@@ -3044,6 +3090,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (c === 'amarillo') { c = 'tomate'; libroRef.set({ color: c }).catch(() => {}); }
       if (COLORS[c]) { colorKey = c; applyColor(); }
       { const dv = snap.exists ? (snap.data() || {}) : {};
+        if (Array.isArray(dv.negocios)) { const nv = limpiarNegs(dv.negocios); if (JSON.stringify(nv) !== JSON.stringify(negocios)) { negocios = nv; try { localStorage.setItem('libro-negocios', JSON.stringify(negocios)); } catch (e) {} if (editNeg == null) pintarNegocio(); } }
+        else { try { if (localStorage.getItem('libro-negocios')) guardarNegs(); } catch (e) {} }
         if (Array.isArray(dv.orden) && !document.body.classList.contains('moviendo')) { aplicarOrden(dv.orden.map(String)); try { localStorage.setItem('libro-orden', JSON.stringify(dv.orden)); } catch (e) {} }
         if (!Array.isArray(dv.orden)) { try { const lo = JSON.parse(localStorage.getItem('libro-orden') || 'null'); if (Array.isArray(lo) && lo.length) guardarVista('orden', lo); } catch (e) {} }
         if (!dv.plegadas && Object.keys(plegadas).length) guardarVista('plegadas', { ...plegadas });
@@ -3232,7 +3280,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const dinero = !sinDinero();
       const hoy = hoyYmd(), mes = $('mes').value || thisMonth;
       const L = [];
-      L.push(`Negocio que está viendo: ${NEGOCIOS[negocio]}${negocio === 'inmobiliaria' ? ' (los movimientos de abajo son de la inmobiliaria, no del despacho jurídico)' : ''}.`);
+      L.push(`Negocio que está viendo: ${nombreNeg(negocio)}${negocio !== 'juridico' ? ' (los movimientos de abajo son de este negocio, no del despacho jurídico)' : ''}.`);
       L.push(`Hoy es ${hoy} (${new Date().toLocaleDateString('es-EC', { weekday: 'long' })}). Mes que está viendo: ${mes}. Moneda: USD.`);
       L.push(invitado ? `Quien pregunta es ${invitado.nombre || 'un asistente'}, asistente del despacho.` : 'Quien pregunta es el abogado dueño del libro.');
       const nomCaso = new Map(casos.map((c) => [c.id, c.nombre]));
