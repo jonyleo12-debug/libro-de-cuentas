@@ -880,7 +880,7 @@ body.invitado .ajustes-btn { display: none; }
 .isel-menu button[aria-selected="true"] { font-weight: 600; }
 .prop-pin-l { background: none; border: 0; overflow: visible; }
 .prop-pin-l .prop-pill { position: absolute; left: 0; top: 0; }
-.prop-mini { display: grid; grid-template-columns: 230px 1fr; gap: 16px; font: 13px var(--font-body); color: #1b1b1d; align-items: stretch; }
+.prop-mini { display: grid; grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); gap: 14px; box-sizing: border-box; font: 13px var(--font-body); color: #1b1b1d; align-items: stretch; }
 .prop-mini-foto { aspect-ratio: auto; min-height: 220px; border-radius: 16px; }
 .prop-mini-c { display: grid; gap: 7px; align-content: start; min-width: 0; }
 .prop-mini b { font-size: 17px; line-height: 1.2; }
@@ -894,7 +894,10 @@ body.invitado .ajustes-btn { display: none; }
 .prop-mini-desc { margin: 0; color: #555; font-size: 12.5px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
 .prop-mini-precio { display: flex; align-items: baseline; gap: 6px; }
 .prop-mini-precio span { font-weight: 600; font-size: 12.5px; }
-.prop-mini-precio strong { font-size: 20px; }
+.prop-mini-precio strong { font-size: 22px; color: var(--accent); letter-spacing: -.01em; }
+.prop-mini.arr .prop-mini-precio strong { color: var(--arriendo); }
+.prop-mini > * { min-width: 0; }
+.mapa-lf .gm-style-iw-d { overflow-x: hidden !important; }
 .prop-dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 6px; z-index: 1; }
 .prop-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.6); box-shadow: 0 0 0 1px rgba(0,0,0,.15); cursor: pointer; transition: transform .15s, background .15s; }
 .prop-dots button::before { content: ''; position: absolute; inset: -6px; }
@@ -1682,7 +1685,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const icoTipo = (t) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifo(t)}"/></svg>`;
   const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.op === 'Arriendo' ? 'var(--arriendo)' : 'var(--accent)';
   const pinSvg = (x) => `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" style="fill:${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifo(x.tipo || 'Casa')}"/></svg>`;
-  const SERVICIOS = [['luz', 'Luz', 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12z'], ['agua', 'Agua', 'M12 3s-6 6.9-6 11a6 6 0 0 0 12 0c0-4.1-6-11-6-11z'], ['alcantarillado', 'Alcantarillado', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M9 3.5v17M15 3.5v17'], ['internet', 'Internet', 'M2.5 9a14 14 0 0 1 19 0M5.8 12.5a9.5 9.5 0 0 1 12.4 0M9 16a4.6 4.6 0 0 1 6 0M12 19.5h.01'], ['carretera', 'Carretera', 'M8 3 4 21M16 3l4 18M12 4v3M12 11v3M12 18v2']];
+  const SERVICIOS = [['luz', 'Luz', 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12z'], ['agua', 'Agua', 'M12 3s-6 6.9-6 11a6 6 0 0 0 12 0c0-4.1-6-11-6-11z'], ['alcantarillado', 'Alcantarillado', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M9 3.5v17M15 3.5v17']];
   const icoServ = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
   function servEl(x, conTexto) {
     const d = document.createElement('div'); d.className = 'prop-servs' + (conTexto ? ' txt' : '');
@@ -1742,18 +1745,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const icoPin = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 21s-7-6.4-7-11.5a7 7 0 0 1 14 0C19 14.6 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
   // Popup on the map: photo with dots on the left, the details on the right.
   function miniCard(x) {
-    const d = document.createElement('div'); d.className = 'prop-mini';
+    const d = document.createElement('div'); d.className = 'prop-mini' + (x.op === 'Arriendo' ? ' arr' : '');
     // Fit the popup inside the map box; narrow maps get the compact layout.
-    const w = Math.max(240, Math.min(540, ($('mapa').clientWidth || 600) - 70)); d.style.width = w + 'px'; if (w < 440) d.classList.add('compacto');
+    const w = Math.max(240, Math.min(520, ($('mapa').clientWidth || 600) - (motor === 'g' ? 120 : 70))); d.style.width = w + 'px'; if (w < 380) d.classList.add('compacto');
     d.appendChild(fotoEl(x, 'prop-mini-foto'));
     const c = document.createElement('div'); c.className = 'prop-mini-c';
     const tp = document.createElement('small'); tp.className = 'prop-mini-tipo'; tp.innerHTML = icoTipo(x.tipo || 'Casa'); tp.append(x.tipo || 'Propiedad'); c.appendChild(tp);
     const b = document.createElement('b'); b.textContent = x.nombre; c.appendChild(b);
+    const pr = document.createElement('div'); pr.className = 'prop-mini-precio'; const ps = document.createElement('strong'); ps.textContent = precioTxt(x); pr.appendChild(ps); c.appendChild(pr);
     if (x.dir) { const s = document.createElement('small'); s.className = 'prop-mini-dir'; s.innerHTML = icoPin; s.append(x.dir); c.appendChild(s); }
     const dt = datosChips(x); if (dt.children.length) { dt.classList.add('caja'); c.appendChild(dt); }
     if (x.servicios.length) c.appendChild(servEl(x, true));
     if (x.desc) { const p = document.createElement('p'); p.className = 'prop-mini-desc'; p.textContent = x.desc; c.appendChild(p); }
-    const pr = document.createElement('div'); pr.className = 'prop-mini-precio'; const pl = document.createElement('span'); pl.textContent = x.op === 'Arriendo' ? 'Arriendo:' : 'Precio:'; const ps = document.createElement('strong'); ps.textContent = precioTxt(x); pr.append(pl, ps); c.appendChild(pr);
     const acts = document.createElement('div'); acts.className = 'casa-acts';
     const g = document.createElement('a'); g.href = gmaps(x); g.target = '_blank'; g.rel = 'noopener'; g.textContent = 'Cómo llegar ↗';
     const ed = document.createElement('button'); ed.type = 'button'; ed.textContent = 'Ver / editar'; ed.addEventListener('click', () => abrirProp(x));
