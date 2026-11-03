@@ -764,6 +764,31 @@ body.invitado .neg-mas { display: none; }
 .neg-pop button[aria-checked="true"] { font-weight: 600; color: var(--accent); }
 body.invitado .hero-neg-btn { pointer-events: none; } body.invitado .hero-neg-btn .hero-caret { display: none; }
 body.inmob #sec-casos, body.inmob .caso-f { display: none !important; }
+
+/* Opciones de categorías */
+.ajustes-btn { align-self: center; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--panel); color: var(--muted); box-shadow: var(--raise-sm); cursor: pointer; display: grid; place-items: center; transition: color .15s, transform .3s; }
+.ajustes-btn:hover { color: var(--accent); transform: rotate(40deg); }
+body.invitado .ajustes-btn { display: none; }
+.dlg-cats { width: min(460px, calc(100vw - 32px)); }
+.cats-in { display: grid; gap: 12px; }
+.cats-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cats-cab h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 21px; }
+.cats-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.cats-tabs button { border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 6px 14px; font: 14px var(--font-body); cursor: pointer; }
+.cats-tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cats-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 46vh; overflow-y: auto; }
+.cats-list li { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.cats-list input { flex: 1; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.cats-list input:focus { border-color: var(--accent); outline: none; }
+.cats-list button { flex: none; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 15px; width: 30px; height: 32px; border-radius: 8px; }
+.cats-list button:hover:not(:disabled) { background: var(--accent-soft); color: var(--fg); }
+.cats-list button:disabled { opacity: .25; cursor: default; }
+.cats-list .cats-del:hover { color: var(--out); }
+.cats-list small { color: var(--muted); font-size: 11.5px; flex: none; }
+.dlg-cats .cats-nueva { display: flex; gap: 8px; align-items: center; }
+.dlg-cats .cats-nueva .btn { flex: none; padding: 9px 18px; }
+.cats-nueva input { flex: 1; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.cats-reset { justify-self: start; }
 </style>
 </head>
 <body>
@@ -805,6 +830,7 @@ body.inmob #sec-casos, body.inmob .caso-f { display: none !important; }
 </div>
 <div class="wrap" id="app" hidden>
   <nav class="side menu" aria-label="Menú">
+    <button type="button" class="ajustes-btn" id="ajustes-btn" aria-label="Opciones de categorías" title="Opciones de categorías"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4c.6.2 1.2.6 1.7 1l2.3-.8 1.7 3-1.8 1.6c.1.6.1 1.3 0 1.9l1.8 1.6-1.7 3-2.3-.8c-.5.4-1.1.8-1.7 1l-.5 2.4h-3.4l-.5-2.4c-.6-.2-1.2-.6-1.7-1l-2.3.8-1.7-3 1.8-1.6a6 6 0 0 1 0-1.9L3.9 8.6l1.7-3 2.3.8c.5-.4 1.1-.8 1.7-1z"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     <div class="usr">
       <div><span class="usr-l">Usuario</span><b id="u-name">Cargando…</b><span class="sync" id="sync">Sincronizado</span></div>
       <button type="button" class="ghost" id="logout">Salir</button>
@@ -1101,7 +1127,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     'Inversión': ['Fondo de emergencia', 'Póliza de acumulación', 'Fondo de inversión', 'ETF / bolsa', 'Otra inversión'],
   };
   // Shown name of a category; the stored value stays the same so old records and the rules keep working.
-  const catTxt = (c) => c === 'Honorarios por casos' ? 'Honorarios' : c;
+  let honNombre = 'Honorarios';
+  const catTxt = (c) => c === 'Honorarios por casos' ? honNombre : c;
+  const CAT_DEF = JSON.parse(JSON.stringify(CATS));
   const usd = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' });
   const pct = new Intl.NumberFormat('es-EC', { style: 'percent', maximumFractionDigits: 0 });
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -1310,6 +1338,75 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const fillCats = () => { $('f-cat').replaceChildren(...CATS[$('f-tipo').value].map((c) => new Option(catTxt(c), c))); toggleCaso(); };
   fillCats();
   $('f-tipo').addEventListener('change', fillCats);
+  // Options of each list (Ingreso / Gasto / Inversión), per business. Stored on the business document as categorias + honNombre.
+  // "Honorarios por casos" stays as the stored value (cases depend on it); only its shown name changes.
+  const docNegocio = () => negocio === 'juridico' ? libroRef : libroRef.collection('negocios').doc(negocio);
+  let catsTab = 'Ingreso';
+  const limpiarLista = (xs) => [...new Set((Array.isArray(xs) ? xs : []).map((x) => String(x || '').trim().slice(0, 40)).filter(Boolean))];
+  function aplicarCats(dv) {
+    const c = dv && dv.categorias && typeof dv.categorias === 'object' ? dv.categorias : null;
+    Object.keys(CAT_DEF).forEach((k) => { const l = c ? limpiarLista(c[k]) : []; CATS[k] = l.length ? l : [...CAT_DEF[k]]; });
+    if (!CATS['Ingreso'].includes(HON)) CATS['Ingreso'].splice(1, 0, HON);
+    honNombre = dv && dv.honNombre ? String(dv.honNombre).slice(0, 40) : 'Honorarios';
+    const prev = $('f-cat').value; fillCats(); if ([...$('f-cat').options].some((o) => o.value === prev)) $('f-cat').value = prev;
+    if (!$('dlg-cats').open || !$('dlg-cats').contains(document.activeElement) || document.activeElement.tagName !== 'INPUT') pintarCats();
+    try { renderPronto(); } catch (e) {}
+  }
+  const guardarCats = () => docNegocio().set({ categorias: JSON.parse(JSON.stringify(CATS)), honNombre }).catch(() => setCatsMsg('No se pudo guardar. Revisa tu internet.', true));
+  const setCatsMsg = (t, err) => { const m = $('cats-msg'); m.textContent = t; m.className = 'msg' + (err ? ' err' : ''); };
+  // Renaming an option also renames the records that use it in this business, so nothing is left behind.
+  function renombrarRegistros(tipo, de, a) {
+    let n = 0;
+    rows.filter((r) => r.tipo === tipo && r.categoria === de && !r.fijoId).forEach((r) => { col('movimientos').doc(r.id).update({ categoria: a }); n++; });
+    fijos.filter((f) => f.tipo === tipo && f.categoria === de).forEach((f) => { col('fijos').doc(f.id).update({ categoria: a }); n++; });
+    return n;
+  }
+  function pintarCats() {
+    $('cats-sub').textContent = `Son las opciones de "Categoría" al anotar un movimiento en ${nombreNeg(negocio)}. Cambia el nombre, el orden o agrega y quita opciones.`;
+    $('cats-tabs').replaceChildren(...Object.keys(CAT_DEF).map((k) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(k === catsTab)); b.textContent = k === 'Inversión' ? 'Inversión / ahorro' : k; b.addEventListener('click', () => { catsTab = k; setCatsMsg(''); pintarCats(); }); return b; }));
+    const lista = CATS[catsTab];
+    $('cats-list').replaceChildren(...lista.map((c, i) => {
+      const li = document.createElement('li');
+      const inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 40; inp.value = catTxt(c); inp.setAttribute('aria-label', 'Nombre de la opción');
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); inp.value = catTxt(c); inp.blur(); } });
+      inp.addEventListener('change', () => {
+        const v = inp.value.trim().replace(/\s+/g, ' ');
+        if (!v) { inp.value = catTxt(c); return; }
+        if (c === HON) { honNombre = v; guardarCats(); fillCats(); setCatsMsg(`Ahora se llama "${v}". Sigue conectada a los casos.`); return; }
+        if (v === c) return;
+        if (lista.some((x, j) => j !== i && catTxt(x).toLowerCase() === v.toLowerCase())) { setCatsMsg(`Ya existe una opción "${v}".`, true); inp.value = c; return; }
+        lista[i] = v; guardarCats(); fillCats();
+        const n = renombrarRegistros(catsTab, c, v);
+        setCatsMsg(`Cambiado a "${v}"` + (n ? `. También se actualizaron ${n} registro${n === 1 ? '' : 's'}.` : '.'));
+      });
+      const mover = (d, txt, lbl) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.setAttribute('aria-label', lbl); b.disabled = i + d < 0 || i + d >= lista.length; b.addEventListener('click', () => { [lista[i], lista[i + d]] = [lista[i + d], lista[i]]; guardarCats(); fillCats(); pintarCats(); $('cats-list').children[i + d]?.querySelector(d < 0 ? 'button' : 'button:nth-of-type(2)')?.focus(); }); return b; };
+      li.append(inp, mover(-1, '↑', 'Subir'), mover(1, '↓', 'Bajar'));
+      if (c === HON) { const sm = document.createElement('small'); sm.textContent = '🔒'; sm.setAttribute('aria-label', 'Conectada a Casos'); sm.title = 'Esta opción está conectada a la tabla de Casos y no se puede quitar.'; sm.style.width = '30px'; sm.style.textAlign = 'center'; li.appendChild(sm); }
+      else {
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'cats-del'; del.textContent = '✕'; del.setAttribute('aria-label', 'Quitar ' + c); del.disabled = lista.length <= 1;
+        del.addEventListener('click', () => { lista.splice(i, 1); guardarCats(); fillCats(); pintarCats(); setCatsMsg(`Se quitó "${c}". Los movimientos que ya tenían esa categoría se mantienen.`); });
+        li.appendChild(del);
+      }
+      return li;
+    }));
+  }
+  $('cats-nueva').addEventListener('submit', (e) => {
+    e.preventDefault(); const i = $('cats-nueva-txt'); const v = i.value.trim().replace(/\s+/g, ' '); if (!v) return;
+    const lista = CATS[catsTab];
+    if (lista.some((x) => catTxt(x).toLowerCase() === v.toLowerCase())) { setCatsMsg(`Ya existe una opción "${v}".`, true); return; }
+    lista.push(v); guardarCats(); fillCats(); pintarCats(); i.value = ''; i.focus(); setCatsMsg(`Se agregó "${v}".`);
+  });
+  $('cats-reset').addEventListener('click', () => {
+    const b = $('cats-reset');
+    if (!b.classList.contains('armado')) { b.classList.add('armado'); b.textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { b.classList.remove('armado'); b.textContent = 'Volver a las opciones originales'; }, 3000); return; }
+    b.classList.remove('armado'); b.textContent = 'Volver a las opciones originales';
+    Object.keys(CAT_DEF).forEach((k) => { CATS[k] = [...CAT_DEF[k]]; }); honNombre = 'Honorarios'; guardarCats(); fillCats(); pintarCats(); setCatsMsg('Se restauraron las opciones originales.');
+  });
+  $('ajustes-btn').addEventListener('click', () => { if (invitado || !libroRef) return; setCatsMsg(''); pintarCats(); $('dlg-cats').showModal(); });
+  $('cats-cerrar').addEventListener('click', () => $('dlg-cats').close());
+  $('dlg-cats').addEventListener('click', (e) => { if (e.target === $('dlg-cats')) $('dlg-cats').close(); });
+  let catsUnsub = null;
+  function suscribirCats() { if (catsUnsub) return; try { catsUnsub = docNegocio().onSnapshot((snap) => aplicarCats(snap.exists ? (snap.data() || {}) : {}), () => {}); } catch (e) {} }
   $('f-cat').addEventListener('change', toggleCaso);
   const findCaso = (name) => casos.find((c) => c.nombre.trim().toLowerCase() === name.trim().toLowerCase());
   const CF = ['archivo', 'causa', 'cedula', 'telefono', 'correo'];
@@ -3171,7 +3268,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       renderPronto();
     }, lost);
     suscribirCasos(lost);
-    suscribirNotas(lost); suscribirBiblio();
+    suscribirNotas(lost); suscribirBiblio(); suscribirCats();
     col('miembros').onSnapshot((snap) => {
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
@@ -3527,6 +3624,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
 })();
 </script>
+<dialog class="dlg-usr dlg-cats" id="dlg-cats" aria-labelledby="cats-tit">
+  <div class="cats-in">
+    <div class="cats-cab"><h3 id="cats-tit">Opciones de categorías</h3><button type="button" class="ghost" id="cats-cerrar">Listo</button></div>
+    <p class="sub" style="margin:0" id="cats-sub"></p>
+    <div class="cats-tabs" id="cats-tabs" role="tablist"></div>
+    <ul class="cats-list" id="cats-list"></ul>
+    <form class="cats-nueva" id="cats-nueva"><input type="text" id="cats-nueva-txt" maxlength="40" placeholder="Nueva opción" aria-label="Nueva opción"><button type="submit" class="btn">Agregar</button></form>
+    <p class="msg" id="cats-msg" role="status"></p>
+    <button type="button" class="ghost cats-reset" id="cats-reset">Volver a las opciones originales</button>
+  </div>
+</dialog>
 <dialog class="dlg-usr" id="dlg-usr">
   <form id="usr-form" method="dialog">
     <h3 id="usr-tit">Añadir usuario</h3>
