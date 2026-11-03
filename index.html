@@ -853,11 +853,29 @@ body.invitado .ajustes-btn { display: none; }
 .prop-ed { position: absolute; top: 8px; right: 8px; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
 .prop-ed:hover { color: var(--accent); background: var(--accent-soft); }
 .prop-vacio { color: var(--muted); padding: 24px 12px; text-align: center; border: 1px dashed var(--line); border-radius: 16px; }
-.prop-pill { position: absolute; transform: translate(-50%, -100%); margin-top: -4px; white-space: nowrap; border: 0; background: #fff; color: #1b1b1d; font: 700 13px var(--font-body); padding: 5px 10px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.28); cursor: pointer; transition: transform .12s, background .12s; }
-.prop-pill::after { content: ''; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); border: 5px solid transparent; border-bottom: 0; border-top-color: #fff; }
-.prop-pill:hover, .prop-pill.hover, .prop-pill.sel { background: var(--accent); color: #fff; z-index: 2; transform: translate(-50%, -100%) scale(1.08); }
-.prop-pill:hover::after, .prop-pill.hover::after, .prop-pill.sel::after { border-top-color: var(--accent); }
-.prop-pill.cerrada { background: #ddd; color: #666; }
+.prop-pill { position: absolute; transform: translate(-17px, -39px); display: flex; align-items: flex-start; border: 0; background: none; padding: 0; cursor: pointer; white-space: nowrap; }
+.prop-pill .pin-svg { flex: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); transition: transform .12s; transform-origin: 17px 39px; }
+.prop-pill .pill-t { margin: 3px 0 0 -3px; background: #fff; color: #1b1b1d; font: 700 12.5px var(--font-body); padding: 4px 9px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.28); transition: background .12s; }
+.prop-pill:hover, .prop-pill.hover, .prop-pill.sel { z-index: 2; }
+.prop-pill:hover .pin-svg, .prop-pill.hover .pin-svg, .prop-pill.sel .pin-svg { transform: scale(1.15); }
+.prop-pill:hover .pill-t, .prop-pill.hover .pill-t, .prop-pill.sel .pill-t { background: var(--accent); color: #fff; }
+.prop-pill.cerrada .pill-t { background: #ddd; color: #666; }
+.ico-tipo { width: 1.1em; height: 1.1em; flex: none; vertical-align: -0.18em; }
+.prop-info small .ico-tipo { margin-right: 4px; color: var(--accent); }
+.prop-foto > .ico-tipo, .prop-mini-foto > .ico-tipo { width: 44%; height: 44%; opacity: .75; }
+.isel { position: relative; display: inline-block; }
+.dlg-prop .isel { display: block; }
+.isel-btn { display: inline-flex; align-items: center; gap: 8px; width: 100%; font: 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; cursor: pointer; text-transform: none; letter-spacing: 0; text-align: left; }
+.isel-btn span { flex: 1; }
+.isel-btn .ico-tipo { color: var(--accent); width: 18px; height: 18px; }
+.isel-car { width: 14px; height: 14px; color: var(--muted); flex: none; }
+.dlg-prop .isel-btn { font-size: 15px; background: var(--bg); border: 0; border-radius: 14px; padding: 10px 14px; box-shadow: var(--press, none); }
+.isel-menu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 100%; margin: 0; padding: 6px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 40px -12px rgba(0,0,0,.35); max-height: 340px; overflow-y: auto; }
+.isel-menu[hidden] { display: none; }
+.isel-menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--fg); font: 15px var(--font-body); padding: 8px 10px; border-radius: 9px; cursor: pointer; white-space: nowrap; text-transform: none; letter-spacing: 0; text-align: left; }
+.isel-menu button .ico-tipo { width: 20px; height: 20px; color: var(--accent); }
+.isel-menu button:hover, .isel-menu button:focus-visible { background: var(--accent-soft); outline: none; }
+.isel-menu button[aria-selected="true"] { font-weight: 600; }
 .prop-pin-l { background: none; border: 0; overflow: visible; }
 .prop-pin-l .prop-pill { position: absolute; left: 0; top: 0; }
 .prop-mini { display: grid; gap: 5px; width: 230px; font: 13px var(--font-body); color: #1b1b1d; }
@@ -1618,6 +1636,48 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   };
   const visibles = () => lugares.filter(pasaFiltro);
   const icoSvg = { hab: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18h18M3 15h18M6 10V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>', banos: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM6 12V6a2 2 0 0 1 4 0M8 19l-1 2M16 19l1 2"/></svg>', area: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M4 4h16v16H4zM4 9h5V4M20 15h-5v5"/></svg>' };
+  // One icon per property type (filled glyphs on a 24×24 grid). The house is the same one the old map pins had.
+  const GLIFOS = {
+    'Casa': 'M4 11.6 12 4.8l8 6.8V20a1 1 0 0 1-1 1h-4.6v-5.2H9.6V21H5a1 1 0 0 1-1-1z',
+    'Departamento': 'M5 3h14v18h-5v-4h-4v4H5zM8 6v3h3V6zm5 0v3h3V6zm-5 5v3h3v-3zm5 0v3h3v-3z',
+    'Terreno': 'M3 20l3.5-7h11l3.5 7zM11 3h1.8v9H11zm1.8.4 5.4 2.3-5.4 2.3z',
+    'Local comercial': 'M3 9 5 4h14l2 5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zm2 4.2h14V21h-5v-5h-4v5H5z',
+    'Oficina': 'M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 1.8V7h4V5.8zM3 12.5h18v1.6H3z',
+    'Cuarto': 'M2.5 6h2.2v7.5H21.5V19h-2.2v-2H4.7v2H2.5zM6.5 9.2a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM12 9.5h5.5a4 4 0 0 1 4 3.5H12z',
+    'Quinta': 'M12 2a5 5 0 0 1 4.9 4.1A4.5 4.5 0 0 1 15.5 15H13v6h-2v-6H8.5a4.5 4.5 0 0 1-1.4-8.9A5 5 0 0 1 12 2z',
+    'Otro': 'M12 2.8l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.6l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z',
+    '': 'M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z'
+  };
+  const glifo = (t) => GLIFOS[t] != null ? GLIFOS[t] : GLIFOS['Otro'];
+  const icoTipo = (t) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifo(t)}"/></svg>`;
+  const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.op === 'Arriendo' ? '#2f5fa8' : '#1f6b57';
+  const pinSvg = (x) => `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" fill="${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifo(x.tipo || 'Casa')}"/></svg>`;
+  // Native selects can't show icons, so the type selects get a small menu with an icon per option.
+  function iconSelect(sel) {
+    const w = document.createElement('span'); w.className = 'isel';
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'isel-btn'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', sel.getAttribute('aria-label') || 'Tipo');
+    const menu = document.createElement('ul'); menu.className = 'isel-menu'; menu.setAttribute('role', 'listbox'); menu.hidden = true;
+    w.append(btn, menu); sel.after(w); sel.hidden = true;
+    const cerrar = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    const pintar = () => {
+      const o = sel.options[sel.selectedIndex];
+      btn.innerHTML = icoTipo(o ? o.value : '') + '<span></span><svg class="isel-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      btn.querySelector('span').textContent = o ? o.text : '';
+      menu.replaceChildren(...[...sel.options].map((op) => {
+        const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(op.value === sel.value));
+        b.innerHTML = icoTipo(op.value); b.append(op.text);
+        b.addEventListener('click', () => { sel.value = op.value; sel.dispatchEvent(new Event('change')); pintar(); cerrar(); btn.focus(); });
+        li.appendChild(b); return li;
+      }));
+    };
+    btn.addEventListener('click', (e) => { e.preventDefault(); if (!menu.hidden) { cerrar(); return; } pintar(); menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); const s = menu.querySelector('[aria-selected="true"]') || menu.querySelector('button'); if (s) s.focus(); });
+    menu.addEventListener('keydown', (e) => {
+      const bs = [...menu.querySelectorAll('button')], i = bs.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); (bs[i + 1] || bs[0]).focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (bs[i - 1] || bs[bs.length - 1]).focus(); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cerrar(); btn.focus(); }
+    });
+    document.addEventListener('click', (e) => { if (!e.composedPath().includes(w)) cerrar(); });
+    sel._pintar = pintar; pintar();
+  }
   function datosChips(x) {
     const d = document.createElement('div'); d.className = 'prop-datos';
     const add = (k, v) => { if (!v) return; const s = document.createElement('span'); s.innerHTML = icoSvg[k]; s.append(' ' + v); d.appendChild(s); };
@@ -1627,7 +1687,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function fotoEl(x, cls) {
     const f = document.createElement('div'); f.className = cls;
     if (x.fotos[0]) { const img = document.createElement('img'); img.src = x.fotos[0].url; img.alt = ''; img.loading = 'lazy'; f.appendChild(img); }
-    else f.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>';
+    else f.innerHTML = icoTipo(x.tipo || 'Casa');
     const t = document.createElement('span'); t.className = 'prop-op ' + (x.op === 'Arriendo' ? 'arr' : 'ven'); t.textContent = cerrada(x) ? x.estado : x.estado === 'Reservada' ? 'Reservada' : x.op; f.appendChild(t);
     return f;
   }
@@ -1648,7 +1708,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const vs = visibles();
     $('prop-n').textContent = lugares.length ? `${vs.length} de ${lugares.length} propiedad${lugares.length === 1 ? '' : 'es'} · Puyo, Pastaza` : 'Puyo · Pastaza';
     const tsel = $('prop-f-tipo'); const usados = [...new Set([...TIPOS_PROP, ...lugares.map((x) => x.tipo).filter(Boolean)])];
-    if (tsel.options.length !== usados.length + 1) { const v = tsel.value; tsel.replaceChildren(new Option('Tipo: todos', ''), ...usados.map((t) => new Option(t, t))); tsel.value = v; }
+    if (tsel.options.length !== usados.length + 1) { const v = tsel.value; tsel.replaceChildren(new Option('Tipo: todos', ''), ...usados.map((t) => new Option(t, t))); tsel.value = v; if (tsel._pintar) tsel._pintar(); }
     if (!vs.length) {
       const li = document.createElement('li'); li.className = 'prop-vacio';
       li.textContent = lugares.length ? 'Ninguna propiedad cumple los filtros.' : 'Aún no tienes propiedades. Toca "+ Nueva propiedad" para agregar la primera.';
@@ -1659,7 +1719,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       li.appendChild(fotoEl(x, 'prop-foto'));
       const info = document.createElement('div'); info.className = 'prop-info';
       const h = document.createElement('b'); h.textContent = x.nombre; info.appendChild(h);
-      const s = document.createElement('small'); s.textContent = [x.tipo, x.dir].filter(Boolean).join(' · ') || 'Puyo'; info.appendChild(s);
+      const s = document.createElement('small'); s.innerHTML = icoTipo(x.tipo || 'Casa'); s.append([x.tipo, x.dir].filter(Boolean).join(' · ') || 'Puyo'); info.appendChild(s);
       info.appendChild(datosChips(x));
       const pie = document.createElement('div'); pie.className = 'prop-pie';
       const u = document.createElement('span'); u.className = 'prop-ubic-t'; u.textContent = tieneUbic(x) ? (x.fotos.length ? `${x.fotos.length} foto${x.fotos.length === 1 ? '' : 's'}` : '') : 'Sin ubicación';
@@ -1687,7 +1747,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function marcarPills() { document.querySelectorAll('.prop-pill').forEach((p) => { p.classList.toggle('sel', p.dataset.id === propSel); p.classList.toggle('hover', p.dataset.id === propHover); }); }
   function pillEl(x) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'prop-pill' + (cerrada(x) ? ' cerrada' : '') + (x.op === 'Arriendo' ? ' arr' : ''); b.dataset.id = x.id;
-    b.textContent = precioTxt(x, true); b.title = x.nombre;
+    b.innerHTML = pinSvg(x); const t = document.createElement('span'); t.className = 'pill-t'; t.textContent = precioTxt(x, true); b.appendChild(t); b.title = (x.tipo ? x.tipo + ': ' : '') + x.nombre;
     b.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(x.id, false); });
     return b;
   }
@@ -1709,7 +1769,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       vs.forEach((x) => {
         const m = L.marker([x.lat, x.lng], { icon: L.divIcon({ className: 'prop-pin-l', html: '', iconSize: [0, 0] }), keyboard: false });
         m.on('add', () => { const el = m.getElement(); if (el) { el.replaceChildren(pillEl(x)); } });
-        m.bindPopup(miniCard(x), { maxWidth: 260, minWidth: 220 });
+        m.bindPopup(miniCard(x), { maxWidth: 260, minWidth: 220, offset: [0, -34] });
         m.addTo(casasCapa); x._m = m;
       });
     }
@@ -1739,7 +1799,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // ── Property form ──
   let draft = null, draftNuevas = [], subiendoFotos = 0;
   const dlgP = $('dlg-prop');
-  $('p-tipo').replaceChildren(...TIPOS_PROP.map((t) => new Option(t, t)));
+  $('p-tipo').replaceChildren(...TIPOS_PROP.map((t) => new Option(t, t))); iconSelect($('p-tipo')); iconSelect($('prop-f-tipo'));
   const pMsg = (t, err) => { const m = $('p-msg'); m.textContent = t || ''; m.className = 'msg' + (err ? ' err' : ''); };
   function pintarDraft() {
     $('p-ubic-txt').textContent = tieneUbic(draft) ? `Marcada en el mapa (${draft.lat.toFixed(5)}, ${draft.lng.toFixed(5)})` : 'Sin ubicación';
@@ -1755,7 +1815,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function llenarForm() {
     $('prop-tit').textContent = draft.id ? 'Editar propiedad' : 'Nueva propiedad';
-    $('p-nombre').value = draft.nombre || ''; $('p-op').value = draft.op || 'Venta'; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible';
+    $('p-nombre').value = draft.nombre || ''; $('p-op').value = draft.op || 'Venta'; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible'; $('p-tipo')._pintar();
     $('p-precio').value = draft.precio || ''; $('p-hab').value = draft.hab || ''; $('p-banos').value = draft.banos || ''; $('p-area').value = draft.area || ''; $('p-parq').value = draft.parq || '';
     $('p-dir').value = draft.dir || ''; $('p-desc').value = draft.desc || ''; $('p-nota').value = draft.nota || '';
     $('p-borrar').hidden = !draft.id; $('p-borrar').classList.remove('armado'); $('p-borrar').textContent = 'Borrar propiedad';
@@ -1855,7 +1915,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           await cargarGmaps(gmapsKey);
           motor = 'g';
           mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
-          infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -18) });
+          infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -40) });
           mapaG.addListener('click', (e) => { if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
           pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins(); return;
         } catch (e) { motor = null; avisoMapa('No se pudo cargar Google Maps. Uso el mapa gratuito.'); }
