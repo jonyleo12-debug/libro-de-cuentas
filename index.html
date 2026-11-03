@@ -727,6 +727,22 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .ia-estado { font-size: 13px; color: var(--muted); margin: 0; }
 @media (max-width: 640px) { .ia-btn span { display: none; } .ia-btn { padding: 13px; } .ia-panel, .ia-panel.ancho { right: 8px; left: 8px; width: auto; bottom: 8px; height: calc(100dvh - 16px); } #ia-ancho { display: none; } }
 @media print { .ia-btn, .ia-panel { display: none !important; } }
+
+/* Negocio: Consorcio Jurídico / Inmobiliaria */
+.hero-fecha { margin-left: -8px; }
+.hero-fecha .hero-nav { font-size: 17px; padding: 0 6px; }
+.hero-fecha .hero-mes-btn { font-size: 13px; letter-spacing: .06em; opacity: .75; gap: 5px; padding: 1px 4px; }
+.hero-fecha .hero-mes-btn:hover { opacity: 1; }
+.hero-fecha .hero-caret { font-size: .75em; transform: none; }
+.hero-neg-btn { white-space: nowrap; background: none; border: 0; padding: 0 4px; margin-left: -4px; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: baseline; gap: 8px; border-radius: 10px; }
+.hero-neg-btn:hover { background: rgba(255,255,255,.06); }
+.neg-pop { position: absolute; z-index: 40; top: calc(100% + 8px); left: 24px; display: grid; gap: 2px; padding: 8px; border-radius: 16px; background: var(--panel); box-shadow: 0 12px 34px rgba(0,0,0,.2); min-width: 220px; }
+.neg-pop[hidden] { display: none; }
+.neg-pop button { text-align: left; border: 0; background: none; color: var(--fg); font: 15px var(--font-body); padding: 9px 12px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+.neg-pop button:hover { background: var(--accent-soft); }
+.neg-pop button[aria-checked="true"] { font-weight: 600; color: var(--accent); }
+body.invitado .hero-neg-btn { pointer-events: none; } body.invitado .hero-neg-btn .hero-caret { display: none; }
+body.inmob #sec-casos, body.inmob .caso-f { display: none !important; }
 </style>
 </head>
 <body>
@@ -777,16 +793,17 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
     <div class="hero-wrap">
       <div class="hero-box">
         <div class="hero">
-          <span class="hero-k">Libro de cuentas</span>
-          <div class="hero-row">
+          <div class="hero-row hero-fecha">
             <button type="button" class="hero-nav" id="mes-prev" aria-label="Mes anterior">‹</button>
-            <h1><button type="button" class="hero-mes-btn" id="hero-mes-btn" aria-label="Elegir mes"><span id="hero-mes">Mis finanzas</span><span class="hero-caret" aria-hidden="true">▾</span></button></h1>
+            <button type="button" class="hero-mes-btn" id="hero-mes-btn" aria-label="Elegir mes"><span id="hero-mes">Mis finanzas</span><span class="hero-caret" aria-hidden="true">▾</span></button>
             <button type="button" class="hero-nav" id="mes-next" aria-label="Mes siguiente">›</button>
           </div>
+          <h1><button type="button" class="hero-neg-btn" id="neg-btn" aria-haspopup="true" aria-expanded="false" aria-controls="neg-pop"><span id="neg-nombre">Consorcio Jurídico</span><span class="hero-caret" aria-hidden="true">▾</span></button></h1>
           <input type="month" id="mes" class="mes-oculto" tabindex="-1" aria-label="Mes">
           <button type="button" class="hero-color" id="hero-color" aria-label="Cambiar color" aria-expanded="false" aria-controls="color-pop">
           </button>
         </div>
+        <div class="neg-pop" id="neg-pop" role="menu" hidden></div>
         <div class="color-pop" id="color-pop" hidden><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div>
           <span class="usr-l" id="usuarios-l" style="margin-top:6px" hidden>Usuarios</span><div id="usuarios" class="usuarios"></div></div>
       </div>
@@ -1157,8 +1174,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // When an assistant writes, every case-related change carries their mark ("por") so the owner sees who did it.
   const FIRMADAS = ['casos', 'audiencias', 'movimientos'];
   const firma = () => ({ color: invitado.color || '', nombre: invitado.nombre || '', fecha: new Date().toISOString() });
+  // Each business keeps its own book: the law firm uses the original collections, the real-estate agency a separate copy under negocios/inmobiliaria.
+  const NEGOCIOS = { juridico: 'Consorcio Jurídico', inmobiliaria: 'Inmobiliaria' };
+  let negocio = 'juridico';
+  try { const n = localStorage.getItem('libro-negocio'); if (NEGOCIOS[n]) negocio = n; } catch (e) {}
+  const baseNegocio = (name) => (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
   const col = (name) => {
-    const c = libroRef.collection(name);
+    const c = baseNegocio(name).collection(name);
     if (!invitado || !FIRMADAS.includes(name)) return c;
     const marcarCaso = (d) => { if (name !== 'casos' && d && d.casoId) libroRef.collection('casos').doc(d.casoId).update({ por: firma() }); };
     const firmarDoc = (r, casoId) => ({ ...r,
@@ -1351,6 +1373,22 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     inp.focus(); inp.click();
   });
   const pop = $('color-pop'), hc = $('hero-color');
+  // Business switcher in the header.
+  function pintarNegocio() {
+    $('neg-nombre').textContent = NEGOCIOS[negocio];
+    document.body.classList.toggle('inmob', negocio === 'inmobiliaria');
+    document.title = NEGOCIOS[negocio] + ' · Libro de cuentas';
+  }
+  pintarNegocio();
+  {
+    const nb = $('neg-btn'), np = $('neg-pop');
+    const setNeg = (open) => { np.hidden = !open; nb.setAttribute('aria-expanded', String(open)); };
+    np.replaceChildren(...Object.entries(NEGOCIOS).map(([k, v]) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', String(k === negocio)); b.innerHTML = '<span></span><span aria-hidden="true">' + (k === negocio ? '✓' : '') + '</span>'; b.firstChild.textContent = v;
+      b.addEventListener('click', () => { setNeg(false); if (k === negocio) return; try { localStorage.setItem('libro-negocio', k); } catch (e) {} location.reload(); }); return b; }));
+    nb.addEventListener('click', (e) => { e.stopPropagation(); if (invitado) return; setNeg(np.hidden); });
+    document.addEventListener('pointerdown', (e) => { if (!np.hidden && !np.contains(e.target) && !nb.contains(e.target)) setNeg(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !np.hidden) { setNeg(false); nb.focus(); } });
+  }
   const setPop = (open) => { pop.hidden = !open; hc.setAttribute('aria-expanded', String(open)); };
   hc.addEventListener('click', (e) => { e.stopPropagation(); setPop(pop.hidden); });
   document.addEventListener('click', (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target !== hc) setPop(false); });
@@ -1575,7 +1613,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const est = document.createElement('div'); est.className = 'estados';
       if (c.por) {
         tr.classList.add('por-cambio'); tr.style.setProperty('--pc', colorPor(c.por));
-        est.appendChild(marcaPor(c.por, invitado ? null : () => libroRef.collection('casos').doc(c.id).update({ por: null })));
+        est.appendChild(marcaPor(c.por, invitado ? null : () => baseNegocio('casos').collection('casos').doc(c.id).update({ por: null })));
       }
       // Several custom states per case: one box per state plus an empty "+ estado" box to add another.
       { const ests = estadosDe(c); const cajas = [];
@@ -2973,12 +3011,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     try { gcalOn = localStorage.getItem('libro-gcal-inv') === '1'; } catch (e) {}
     db = fireDb;
     libroRef = db.doc('users/' + acc.owner);
+    negocio = 'juridico'; pintarNegocio();
     const lost = () => setMsg('No se pudo abrir el libro compartido. Puede que te hayan quitado el acceso; recarga la página.', true);
     let paraMov = null;
     const ponerDinero = () => {
       document.body.classList.toggle('sin-dinero', sinDinero());
       if (sinDinero()) { if (paraMov) { paraMov(); paraMov = null; } rows = []; }
-      else if (!paraMov) paraMov = libroRef.collection('movimientos').onSnapshotDeCasos((snap) => {
+      else if (!paraMov) paraMov = baseNegocio('movimientos').collection('movimientos').onSnapshotDeCasos((snap) => {
         rows = snap.docs.map(mapMov).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
         render();
       }, lost);
@@ -3193,6 +3232,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const dinero = !sinDinero();
       const hoy = hoyYmd(), mes = $('mes').value || thisMonth;
       const L = [];
+      L.push(`Negocio que está viendo: ${NEGOCIOS[negocio]}${negocio === 'inmobiliaria' ? ' (los movimientos de abajo son de la inmobiliaria, no del despacho jurídico)' : ''}.`);
       L.push(`Hoy es ${hoy} (${new Date().toLocaleDateString('es-EC', { weekday: 'long' })}). Mes que está viendo: ${mes}. Moneda: USD.`);
       L.push(invitado ? `Quien pregunta es ${invitado.nombre || 'un asistente'}, asistente del despacho.` : 'Quien pregunta es el abogado dueño del libro.');
       const nomCaso = new Map(casos.map((c) => [c.id, c.nombre]));
