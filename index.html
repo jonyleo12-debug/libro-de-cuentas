@@ -830,11 +830,13 @@ body.invitado .ajustes-btn { display: none; }
 .prop-check input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; box-shadow: none; }
 .prop-cuerpo { display: grid; grid-template-columns: minmax(270px, 290px) minmax(0, 1fr); gap: 12px; align-items: start; }
 .prop-cuerpo .mapa-box { aspect-ratio: auto; height: clamp(560px, calc(100vh - 140px), 860px); position: sticky; top: 12px; }
-.prop-lista { list-style: none; margin: 0; padding: 2px 6px 2px 2px; display: grid; gap: 12px; max-height: clamp(560px, calc(100vh - 140px), 860px); overflow-y: auto; align-content: start; }
-.prop-card { position: relative; display: grid; grid-template-columns: 100px 1fr; gap: 12px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.prop-lista { list-style: none; margin: 0; padding: 2px 6px 2px 2px; overflow-x: hidden; display: grid; gap: 12px; max-height: clamp(560px, calc(100vh - 140px), 860px); overflow-y: auto; align-content: start; }
+.prop-card { position: relative; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; padding: 10px; overflow: hidden; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .prop-card:hover, .prop-card:focus-visible { border-color: var(--accent); outline: none; }
 .prop-card.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .prop-card.cerrada { opacity: .6; }
+.prop-foto { width: 100%; align-self: start; }
+.prop-foto .prop-op { top: 5px; left: 5px; font-size: 10px; padding: 2px 7px; }
 .prop-foto, .prop-mini-foto { position: relative; border-radius: 12px; overflow: hidden; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; aspect-ratio: 4 / 3; }
 .prop-foto img, .prop-mini-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prop-foto > svg, .prop-mini-foto > svg { width: 40%; height: 40%; opacity: .7; }
@@ -843,13 +845,13 @@ body.invitado .ajustes-btn { display: none; }
 .prop-op.arr { background: var(--arriendo); }
 .prop-op.cer { background: #8a8a8a; }
 .prop-info { display: grid; gap: 4px; min-width: 0; align-content: start; padding-right: 22px; }
-.prop-info b { font-size: 15.5px; line-height: 1.25; overflow-wrap: anywhere; }
+.prop-info b { font-size: 14.5px; line-height: 1.25; overflow-wrap: anywhere; }
 .prop-info small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prop-datos { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); }
 .prop-datos span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .prop-datos svg { width: 16px; height: 16px; flex: none; }
-.prop-pie { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 2px; }
-.prop-pie strong { font-size: 17px; color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prop-pie { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 8px; margin-top: 2px; min-width: 0; }
+.prop-pie strong { font-size: 16px; color: var(--fg); font-variant-numeric: tabular-nums; margin-left: auto; text-align: right; }
 .prop-ubic-t { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
 .prop-ed { position: absolute; top: 8px; right: 8px; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
 .prop-ed:hover { color: var(--accent); background: var(--accent-soft); }
@@ -1796,7 +1798,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (x.desc) { const ds = document.createElement('p'); ds.className = 'prop-desc'; ds.textContent = x.desc; info.appendChild(ds); }
       const pie = document.createElement('div'); pie.className = 'prop-pie';
       const u = document.createElement('span'); u.className = 'prop-ubic-t'; u.textContent = tieneUbic(x) ? (x.fotos.length ? `${x.fotos.length} foto${x.fotos.length === 1 ? '' : 's'}` : '') : 'Sin ubicación';
-      const pr = document.createElement('strong'); pr.textContent = precioTxt(x);
+      const pr = document.createElement('strong'); pr.textContent = x.precio ? precioTxt(x) : 'A consultar';
       pie.append(u, pr); info.appendChild(pie);
       const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'prop-ed'; ed.textContent = '✎'; ed.title = 'Editar'; ed.setAttribute('aria-label', 'Editar ' + x.nombre);
       ed.addEventListener('click', (e) => { e.stopPropagation(); abrirProp(x); });
