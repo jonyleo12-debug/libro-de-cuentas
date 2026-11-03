@@ -828,8 +828,6 @@ body.invitado .ajustes-btn { display: none; }
 .prop-precio input { width: 118px; }
 .prop-check { display: inline-flex; align-items: center; gap: 6px; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--muted); cursor: pointer; }
 .prop-check input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; box-shadow: none; }
-/* On wide screens the properties section grows past the 980px column so the map gets more room. */
-@media (min-width: 1100px) { #sec-mapa { margin-inline: calc(50% - min(740px, 50vw - 16px)); } }
 .prop-cuerpo { display: grid; grid-template-columns: minmax(270px, 290px) minmax(0, 1fr); gap: 12px; align-items: start; }
 .prop-cuerpo .mapa-box { aspect-ratio: auto; height: clamp(560px, calc(100vh - 140px), 860px); position: sticky; top: 12px; }
 .prop-lista { list-style: none; margin: 0; padding: 2px 6px 2px 2px; display: grid; gap: 12px; max-height: clamp(560px, calc(100vh - 140px), 860px); overflow-y: auto; align-content: start; }
