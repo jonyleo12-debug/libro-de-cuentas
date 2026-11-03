@@ -789,6 +789,15 @@ body.invitado .ajustes-btn { display: none; }
 .dlg-cats .cats-nueva .btn { flex: none; padding: 9px 18px; }
 .cats-nueva input { flex: 1; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 .cats-reset { justify-self: start; }
+
+/* Mapa */
+.mapa-busca { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mapa-busca input { flex: 1 1 220px; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; }
+.mapa-box { border-radius: 16px; overflow: hidden; box-shadow: var(--raise-sm); background: var(--accent-soft); aspect-ratio: 16 / 9; min-height: 280px; }
+.mapa-box iframe { width: 100%; height: 100%; border: 0; display: block; }
+.mapa-abrir { justify-self: end; font-size: 13.5px; color: var(--accent); text-decoration: none; }
+.mapa-abrir:hover { text-decoration: underline; }
+@media (max-width: 640px) { .mapa-box { aspect-ratio: 4 / 5; } }
 </style>
 </head>
 <body>
@@ -984,6 +993,20 @@ body.invitado .ajustes-btn { display: none; }
         <tbody id="casos"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody>
       </table>
     </div>
+  </section>
+
+  <section class="panel tone" id="sec-mapa" aria-labelledby="h-mapa">
+    <div class="budget-row">
+      <h2 id="h-mapa">Mapa</h2>
+      <span class="sub" style="display:inline">Parroquia Puyo · Cantón Pastaza · Provincia de Pastaza</span>
+    </div>
+    <form class="mapa-busca" id="mapa-form" role="search">
+      <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca una calle, barrio o lugar de Puyo" aria-label="Buscar en el mapa">
+      <button type="submit" class="btn">Buscar</button>
+      <button type="button" class="ghost" id="mapa-reset" hidden>Ver todo Puyo</button>
+    </form>
+    <div class="mapa-box"><iframe id="mapa-frame" title="Mapa de Puyo, Pastaza" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen src="https://maps.google.com/maps?q=Puyo%2C%20Pastaza%2C%20Ecuador&amp;z=14&amp;output=embed"></iframe></div>
+    <a class="mapa-abrir" id="mapa-abrir" href="https://www.google.com/maps/search/?api=1&amp;query=Puyo%2C%20Pastaza%2C%20Ecuador" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>
   </section>
 
   <section class="panel tone" id="sec-inv" aria-labelledby="h-inv">
@@ -1427,6 +1450,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Reorder blocks below Nuevo movimiento by long-pressing a collapse button
   const appEl = document.getElementById('app');
   const nuevoEl = document.getElementById('fila-nuevo');
+  { // Map of Puyo: searches stay inside the parish so "Calle 9 de Octubre" finds the one in Puyo.
+    const base = 'Puyo, Pastaza, Ecuador';
+    const ir = (q) => {
+      const full = q ? `${q}, ${base}` : base, e = encodeURIComponent(full);
+      $('mapa-frame').src = `https://maps.google.com/maps?q=${e}&z=${q ? 17 : 14}&output=embed`;
+      $('mapa-abrir').href = `https://www.google.com/maps/search/?api=1&query=${e}`;
+      $('mapa-reset').hidden = !q;
+    };
+    $('mapa-form').addEventListener('submit', (e) => { e.preventDefault(); ir($('mapa-txt').value.trim()); });
+    $('mapa-reset').addEventListener('click', () => { $('mapa-txt').value = ''; ir(''); });
+  }
   const claveBloque = (el) => el.classList.contains('grid2') ? 'b-grid' : el.id === 'prom' ? 'b-prom' : (el.querySelector('h2') || {}).id || '';
   const bloques = () => { const arr = [...appEl.children]; return arr.slice(arr.indexOf(nuevoEl) + 1).filter((el) => claveBloque(el)); };
   const bloqueDe = (sec) => { let el = sec; while (el.parentElement && el.parentElement !== appEl) el = el.parentElement; return el; };
