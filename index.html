@@ -905,6 +905,18 @@ body.invitado .ajustes-btn { display: none; }
 .prop-subir input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .prop-ubic { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .prop-ubic .prop-l { width: 100%; }
+.prop-serv-box { display: grid; gap: 8px; }
+.prop-serv { display: flex; flex-wrap: wrap; gap: 8px; }
+.dlg-prop label.serv-ck { display: inline-flex; align-items: center; gap: 6px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; cursor: pointer; user-select: none; }
+.serv-ck input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.serv-ck svg { width: 17px; height: 17px; color: var(--muted); }
+.dlg-prop label.serv-ck:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
+.serv-ck:has(input:checked) svg { color: #fff; }
+.serv-ck:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.prop-servs { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--accent); }
+.prop-servs span { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; }
+.prop-servs svg { width: 16px; height: 16px; flex: none; }
+.prop-mini .prop-servs { color: #444; }
 .prop-borrar { margin-right: auto; color: #a3402e; border-color: #e3b8ae; }
 .prop-borrar.armado { background: #a3402e; color: #fff; border-color: #a3402e; }
 @media (max-width: 820px) {
@@ -1654,6 +1666,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const icoTipo = (t) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifo(t)}"/></svg>`;
   const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.op === 'Arriendo' ? 'var(--arriendo)' : 'var(--accent)';
   const pinSvg = (x) => `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" style="fill:${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifo(x.tipo || 'Casa')}"/></svg>`;
+  const SERVICIOS = [['luz', 'Luz', 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12z'], ['agua', 'Agua', 'M12 3s-6 6.9-6 11a6 6 0 0 0 12 0c0-4.1-6-11-6-11z'], ['alcantarillado', 'Alcantarillado', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M9 3.5v17M15 3.5v17'], ['internet', 'Internet', 'M2.5 9a14 14 0 0 1 19 0M5.8 12.5a9.5 9.5 0 0 1 12.4 0M9 16a4.6 4.6 0 0 1 6 0M12 19.5h.01'], ['carretera', 'Carretera', 'M8 3 4 21M16 3l4 18M12 4v3M12 11v3M12 18v2']];
+  const icoServ = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
+  function servEl(x, conTexto) {
+    const d = document.createElement('div'); d.className = 'prop-servs' + (conTexto ? ' txt' : '');
+    SERVICIOS.filter(([k]) => x.servicios.includes(k)).forEach(([, t, path]) => { const s = document.createElement('span'); s.title = t; s.innerHTML = icoServ(path); if (conTexto) s.append(t); else s.setAttribute('aria-label', t); d.appendChild(s); });
+    return d;
+  }
   // Native selects can't show icons, so the type selects get a small menu with an icon per option.
   function iconSelect(sel) {
     const w = document.createElement('span'); w.className = 'isel';
@@ -1698,7 +1717,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     d.appendChild(fotoEl(x, 'prop-mini-foto'));
     const b = document.createElement('b'); b.textContent = x.nombre; d.appendChild(b);
     if (x.dir) { const s = document.createElement('small'); s.textContent = x.dir; d.appendChild(s); }
-    const pie = document.createElement('div'); pie.className = 'prop-mini-pie'; pie.appendChild(datosChips(x));
+    const pie = document.createElement('div'); pie.className = 'prop-mini-pie'; pie.appendChild(datosChips(x)); if (x.servicios.length) d.insertBefore(servEl(x, true), null);
     const pr = document.createElement('strong'); pr.textContent = precioTxt(x); pie.appendChild(pr); d.appendChild(pie);
     const acts = document.createElement('div'); acts.className = 'casa-acts';
     const g = document.createElement('a'); g.href = gmaps(x); g.target = '_blank'; g.rel = 'noopener'; g.textContent = 'Cómo llegar ↗';
@@ -1722,7 +1741,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const info = document.createElement('div'); info.className = 'prop-info';
       const h = document.createElement('b'); h.textContent = x.nombre; info.appendChild(h);
       const s = document.createElement('small'); s.innerHTML = icoTipo(x.tipo || 'Casa'); s.append([x.tipo, x.dir].filter(Boolean).join(' · ') || 'Puyo'); info.appendChild(s);
-      info.appendChild(datosChips(x));
+      info.appendChild(datosChips(x)); if (x.servicios.length) info.appendChild(servEl(x, false));
       const pie = document.createElement('div'); pie.className = 'prop-pie';
       const u = document.createElement('span'); u.className = 'prop-ubic-t'; u.textContent = tieneUbic(x) ? (x.fotos.length ? `${x.fotos.length} foto${x.fotos.length === 1 ? '' : 's'}` : '') : 'Sin ubicación';
       const pr = document.createElement('strong'); pr.textContent = precioTxt(x);
@@ -1780,7 +1799,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pintarProps() { pintarLista(); pintarPins(); }
   const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || 'Propiedad'), nota: String(v.nota || ''), creado: String(v.creado || ''),
     op: v.op === 'Arriendo' ? 'Arriendo' : 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
-    dir: String(v.dir || ''), desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
+    dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
     try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
@@ -1802,6 +1821,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let draft = null, draftNuevas = [], subiendoFotos = 0;
   const dlgP = $('dlg-prop');
   $('p-tipo').replaceChildren(...TIPOS_PROP.map((t) => new Option(t, t))); iconSelect($('p-tipo')); iconSelect($('prop-f-tipo'));
+  $('p-serv').replaceChildren(...SERVICIOS.map(([k, t, path]) => { const l = document.createElement('label'); l.className = 'serv-ck'; l.innerHTML = `<input type="checkbox" value="${k}">${icoServ(path)}`; l.append(t); return l; }));
   const pMsg = (t, err) => { const m = $('p-msg'); m.textContent = t || ''; m.className = 'msg' + (err ? ' err' : ''); };
   function pintarDraft() {
     $('p-ubic-txt').textContent = tieneUbic(draft) ? `Marcada en el mapa (${draft.lat.toFixed(5)}, ${draft.lng.toFixed(5)})` : 'Sin ubicación';
@@ -1819,13 +1839,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('prop-tit').textContent = draft.id ? 'Editar propiedad' : 'Nueva propiedad';
     $('p-nombre').value = draft.nombre || ''; $('p-op').value = draft.op || 'Venta'; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible'; $('p-tipo')._pintar();
     $('p-precio').value = draft.precio || ''; $('p-hab').value = draft.hab || ''; $('p-banos').value = draft.banos || ''; $('p-area').value = draft.area || ''; $('p-parq').value = draft.parq || '';
-    $('p-dir').value = draft.dir || ''; $('p-desc').value = draft.desc || ''; $('p-nota').value = draft.nota || '';
+    $('p-dir').value = draft.dir || ''; $('p-serv').querySelectorAll('input').forEach((c) => { c.checked = (draft.servicios || []).includes(c.value); }); $('p-desc').value = draft.desc || ''; $('p-nota').value = draft.nota || '';
     $('p-borrar').hidden = !draft.id; $('p-borrar').classList.remove('armado'); $('p-borrar').textContent = 'Borrar propiedad';
     pMsg(''); pintarDraft();
   }
   function leerForm() {
     const n = (id) => { const v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : 0; };
-    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: $('p-op').value, tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio')), hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: $('p-nota').value.trim().slice(0, 200) });
+    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: $('p-op').value, tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio')), hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: $('p-nota').value.trim().slice(0, 200), servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
   }
   function abrirProp(x) {
     if (invitado) return;
@@ -1876,7 +1896,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     e.preventDefault(); if (!draft) return;
     if (subiendoFotos) { pMsg('Espera a que terminen de subir las fotos.', true); return; }
     leerForm(); if (!draft.nombre) { pMsg('Ponle un título.', true); $('p-nombre').focus(); return; }
-    const { id, _m, ...datos } = draft;
+    const { id, _m, _dirAuto, ...datos } = draft;
     // Photos removed from an existing property are deleted from Storage too.
     const antes = id ? (lugares.find((x) => x.id === id) || { fotos: [] }).fotos : [];
     antes.filter((f) => !datos.fotos.some((g) => g.ruta === f.ruta)).forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
@@ -1897,7 +1917,26 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (!draft) return;
     draft.lat = lat; draft.lng = lng;
     llenarForm(); dlgP.showModal();
+    // Fill the address from the point unless the user typed one of their own.
+    if (draft.dir && draft.dir !== draft._dirAuto) return;
+    const d = draft; $('p-dir').placeholder = 'Buscando la dirección…';
+    direccionDe(lat, lng).then((t) => {
+      $('p-dir').placeholder = 'Ej.: Barrio Obrero, calle Atahualpa y 9 de Octubre';
+      if (!t || draft !== d || d.lat !== lat || ($('p-dir').value.trim() && $('p-dir').value.trim() !== d._dirAuto)) return;
+      d.dir = d._dirAuto = t.slice(0, 120); $('p-dir').value = d.dir;
+    });
   }
+  // Reverse geocoding: Google's when Google Maps is on (needs the Geocoding API on the key), else OpenStreetMap's.
+  const dirGoogle = (lat, lng) => new Promise((ok) => { try { new google.maps.Geocoder().geocode({ location: { lat, lng }, language: 'es' }, (res, st) => { if (st !== 'OK' || !res || !res[0]) { ok(''); return; } const r = res.find((x) => x.types.includes('street_address') || x.types.includes('route')) || res[0]; ok(r.formatted_address.replace(/,?\s*Ecuador$/, '').replace(/,?\s*Provincia de Pastaza/, '')); }); } catch (e) { ok(''); } });
+  async function dirOsm(lat, lng) {
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&addressdetails=1&lat=${lat}&lon=${lng}`, { headers: { 'Accept-Language': 'es' } });
+      const j = await r.json(), a = (j && j.address) || {};
+      const partes = [a.road, a.neighbourhood || a.suburb || a.quarter || a.hamlet, a.city || a.town || a.village].filter(Boolean);
+      return [...new Set(partes)].join(', ') || String((j && j.display_name) || '').split(',').slice(0, 3).join(',');
+    } catch (e) { return ''; }
+  }
+  async function direccionDe(lat, lng) { let t = motor === 'g' ? await dirGoogle(lat, lng) : ''; if (!t) t = await dirOsm(lat, lng); return t; }
   function borrarMapa() {
     if (mapaL) { mapaL.remove(); mapaL = null; casasCapa = null; }
     if (mapaG) { marcasG.forEach((m) => m.setMap(null)); marcasG = []; mapaG = null; }
@@ -4236,7 +4275,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       <label>Área (m²)<input type="number" id="p-area" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Parqueaderos<input type="number" id="p-parq" min="0" max="50" inputmode="numeric" placeholder="0"></label>
     </div>
-    <label class="prop-wide">Dirección o barrio<input type="text" id="p-dir" maxlength="120" placeholder="Ej.: Barrio Obrero, calle Atahualpa y 9 de Octubre"></label>
+    <label class="prop-wide">Dirección o barrio<input type="text" id="p-dir" maxlength="120" placeholder="Se llena solo al marcar la ubicación en el mapa"></label>
+    <div class="prop-wide prop-serv-box"><span class="prop-l">Servicios básicos</span><div class="prop-serv" id="p-serv"></div></div>
     <label class="prop-wide">Descripción<textarea id="p-desc" class="obs" rows="3" maxlength="1500" placeholder="Lo que la hace especial: patio, vista, cerca del centro…"></textarea></label>
     <label class="prop-wide">Dueño y contacto (privado)<input type="text" id="p-nota" maxlength="200" placeholder="Ej.: Sr. Luis Pérez · 0991234567 · comisión 3%"></label>
     <div class="prop-wide prop-fotos-box">
