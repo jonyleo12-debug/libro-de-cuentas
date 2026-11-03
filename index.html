@@ -747,6 +747,15 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .neg-edit input { flex: 1; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--accent); border-radius: 8px; padding: 7px 9px; }
 .neg-pop .neg-ok { flex: none; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; padding: 7px 12px; }
 .neg-pop .neg-ok:hover { background: var(--accent); }
+.neg-h1 { display: flex; align-items: center; gap: 2px; margin-left: -12px !important; }
+.neg-h1 .hero-neg-btn { margin-left: 0; }
+.neg-nav { font-size: 30px; padding: 2px 6px; }
+.neg-nav[hidden] { display: none; }
+body.invitado .neg-nav { display: none !important; }
+.neg-hueco { flex: none; width: 36px; }
+.neg-pop .neg-borrar { flex: none; min-width: 36px; text-align: center; justify-content: center; color: var(--muted); font-size: 14px; padding: 8px 9px; }
+.neg-pop .neg-borrar:hover { color: var(--out); }
+.neg-pop .neg-borrar.armado { color: #fff; background: var(--out); font-size: 12.5px; font-weight: 600; }
 .neg-mas { vertical-align: middle; margin-left: 6px; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.35); background: none; color: var(--ink-fg); font: 300 20px/1 var(--font-body); cursor: pointer; display: inline-grid; place-items: center; padding: 0 0 2px; opacity: .7; position: relative; top: -3px; }
 .neg-mas:hover { opacity: 1; background: rgba(255,255,255,.08); }
 body.invitado .neg-mas { display: none; }
@@ -810,7 +819,7 @@ body.inmob #sec-casos, body.inmob .caso-f { display: none !important; }
             <button type="button" class="hero-mes-btn" id="hero-mes-btn" aria-label="Elegir mes"><span id="hero-mes">Mis finanzas</span><span class="hero-caret" aria-hidden="true">▾</span></button>
             <button type="button" class="hero-nav" id="mes-next" aria-label="Mes siguiente">›</button>
           </div>
-          <h1><button type="button" class="hero-neg-btn" id="neg-btn" aria-haspopup="true" aria-expanded="false" aria-controls="neg-pop"><span id="neg-nombre">Consorcio Jurídico</span><span class="hero-caret" aria-hidden="true">▾</span></button><button type="button" class="neg-mas" id="neg-mas" aria-label="Crear otro negocio" title="Crear otro negocio">+</button></h1>
+          <h1 class="neg-h1"><button type="button" class="hero-nav neg-nav" id="neg-prev" aria-label="Negocio anterior">‹</button><button type="button" class="hero-neg-btn" id="neg-btn" aria-haspopup="true" aria-expanded="false" aria-controls="neg-pop"><span id="neg-nombre">Consorcio Jurídico</span><span class="hero-caret" aria-hidden="true">▾</span></button><button type="button" class="hero-nav neg-nav" id="neg-next" aria-label="Negocio siguiente">›</button><button type="button" class="neg-mas" id="neg-mas" aria-label="Crear otro negocio" title="Crear otro negocio">+</button></h1>
           <input type="month" id="mes" class="mes-oculto" tabindex="-1" aria-label="Mes">
           <button type="button" class="hero-color" id="hero-color" aria-label="Cambiar color" aria-expanded="false" aria-controls="color-pop">
           </button>
@@ -1392,19 +1401,35 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const pop = $('color-pop'), hc = $('hero-color');
   // Business switcher in the header.
   let editNeg = null; // id being renamed, or 'nuevo'
+  let borrarNeg = null; // id waiting for the second tap
+  // Deleting a business removes it from the list and erases every record it kept.
+  async function borrarNegocio(n) {
+    const base = libroRef.collection('negocios').doc(n.id);
+    const leer = (c) => new Promise((ok) => { let un = null, listo = false; un = c.onSnapshot((snap) => { if (listo) return; listo = true; ok(snap.docs.map((d) => d.id)); setTimeout(() => { try { un && un(); } catch (e) {} }, 0); }, () => { if (!listo) { listo = true; ok([]); } }); });
+    negocios = negocios.filter((x) => x.id !== n.id); borrarNeg = null; guardarNegs();
+    for (const name of ['movimientos', 'fijos', 'inversiones', 'casos', 'audiencias', 'respaldos']) {
+      const c = base.collection(name); const ids = await leer(c);
+      ids.forEach((id) => { try { c.doc(id).delete(); } catch (e) {} });
+    }
+    try { base.delete(); } catch (e) {}
+    if (negocio === n.id) { try { localStorage.setItem('libro-negocio', 'juridico'); } catch (e) {} location.reload(); return; }
+    pintarNegocio();
+  }
   function pintarNegocio() {
     if (!invitado && !negocios.some((x) => x.id === negocio)) { negocio = 'juridico'; try { localStorage.setItem('libro-negocio', 'juridico'); } catch (e) {} location.reload(); return; }
     $('neg-nombre').textContent = nombreNeg(negocio);
     document.body.classList.toggle('inmob', negocio !== 'juridico');
     document.title = nombreNeg(negocio) + ' · Libro de cuentas';
     pintarMenuNeg();
+    $('neg-prev').hidden = $('neg-next').hidden = negocios.length < 2;
   }
+  const irNeg = (d) => { const i = negocios.findIndex((x) => x.id === negocio); const n = negocios[(i + d + negocios.length) % negocios.length]; if (!n || n.id === negocio) return; try { localStorage.setItem('libro-negocio', n.id); } catch (e) {} location.reload(); };
   function guardarNegs() {
     try { localStorage.setItem('libro-negocios', JSON.stringify(negocios)); } catch (e) {}
     if (libroRef && !invitado) libroRef.set({ negocios }).catch(() => {});
   }
   const negPop = $('neg-pop'), negBtn = $('neg-btn');
-  const setNeg = (open) => { if (!open) editNeg = null; negPop.hidden = !open; negBtn.setAttribute('aria-expanded', String(open)); if (open) pintarMenuNeg(); };
+  const setNeg = (open) => { if (!open) { editNeg = null; borrarNeg = null; } negPop.hidden = !open; negBtn.setAttribute('aria-expanded', String(open)); if (open) pintarMenuNeg(); };
   function campoNeg(valor, alGuardar) {
     const f = document.createElement('form'); f.className = 'neg-edit';
     const i = document.createElement('input'); i.type = 'text'; i.maxLength = 40; i.value = valor; i.placeholder = 'Nombre del negocio'; i.setAttribute('aria-label', 'Nombre del negocio');
@@ -1424,13 +1449,22 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       b.addEventListener('click', () => { setNeg(false); if (n.id === negocio) return; try { localStorage.setItem('libro-negocio', n.id); } catch (e) {} location.reload(); });
       const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'neg-lapiz'; ed.textContent = '✎'; ed.title = 'Cambiar nombre'; ed.setAttribute('aria-label', 'Cambiar nombre de ' + n.nombre);
       ed.addEventListener('click', (e) => { e.stopPropagation(); editNeg = n.id; pintarMenuNeg(); });
-      fila.append(b, ed); return fila;
+      fila.append(b, ed);
+      if (n.id !== 'juridico') {
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'neg-borrar' + (borrarNeg === n.id ? ' armado' : '');
+        del.textContent = borrarNeg === n.id ? '¿Borrar todo?' : '🗑'; del.title = 'Borrar negocio'; del.setAttribute('aria-label', borrarNeg === n.id ? `Confirmar: borrar ${n.nombre} y todos sus datos` : 'Borrar ' + n.nombre);
+        del.addEventListener('click', (e) => { e.stopPropagation(); if (borrarNeg !== n.id) { borrarNeg = n.id; pintarMenuNeg(); return; } borrarNegocio(n); });
+        fila.appendChild(del);
+      } else { const sp = document.createElement('span'); sp.className = 'neg-hueco'; sp.setAttribute('aria-hidden', 'true'); fila.appendChild(sp); }
+      return fila;
     });
     if (editNeg === 'nuevo') kids.push(campoNeg('', (v) => { const id = 'n' + Date.now().toString(36); negocios.push({ id, nombre: v }); guardarNegs(); try { localStorage.setItem('libro-negocio', id); } catch (e) {} location.reload(); }));
     else { const nu = document.createElement('button'); nu.type = 'button'; nu.className = 'neg-nuevo'; nu.textContent = '+ Nuevo negocio'; nu.addEventListener('click', (e) => { e.stopPropagation(); editNeg = 'nuevo'; pintarMenuNeg(); }); kids.push(nu); }
     negPop.replaceChildren(...kids);
   }
   pintarNegocio();
+  $('neg-prev').addEventListener('click', () => { if (!invitado) irNeg(-1); });
+  $('neg-next').addEventListener('click', () => { if (!invitado) irNeg(1); });
   negBtn.addEventListener('click', (e) => { e.stopPropagation(); if (invitado) return; setNeg(negPop.hidden); });
   $('neg-mas').addEventListener('click', (e) => { e.stopPropagation(); if (invitado) return; editNeg = 'nuevo'; negPop.hidden = false; negBtn.setAttribute('aria-expanded', 'true'); pintarMenuNeg(); });
   document.addEventListener('pointerdown', (e) => { if (!negPop.hidden && !negPop.contains(e.target) && !negBtn.contains(e.target) && !$('neg-mas').contains(e.target)) setNeg(false); });
