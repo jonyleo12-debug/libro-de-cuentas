@@ -809,6 +809,8 @@ body.invitado .ajustes-btn { display: none; }
 .mapa-gkey[hidden] { display: none; }
 .mapa-gkey input { flex: 1 1 220px; min-width: 0; font: 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; }
 .mapa-lf .gm-style-iw button.gm-ui-hover-effect { box-shadow: none; }
+.mapa-estilo-l { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.mapa-estilo-l select { font: 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; }
 .mapa-lf.marcando, .mapa-lf.marcando .leaflet-interactive { cursor: crosshair; }
 .mapa-casa-btn.on { background: var(--accent); color: #fff; }
 .mapa-aviso { margin: 0; font-size: 13.5px; color: var(--accent); }
@@ -1036,7 +1038,7 @@ body.invitado .ajustes-btn { display: none; }
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca una calle, barrio o lugar de Puyo" aria-label="Buscar en el mapa">
       <button type="submit" class="btn">Buscar</button>
       <button type="button" class="ghost mapa-casa-btn" id="mapa-casa" aria-pressed="false">🏠 Marcar casa</button>
-      <button type="button" class="ghost" id="mapa-capa" aria-pressed="false">Satélite</button>
+      <label class="mapa-estilo-l"><span>Estilo</span><select id="mapa-estilo" aria-label="Estilo del mapa"></select></label>
       <button type="button" class="ghost" id="mapa-gkey-quitar" title="Quitar la clave de Google Maps" hidden>Quitar clave</button>
     </form>
     <form class="mapa-gkey" id="mapa-gkey-form" hidden>
@@ -1618,7 +1620,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
           infoG = new google.maps.InfoWindow();
           mapaG.addListener('click', (e) => { if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); });
-          pintarCasas(); return;
+          pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarCasas(); return;
         } catch (e) { motor = null; avisoMapa('No se pudo cargar Google Maps. Uso el mapa gratuito.'); }
       }
       let L; try { L = await cargarLeaflet(); } catch (e) { avisoMapa('No se pudo cargar el mapa. Revisa tu internet y recarga la página.'); return; }
@@ -1632,7 +1634,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       casasCapa = L.layerGroup().addTo(mapaL);
       mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
       mapaL.on('click', (e) => { if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
-      pintarCasas();
+      pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarCasas();
     })();
     try { await mapaIniciando; } finally { mapaIniciando = null; }
   }
@@ -1662,13 +1664,38 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     col('lugares').add({ lat: puntoNuevo.lat, lng: puntoNuevo.lng, nombre, nota: $('mapa-nota').value.trim().slice(0, 200), creado: new Date().toISOString() });
     quitarNueva(); avisoMapa(`Se guardó "${nombre}".`); setTimeout(() => avisoMapa(''), 2500);
   });
-  $('mapa-capa').addEventListener('click', async () => {
-    await iniciarMapa(); let sat;
-    if (motor === 'g') { sat = mapaG.getMapTypeId() !== 'hybrid'; mapaG.setMapTypeId(sat ? 'hybrid' : 'roadmap'); }
-    else if (mapaL) { sat = !mapaL.hasLayer(mapaCapas.sat); mapaL.removeLayer(sat ? mapaCapas.calles : mapaCapas.sat); (sat ? mapaCapas.sat : mapaCapas.calles).addTo(mapaL); }
-    else return;
-    $('mapa-capa').textContent = sat ? 'Calles' : 'Satélite'; $('mapa-capa').setAttribute('aria-pressed', String(sat));
+  // Map styles. Google styles work with classic styling (no Map ID needed).
+  const G_EST = {
+    plata: [{elementType:'geometry',stylers:[{color:'#f5f5f5'}]},{elementType:'labels.icon',stylers:[{visibility:'off'}]},{elementType:'labels.text.fill',stylers:[{color:'#616161'}]},{elementType:'labels.text.stroke',stylers:[{color:'#f5f5f5'}]},{featureType:'poi',elementType:'geometry',stylers:[{color:'#eeeeee'}]},{featureType:'poi.park',elementType:'geometry',stylers:[{color:'#e5e5e5'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'road.highway',elementType:'geometry',stylers:[{color:'#dadada'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#c9c9c9'}]}],
+    noche: [{elementType:'geometry',stylers:[{color:'#242f3e'}]},{elementType:'labels.text.stroke',stylers:[{color:'#242f3e'}]},{elementType:'labels.text.fill',stylers:[{color:'#746855'}]},{featureType:'administrative.locality',elementType:'labels.text.fill',stylers:[{color:'#d59563'}]},{featureType:'poi',elementType:'labels.text.fill',stylers:[{color:'#d59563'}]},{featureType:'poi.park',elementType:'geometry',stylers:[{color:'#263c3f'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#38414e'}]},{featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#212a37'}]},{featureType:'road',elementType:'labels.text.fill',stylers:[{color:'#9ca5b3'}]},{featureType:'road.highway',elementType:'geometry',stylers:[{color:'#746855'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#17263c'}]},{featureType:'water',elementType:'labels.text.fill',stylers:[{color:'#515c6d'}]}],
+    retro: [{elementType:'geometry',stylers:[{color:'#ebe3cd'}]},{elementType:'labels.text.fill',stylers:[{color:'#523735'}]},{elementType:'labels.text.stroke',stylers:[{color:'#f5f1e6'}]},{featureType:'landscape.natural',elementType:'geometry',stylers:[{color:'#dfd2ae'}]},{featureType:'poi',elementType:'geometry',stylers:[{color:'#dfd2ae'}]},{featureType:'poi.park',elementType:'geometry.fill',stylers:[{color:'#a5b076'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#f5f1e6'}]},{featureType:'road.arterial',elementType:'geometry',stylers:[{color:'#fdfcf8'}]},{featureType:'road.highway',elementType:'geometry',stylers:[{color:'#f8c967'}]},{featureType:'road.highway',elementType:'geometry.stroke',stylers:[{color:'#e9bc62'}]},{featureType:'water',elementType:'geometry.fill',stylers:[{color:'#b9d3c2'}]}],
+    limpio: [{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]},{featureType:'road',elementType:'labels.icon',stylers:[{visibility:'off'}]},{featureType:'landscape',stylers:[{saturation:-60},{lightness:20}]},{featureType:'water',stylers:[{saturation:-30},{lightness:10}]}],
+  };
+  const tonoApp = () => { const c = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#1f6b57'; return [{stylers:[{hue:c},{saturation:-25}]},{featureType:'poi.business',stylers:[{visibility:'off'}]},{featureType:'road',elementType:'geometry',stylers:[{lightness:60}]},{featureType:'water',stylers:[{color:c},{lightness:45}]}]; };
+  const ESTILOS_G = [['normal', 'Normal'], ['limpio', 'Limpio'], ['plata', 'Plata'], ['app', 'Color de la app'], ['retro', 'Retro'], ['noche', 'Noche'], ['sat', 'Satélite'], ['relieve', 'Relieve']];
+  const ESTILOS_L = [['normal', 'Calles'], ['sat', 'Satélite']];
+  let estiloMapa = 'normal'; try { estiloMapa = localStorage.getItem('libro-mapa-estilo') || 'normal'; } catch (e) {}
+  function pintarEstilos() {
+    const xs = motor === 'g' ? ESTILOS_G : ESTILOS_L, sel = $('mapa-estilo');
+    sel.replaceChildren(...xs.map(([k, t]) => new Option(t, k)));
+    sel.value = xs.some(([k]) => k === estiloMapa) ? estiloMapa : 'normal';
+  }
+  function aplicarEstilo(k) {
+    if (motor === 'g' && mapaG) {
+      const tipo = k === 'sat' ? 'hybrid' : k === 'relieve' ? 'terrain' : 'roadmap';
+      mapaG.setMapTypeId(tipo);
+      mapaG.setOptions({ styles: k === 'app' ? tonoApp() : (G_EST[k] || null) });
+    } else if (motor === 'l' && mapaL) {
+      const sat = k === 'sat';
+      mapaL.removeLayer(sat ? mapaCapas.calles : mapaCapas.sat); (sat ? mapaCapas.sat : mapaCapas.calles).addTo(mapaL);
+    }
+  }
+  $('mapa-estilo').addEventListener('change', async () => {
+    await iniciarMapa(); estiloMapa = $('mapa-estilo').value;
+    try { localStorage.setItem('libro-mapa-estilo', estiloMapa); } catch (e) {}
+    aplicarEstilo(estiloMapa);
   });
+  pintarEstilos();
   // Search: Google's geocoder when Google Maps is on (falls back to OpenStreetMap's), limited to the Puyo area.
   async function buscarNominatim(q) {
     const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ec&viewbox=-78.10,-1.42,-77.92,-1.56&bounded=1&q=${encodeURIComponent(q + ', Puyo')}`, { headers: { 'Accept-Language': 'es' } });
