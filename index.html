@@ -3213,11 +3213,28 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         if (!res.ok) throw await errorDe(res);
         await leerSSE(res, (d) => { const c = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content; if (c) alTexto(c); });
       } else {
-        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:streamGenerateContent?alt=sse`, { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': clave },
+        const llamar = (mo) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mo)}:streamGenerateContent?alt=sse`, { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': clave },
           body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: hist.map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] })) }) });
+        res = await llamar(modelo);
+        if (res.status === 404) { // Google retires model names often: pick the newest Flash model this key can use.
+          const nuevo = await elegirGemini(clave, signal);
+          if (nuevo && nuevo !== modelo) { iaCfg.modelos.gemini = nuevo; guardarCfg(iaCfg); pintarSub(); res = await llamar(nuevo); }
+        }
         if (!res.ok) throw await errorDe(res);
         await leerSSE(res, (d) => { const ps = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts; if (ps) ps.forEach((p) => { if (p.text && !p.thought) alTexto(p.text); }); });
       }
+    }
+    async function elegirGemini(clave, signal) {
+      try {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', { signal, headers: { 'x-goog-api-key': clave } });
+        if (!r.ok) return '';
+        const j = await r.json();
+        const ms = (j.models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => String(m.name || '').replace(/^models\//, '')).filter((n) => /^gemini-/.test(n) && !/(image|tts|audio|live|embed|vision|robotics|computer|thinking-exp|learnlm)/.test(n));
+        const ver = (n) => { const v = (n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1]; return v ? parseFloat(v) : 0; };
+        const nota = (n) => ver(n) * 100 + (/flash/.test(n) ? 20 : /pro/.test(n) ? 10 : 0) - (/lite/.test(n) ? 15 : 0) - (/(preview|exp)/.test(n) ? 5 : 0) - (/-\d{3}$|-\d{2}-\d{4}$/.test(n) ? 1 : 0) + (/-latest$/.test(n) ? 2 : 0);
+        ms.sort((a, b) => nota(b) - nota(a));
+        return ms[0] || '';
+      } catch (e) { return ''; }
     }
     async function errorDe(res) {
       let det = ''; try { const j = await res.json(); det = (j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
