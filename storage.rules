@@ -26,5 +26,10 @@ service firebase.storage {
       allow read, delete: if esDueno(uid) || esAsistente(uid);
       allow create: if (esDueno(uid) || esAsistente(uid)) && tipoValido();
     }
+    // Fotos de las propiedades (inmobiliaria)
+    match /users/{uid}/propiedades/{archivo} {
+      allow read, delete: if esDueno(uid);
+      allow create: if esDueno(uid) && tipoValido();
+    }
   }
 }
