@@ -805,6 +805,10 @@ body.invitado .ajustes-btn { display: none; }
 .mapa-busca input { flex: 1 1 220px; min-width: 0; font: 15px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; }
 .mapa-box { border-radius: 16px; overflow: hidden; box-shadow: var(--raise-sm); background: var(--accent-soft); aspect-ratio: 16 / 9; min-height: 280px; }
 .mapa-lf { width: 100%; height: 100%; min-height: 280px; z-index: 0; }
+.mapa-gkey { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; font-size: 14px; }
+.mapa-gkey[hidden] { display: none; }
+.mapa-gkey input { flex: 1 1 220px; min-width: 0; font: 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; }
+.mapa-lf .gm-style-iw button.gm-ui-hover-effect { box-shadow: none; }
 .mapa-lf.marcando, .mapa-lf.marcando .leaflet-interactive { cursor: crosshair; }
 .mapa-casa-btn.on { background: var(--accent); color: #fff; }
 .mapa-aviso { margin: 0; font-size: 13.5px; color: var(--accent); }
@@ -1033,6 +1037,12 @@ body.invitado .ajustes-btn { display: none; }
       <button type="submit" class="btn">Buscar</button>
       <button type="button" class="ghost mapa-casa-btn" id="mapa-casa" aria-pressed="false">🏠 Marcar casa</button>
       <button type="button" class="ghost" id="mapa-capa" aria-pressed="false">Satélite</button>
+      <button type="button" class="ghost" id="mapa-gkey-quitar" title="Quitar la clave de Google Maps" hidden>Quitar clave</button>
+    </form>
+    <form class="mapa-gkey" id="mapa-gkey-form" hidden>
+      <span>Para ver <b>Google Maps</b>, pega aquí tu clave de Google Maps:</span>
+      <input type="password" id="mapa-gkey" autocomplete="off" spellcheck="false" placeholder="AIza…" aria-label="Clave de Google Maps">
+      <button type="submit" class="btn" id="mapa-gkey-form-btn">Conectar</button>
     </form>
     <p class="mapa-aviso" id="mapa-aviso" role="status" hidden></p>
     <div class="mapa-box"><div id="mapa" class="mapa-lf" aria-label="Mapa de Puyo, Pastaza"></div></div>
@@ -1506,44 +1516,69 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const appEl = document.getElementById('app');
   const nuevoEl = document.getElementById('fila-nuevo');
   // ── Mapa de Puyo con casas marcadas ──
-  // Leaflet + Esri street tiles (free, no key), OpenStreetMap as fallback. Each house is a record in the business's "lugares" collection.
+  // With the owner's Google Maps key the map is Google's; without one it falls back to Leaflet + OpenStreetMap.
+  // Each house is a record in the business's "lugares" collection.
   const PUYO = [-1.4924, -78.0024];
-  let mapaL = null, mapaCapas = null, casasCapa = null, lugares = [], marcando = false, puntoNuevo = null, marcaNueva = null, lugaresUnsub = null;
-  let leafletP = null;
+  let motor = null; // 'g' | 'l'
+  let mapaL = null, mapaCapas = null, casasCapa = null, mapaG = null, marcasG = [], nuevaG = null, infoG = null;
+  let lugares = [], marcando = false, puntoNuevo = null, marcaNueva = null, lugaresUnsub = null;
+  let gmapsKey = ''; try { gmapsKey = localStorage.getItem('libro-gmaps') || ''; } catch (e) {}
+  let leafletP = null, gmapsP = null, mapaIniciando = null;
   const cargarLeaflet = () => leafletP || (leafletP = new Promise((ok, mal) => {
     const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css);
     const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'; sc.onload = () => ok(window.L); sc.onerror = () => { leafletP = null; mal(new Error('leaflet')); }; document.head.appendChild(sc);
   }));
+  const cargarGmaps = (key) => gmapsP || (gmapsP = new Promise((ok, mal) => {
+    window.__gmapsListo = () => ok(window.google.maps);
+    window.gm_authFailure = () => { gmapsMalo('Google rechazó la clave. Revisa que esté bien copiada, que "Maps JavaScript API" esté activada y que la clave permita jonyleo12-debug.github.io.'); };
+    const sc = document.createElement('script'); sc.async = true; sc.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&language=es&region=EC&callback=__gmapsListo`; sc.onerror = () => { gmapsP = null; mal(new Error('gmaps')); }; document.head.appendChild(sc);
+  }));
   const avisoMapa = (t) => { const a = $('mapa-aviso'); a.textContent = t || ''; a.hidden = !t; };
-  const iconoCasa = (L, nueva) => L.divIcon({ className: 'casa-ico' + (nueva ? ' nueva' : ''), iconSize: [34, 40], iconAnchor: [17, 38], popupAnchor: [0, -34],
-    html: '<svg viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" fill="var(--accent)" stroke="#fff" stroke-width="2"/><path d="M9.5 18.2 17 11.8l7.5 6.4V25a1 1 0 0 1-1 1h-4.2v-4.6h-4.6V26h-4.2a1 1 0 0 1-1-1z" fill="#fff"/></svg>' });
+  const casaSvg = (nueva) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 40" width="34" height="40"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" fill="${nueva ? '#888' : (getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#1f6b57')}" stroke="#fff" stroke-width="2"/><path d="M9.5 18.2 17 11.8l7.5 6.4V25a1 1 0 0 1-1 1h-4.2v-4.6h-4.6V26h-4.2a1 1 0 0 1-1-1z" fill="#fff"/></svg>`;
+  const iconoCasa = (L, nueva) => L.divIcon({ className: 'casa-ico' + (nueva ? ' nueva' : ''), iconSize: [34, 40], iconAnchor: [17, 38], popupAnchor: [0, -34], html: casaSvg(nueva) });
+  const iconoG = (nueva) => ({ url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(casaSvg(nueva)), scaledSize: new google.maps.Size(34, 40), anchor: new google.maps.Point(17, 38) });
   const gmaps = (x) => `https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lng}`;
+  function popupCasa(x, cerrar) {
+    const div = document.createElement('div'); div.className = 'casa-pop';
+    const h = document.createElement('b'); h.textContent = x.nombre; div.appendChild(h);
+    if (x.nota) { const n = document.createElement('p'); n.textContent = x.nota; div.appendChild(n); }
+    const acts = document.createElement('div'); acts.className = 'casa-acts';
+    const g = document.createElement('a'); g.href = gmaps(x); g.target = '_blank'; g.rel = 'noopener'; g.textContent = 'Cómo llegar ↗';
+    const ed = document.createElement('button'); ed.type = 'button'; ed.textContent = 'Editar';
+    ed.addEventListener('click', () => { const nn = prompt('Nombre de la casa', x.nombre); if (nn == null) return; const nt = prompt('Nota', x.nota || ''); if (nt == null) return; col('lugares').doc(x.id).update({ nombre: nn.trim().slice(0, 60) || x.nombre, nota: nt.trim().slice(0, 200) }); });
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'casa-del'; del.textContent = 'Borrar';
+    del.addEventListener('click', () => { if (!del.classList.contains('armado')) { del.classList.add('armado'); del.textContent = '¿Seguro?'; return; } col('lugares').doc(x.id).delete(); cerrar(); });
+    acts.append(g, ed, del); div.appendChild(acts);
+    const sm = document.createElement('small'); sm.textContent = 'Arrastra la casita para moverla.'; div.appendChild(sm);
+    return div;
+  }
   function pintarCasas() {
     $('mapa-casas').replaceChildren(...lugares.map((x) => {
       const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.className = 'mapa-chip';
       b.textContent = '🏠 ' + x.nombre; b.title = x.nota || x.nombre;
-      b.addEventListener('click', () => { if (!mapaL) return; mapaL.flyTo([x.lat, x.lng], 18); const m = x._m; if (m) setTimeout(() => m.openPopup(), 600); });
+      b.addEventListener('click', () => {
+        if (motor === 'g' && mapaG) { mapaG.panTo({ lat: x.lat, lng: x.lng }); mapaG.setZoom(18); if (x._m) google.maps.event.trigger(x._m, 'click'); }
+        else if (mapaL) { mapaL.flyTo([x.lat, x.lng], 18); if (x._m) setTimeout(() => x._m.openPopup(), 600); }
+      });
       li.appendChild(b); return li;
     }));
-    if (!mapaL || !casasCapa) return;
-    const L = window.L; casasCapa.clearLayers();
-    lugares.forEach((x) => {
-      const m = L.marker([x.lat, x.lng], { icon: iconoCasa(L), draggable: true, title: x.nombre, keyboard: true });
-      const div = document.createElement('div'); div.className = 'casa-pop';
-      const h = document.createElement('b'); h.textContent = x.nombre; div.appendChild(h);
-      if (x.nota) { const n = document.createElement('p'); n.textContent = x.nota; div.appendChild(n); }
-      const acts = document.createElement('div'); acts.className = 'casa-acts';
-      const g = document.createElement('a'); g.href = gmaps(x); g.target = '_blank'; g.rel = 'noopener'; g.textContent = 'Google Maps ↗';
-      const ed = document.createElement('button'); ed.type = 'button'; ed.textContent = 'Editar';
-      ed.addEventListener('click', () => { const nn = prompt('Nombre de la casa', x.nombre); if (nn == null) return; const nt = prompt('Nota', x.nota || ''); if (nt == null) return; col('lugares').doc(x.id).update({ nombre: nn.trim().slice(0, 60) || x.nombre, nota: nt.trim().slice(0, 200) }); });
-      const del = document.createElement('button'); del.type = 'button'; del.className = 'casa-del'; del.textContent = 'Borrar';
-      del.addEventListener('click', () => { if (!del.classList.contains('armado')) { del.classList.add('armado'); del.textContent = '¿Seguro?'; return; } col('lugares').doc(x.id).delete(); mapaL.closePopup(); });
-      acts.append(g, ed, del); div.appendChild(acts);
-      const sm = document.createElement('small'); sm.textContent = 'Arrastra la casita para moverla.'; div.appendChild(sm);
-      m.bindPopup(div);
-      m.on('dragend', () => { const ll = m.getLatLng(); col('lugares').doc(x.id).update({ lat: ll.lat, lng: ll.lng }); });
-      m.addTo(casasCapa); x._m = m;
-    });
+    if (motor === 'g' && mapaG) {
+      marcasG.forEach((m) => m.setMap(null)); marcasG = [];
+      lugares.forEach((x) => {
+        const m = new google.maps.Marker({ position: { lat: x.lat, lng: x.lng }, map: mapaG, icon: iconoG(false), title: x.nombre, draggable: true });
+        m.addListener('click', () => { infoG.setContent(popupCasa(x, () => infoG.close())); infoG.open({ anchor: m, map: mapaG }); });
+        m.addListener('dragend', () => { const p = m.getPosition(); col('lugares').doc(x.id).update({ lat: p.lat(), lng: p.lng() }); });
+        marcasG.push(m); x._m = m;
+      });
+    } else if (motor === 'l' && mapaL && casasCapa) {
+      const L = window.L; casasCapa.clearLayers();
+      lugares.forEach((x) => {
+        const m = L.marker([x.lat, x.lng], { icon: iconoCasa(L), draggable: true, title: x.nombre, keyboard: true });
+        m.bindPopup(popupCasa(x, () => mapaL.closePopup()));
+        m.on('dragend', () => { const ll = m.getLatLng(); col('lugares').doc(x.id).update({ lat: ll.lat, lng: ll.lng }); });
+        m.addTo(casasCapa); x._m = m;
+      });
+    }
   }
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
@@ -1554,30 +1589,71 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       pintarCasas();
     }, () => {}); } catch (e) {}
   }
-  const setMarcando = (v) => { marcando = v; $('mapa-casa').setAttribute('aria-pressed', String(v)); $('mapa-casa').classList.toggle('on', v); $('mapa').classList.toggle('marcando', v); avisoMapa(v ? 'Toca en el mapa el lugar de la casa.' : ''); };
-  function quitarNueva() { if (marcaNueva) { marcaNueva.remove(); marcaNueva = null; } puntoNuevo = null; $('mapa-nueva').hidden = true; }
-  async function iniciarMapa() {
-    if (mapaL) return;
-    let L; try { L = await cargarLeaflet(); } catch (e) { avisoMapa('No se pudo cargar el mapa. Revisa tu internet y recarga la página.'); return; }
-    mapaL = L.map('mapa', { zoomControl: true, scrollWheelZoom: false }).setView(PUYO, 14);
-    mapaCapas = {
-      calles: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Mapa © Esri' }),
-      sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imágenes © Esri' })
-    };
-    mapaCapas.calles.addTo(mapaL);
-    // If the street tiles fail to load, fall back to OpenStreetMap so the map is never blank.
-    { let fallas = 0; mapaCapas.calles.on('tileerror', () => { if (++fallas !== 4) return; const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }); const on = mapaL.hasLayer(mapaCapas.calles); if (on) mapaL.removeLayer(mapaCapas.calles); mapaCapas.calles = osm; if (on) osm.addTo(mapaL); }); }
-    casasCapa = L.layerGroup().addTo(mapaL);
-    mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
-    mapaL.on('click', (e) => {
-      if (!marcando) return;
-      setMarcando(false); puntoNuevo = e.latlng;
-      if (marcaNueva) marcaNueva.remove();
-      marcaNueva = L.marker(e.latlng, { icon: iconoCasa(L, true) }).addTo(mapaL);
-      $('mapa-nueva').hidden = false; $('mapa-nombre').value = ''; $('mapa-nota').value = ''; $('mapa-nombre').focus();
-    });
-    pintarCasas();
+  const setMarcando = (v) => { marcando = v; $('mapa-casa').setAttribute('aria-pressed', String(v)); $('mapa-casa').classList.toggle('on', v); $('mapa').classList.toggle('marcando', v); if (mapaG) mapaG.setOptions({ draggableCursor: v ? 'crosshair' : null }); avisoMapa(v ? 'Toca en el mapa el lugar de la casa.' : ''); };
+  function quitarNueva() { if (marcaNueva) { marcaNueva.remove(); marcaNueva = null; } if (nuevaG) { nuevaG.setMap(null); nuevaG = null; } puntoNuevo = null; $('mapa-nueva').hidden = true; }
+  function marcarEn(lat, lng) {
+    setMarcando(false); quitarNueva(); puntoNuevo = { lat, lng };
+    if (motor === 'g') nuevaG = new google.maps.Marker({ position: puntoNuevo, map: mapaG, icon: iconoG(true) });
+    else marcaNueva = window.L.marker([lat, lng], { icon: iconoCasa(window.L, true) }).addTo(mapaL);
+    $('mapa-nueva').hidden = false; $('mapa-nombre').value = ''; $('mapa-nota').value = ''; $('mapa-nombre').focus();
   }
+  function borrarMapa() {
+    if (mapaL) { mapaL.remove(); mapaL = null; casasCapa = null; }
+    if (mapaG) { marcasG.forEach((m) => m.setMap(null)); marcasG = []; mapaG = null; }
+    $('mapa').replaceChildren(); motor = null; quitarNueva();
+  }
+  function gmapsMalo(t) {
+    if (motor !== 'g') { avisoMapa(t); return; }
+    borrarMapa(); gmapsP = null; avisoMapa(t + ' Mientras tanto uso el mapa gratuito.'); iniciarMapa(true);
+  }
+  async function iniciarMapa(sinGoogle) {
+    if (motor) return;
+    if (mapaIniciando) return mapaIniciando;
+    mapaIniciando = (async () => {
+      pintarGkey();
+      if (gmapsKey && !sinGoogle) {
+        try {
+          await cargarGmaps(gmapsKey);
+          motor = 'g';
+          mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
+          infoG = new google.maps.InfoWindow();
+          mapaG.addListener('click', (e) => { if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); });
+          pintarCasas(); return;
+        } catch (e) { motor = null; avisoMapa('No se pudo cargar Google Maps. Uso el mapa gratuito.'); }
+      }
+      let L; try { L = await cargarLeaflet(); } catch (e) { avisoMapa('No se pudo cargar el mapa. Revisa tu internet y recarga la página.'); return; }
+      motor = 'l';
+      mapaL = L.map('mapa', { zoomControl: true, scrollWheelZoom: false }).setView(PUYO, 14);
+      mapaCapas = {
+        calles: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }),
+        sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imágenes © Esri' })
+      };
+      mapaCapas.calles.addTo(mapaL);
+      casasCapa = L.layerGroup().addTo(mapaL);
+      mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
+      mapaL.on('click', (e) => { if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
+      pintarCasas();
+    })();
+    try { await mapaIniciando; } finally { mapaIniciando = null; }
+  }
+  function pintarGkey() { $('mapa-gkey-form').hidden = !!gmapsKey || !!invitado; $('mapa-gkey-quitar').hidden = !gmapsKey || !!invitado; }
+  pintarGkey();
+  // The key lives on the owner's book (shared by all businesses and devices) and in this browser.
+  function ponerClaveGmaps(k) {
+    k = String(k || '').trim();
+    if (k === gmapsKey) return;
+    gmapsKey = k; try { if (k) localStorage.setItem('libro-gmaps', k); else localStorage.removeItem('libro-gmaps'); } catch (e) {}
+    pintarGkey();
+    if (motor) { if (motor === 'g' || k) { if (motor === 'g') { location.reload(); return; } borrarMapa(); avisoMapa(''); iniciarMapa(); } }
+    pintarGkey();
+  }
+  $('mapa-gkey-form').addEventListener('submit', (e) => {
+    e.preventDefault(); const k = $('mapa-gkey').value.trim();
+    if (!/^AIza[0-9A-Za-z_\-]{30,}$/.test(k)) { avisoMapa('Esa clave no parece de Google Maps. Debe empezar con "AIza".'); return; }
+    if (libroRef && !invitado) libroRef.set({ gmapsKey: k }).catch(() => {});
+    $('mapa-gkey').value = ''; ponerClaveGmaps(k);
+  });
+  $('mapa-gkey-quitar').addEventListener('click', () => { if (!gmapsKey) return; if (!confirm('¿Quitar la clave de Google Maps? El mapa volverá al gratuito.')) return; if (libroRef && !invitado) libroRef.set({ gmapsKey: '' }).catch(() => {}); ponerClaveGmaps(''); });
   $('mapa-casa').addEventListener('click', async () => { if (invitado) return; await iniciarMapa(); quitarNueva(); setMarcando(!marcando); });
   $('mapa-cancelar').addEventListener('click', quitarNueva);
   $('mapa-nueva').addEventListener('submit', (e) => {
@@ -1587,20 +1663,27 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     quitarNueva(); avisoMapa(`Se guardó "${nombre}".`); setTimeout(() => avisoMapa(''), 2500);
   });
   $('mapa-capa').addEventListener('click', async () => {
-    await iniciarMapa(); if (!mapaL) return;
-    const sat = !mapaL.hasLayer(mapaCapas.sat);
-    mapaL.removeLayer(sat ? mapaCapas.calles : mapaCapas.sat); (sat ? mapaCapas.sat : mapaCapas.calles).addTo(mapaL);
+    await iniciarMapa(); let sat;
+    if (motor === 'g') { sat = mapaG.getMapTypeId() !== 'hybrid'; mapaG.setMapTypeId(sat ? 'hybrid' : 'roadmap'); }
+    else if (mapaL) { sat = !mapaL.hasLayer(mapaCapas.sat); mapaL.removeLayer(sat ? mapaCapas.calles : mapaCapas.sat); (sat ? mapaCapas.sat : mapaCapas.calles).addTo(mapaL); }
+    else return;
     $('mapa-capa').textContent = sat ? 'Calles' : 'Satélite'; $('mapa-capa').setAttribute('aria-pressed', String(sat));
   });
-  // Search: OpenStreetMap's free geocoder, limited to the Puyo area.
+  // Search: Google's geocoder when Google Maps is on (falls back to OpenStreetMap's), limited to the Puyo area.
+  async function buscarNominatim(q) {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ec&viewbox=-78.10,-1.42,-77.92,-1.56&bounded=1&q=${encodeURIComponent(q + ', Puyo')}`, { headers: { 'Accept-Language': 'es' } });
+    const j = await r.json(); return j && j[0] ? { lat: Number(j[0].lat), lng: Number(j[0].lon) } : null;
+  }
+  const buscarGoogle = (q) => new Promise((ok) => { try { new google.maps.Geocoder().geocode({ address: q + ', Puyo, Pastaza, Ecuador', bounds: new google.maps.LatLngBounds({ lat: -1.56, lng: -78.10 }, { lat: -1.42, lng: -77.92 }), region: 'ec' }, (res, st) => ok(st === 'OK' && res[0] ? { lat: res[0].geometry.location.lat(), lng: res[0].geometry.location.lng() } : null)); } catch (e) { ok(null); } });
   $('mapa-form').addEventListener('submit', async (e) => {
-    e.preventDefault(); const q = $('mapa-txt').value.trim(); await iniciarMapa(); if (!mapaL) return;
-    if (!q) { mapaL.flyTo(PUYO, 14); return; }
+    e.preventDefault(); const q = $('mapa-txt').value.trim(); await iniciarMapa(); if (!motor) return;
+    const ir = (p, z) => { if (motor === 'g') { mapaG.panTo({ lat: p[0], lng: p[1] }); mapaG.setZoom(z); } else mapaL.flyTo(p, z); };
+    if (!q) { ir(PUYO, 14); return; }
     avisoMapa('Buscando…');
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ec&viewbox=-78.10,-1.42,-77.92,-1.56&bounded=1&q=${encodeURIComponent(q + ', Puyo')}`, { headers: { 'Accept-Language': 'es' } });
-      const j = await r.json();
-      if (j && j[0]) { mapaL.flyTo([Number(j[0].lat), Number(j[0].lon)], 17); avisoMapa(''); }
+      let p = motor === 'g' ? await buscarGoogle(q) : null;
+      if (!p) p = await buscarNominatim(q);
+      if (p) { ir([p.lat, p.lng], 17); avisoMapa(''); }
       else avisoMapa(`No encontré "${q}" en Puyo. Prueba con otro nombre o mueve el mapa a mano.`);
     } catch (er) { avisoMapa('No se pudo buscar. Revisa tu internet.'); }
   });
@@ -3400,6 +3483,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (c === 'amarillo') { c = 'tomate'; libroRef.set({ color: c }).catch(() => {}); }
       if (COLORS[c]) { colorKey = c; applyColor(); }
       { const dv = snap.exists ? (snap.data() || {}) : {};
+        if (typeof dv.gmapsKey === 'string') { try { ponerClaveGmaps(dv.gmapsKey); } catch (e) {} }
         if (Array.isArray(dv.negocios)) { const nv = limpiarNegs(dv.negocios); if (JSON.stringify(nv) !== JSON.stringify(negocios)) { negocios = nv; try { localStorage.setItem('libro-negocios', JSON.stringify(negocios)); } catch (e) {} if (editNeg == null) pintarNegocio(); } }
         else { try { if (localStorage.getItem('libro-negocios')) guardarNegs(); } catch (e) {} }
         if (Array.isArray(dv.orden) && !document.body.classList.contains('moviendo')) { aplicarOrden(dv.orden.map(String)); try { localStorage.setItem('libro-orden', JSON.stringify(dv.orden)); } catch (e) {} }
