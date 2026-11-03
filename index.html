@@ -1129,7 +1129,7 @@ body.invitado .ajustes-btn { display: none; }
     </div>
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio o calle de Puyo" aria-label="Buscar propiedades o lugares">
-      <button type="button" class="btn prop-nueva-btn" id="prop-nueva">+ Nueva propiedad</button>
+      <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
     </form>
     <div class="prop-filtros" id="prop-filtros">
       <div class="prop-seg" role="group" aria-label="Operación"><button type="button" data-op="" aria-pressed="true">Todas</button><button type="button" data-op="Venta" aria-pressed="false">Venta</button><button type="button" data-op="Arriendo" aria-pressed="false">Arriendo</button></div>
@@ -1916,7 +1916,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     setMarcando(false);
     if (!draft) return;
     draft.lat = lat; draft.lng = lng;
-    llenarForm(); dlgP.showModal();
+    llenarForm(); if (!dlgP.open) dlgP.showModal();
     // Fill the address from the point unless the user typed one of their own.
     if (draft.dir && draft.dir !== draft._dirAuto) return;
     const d = draft; $('p-dir').placeholder = 'Buscando la dirección…';
@@ -1937,6 +1937,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     } catch (e) { return ''; }
   }
   async function direccionDe(lat, lng) { let t = motor === 'g' ? await dirGoogle(lat, lng) : ''; if (!t) t = await dirOsm(lat, lng); return t; }
+  // Right click (or a long press on the phone) on the map: a new property right there.
+  function nuevaEn(lat, lng) {
+    if (invitado || !isFinite(lat) || !isFinite(lng)) return;
+    if (dlgP.open) return;
+    setMarcando(false); abrirProp(null); marcarEn(lat, lng);
+  }
   function borrarMapa() {
     if (mapaL) { mapaL.remove(); mapaL = null; casasCapa = null; }
     if (mapaG) { marcasG.forEach((m) => m.setMap(null)); marcasG = []; mapaG = null; }
@@ -1958,6 +1964,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
           infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -40) });
           mapaG.addListener('click', (e) => { if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
+          mapaG.addListener('contextmenu', (e) => { if (e.latLng) nuevaEn(e.latLng.lat(), e.latLng.lng()); });
           pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins(); return;
         } catch (e) { motor = null; avisoMapa('No se pudo cargar Google Maps. Uso el mapa gratuito.'); }
       }
@@ -1972,6 +1979,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       casasCapa = L.layerGroup().addTo(mapaL);
       mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
       mapaL.on('click', (e) => { if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
+      mapaL.on('contextmenu', (e) => { nuevaEn(e.latlng.lat, e.latlng.lng); });
       pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins();
     })();
     try { await mapaIniciando; } finally { mapaIniciando = null; }
