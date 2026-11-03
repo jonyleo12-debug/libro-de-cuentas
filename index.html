@@ -669,6 +669,42 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   #fijos td:nth-child(1) { grid-area: fec; } #fijos td:nth-child(2) { grid-area: det; } #fijos td:nth-child(3) { grid-area: mon; text-align: right; } #fijos td:nth-child(4) { grid-area: act; justify-self: end; }
   #fijos td[colspan] { grid-column: 1 / -1; grid-row: 1 / -1; }
 }
+/* Asistente IA */
+.ia-btn { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(18px, env(safe-area-inset-bottom, 0px)); z-index: 60; display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 11px 18px 11px 14px; font: 600 14px/1 var(--font-body); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.ia-btn svg { width: 20px; height: 20px; }
+.ia-panel { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(18px, env(safe-area-inset-bottom, 0px)); z-index: 61; width: min(420px, calc(100vw - 32px)); height: min(640px, calc(100dvh - 36px)); background: var(--panel); color: var(--fg); border-radius: 18px; box-shadow: 0 18px 50px rgba(0,0,0,.28); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; }
+.ia-panel[hidden], .ia-btn[hidden] { display: none; }
+.ia-cab { display: flex; align-items: center; gap: 8px; padding: 14px 16px; background: var(--accent); color: #fff; }
+.ia-cab h2 { font-size: 19px; margin: 0; flex: 1; min-width: 0; color: #fff; }
+.ia-cab small { display: block; font: 12px var(--font-body); opacity: .85; }
+.ia-ico { background: rgba(255,255,255,.16); color: #fff; border: 0; border-radius: 999px; width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; font-size: 16px; flex: none; }
+.ia-ico svg { width: 17px; height: 17px; }
+.ia-cuerpo { overflow-y: auto; padding: 14px 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.ia-msg { max-width: 88%; padding: 9px 12px; border-radius: 14px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; min-width: 0; }
+.ia-msg.yo { justify-self: end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; white-space: pre-wrap; }
+.ia-msg.ia { justify-self: start; background: var(--accent-soft); color: var(--fg); border-bottom-left-radius: 4px; }
+.ia-msg.ia p { margin: 0 0 6px; } .ia-msg.ia p:last-child { margin: 0; }
+.ia-msg.ia ul, .ia-msg.ia ol { margin: 2px 0 6px; padding-left: 20px; }
+.ia-msg.err { justify-self: stretch; max-width: none; background: none; border: 1px solid var(--out); color: var(--out); }
+.ia-msg.pensando::after { content: '…'; animation: iaPunto 1s infinite; }
+@keyframes iaPunto { 50% { opacity: .2; } }
+.ia-hola { color: var(--muted); font-size: 14px; display: grid; gap: 10px; }
+.ia-sug { display: flex; flex-wrap: wrap; gap: 6px; }
+.ia-sug button { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; font: 13px var(--font-body); color: var(--fg); cursor: pointer; text-align: left; }
+.ia-pie { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end; }
+.ia-pie textarea { flex: 1; min-width: 0; resize: none; max-height: 140px; font: 14px/1.4 var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; }
+.ia-env { flex: none; width: 38px; height: 38px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; cursor: pointer; display: grid; place-items: center; }
+.ia-env:disabled { opacity: .45; cursor: default; }
+.ia-env svg { width: 18px; height: 18px; }
+.ia-conf { display: grid; gap: 12px; font-size: 14px; }
+.ia-conf label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.ia-conf select, .ia-conf input { font: 14px var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.ia-aviso { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--fg); margin: 0; }
+.ia-conf .ia-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ia-conf a { color: var(--accent); }
+.ia-estado { font-size: 13px; color: var(--muted); margin: 0; }
+@media (max-width: 640px) { .ia-btn span { display: none; } .ia-btn { padding: 13px; } .ia-panel { right: 8px; left: 8px; width: auto; bottom: 8px; height: calc(100dvh - 16px); } }
+@media print { .ia-btn, .ia-panel { display: none !important; } }
 </style>
 </head>
 <body>
@@ -904,6 +940,20 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
       <p class="sub" style="margin:0">La app guarda sola una copia de todo cada día que la abres y conserva las últimas 30. Restaurar devuelve lo que borraste o cambiaste ese día, sin borrar lo que agregaste después.</p>
       <ul class="det-list auto-list" id="auto-list"><li class="sub">Cargando…</li></ul>
     </div>
+  </section>
+  <button type="button" class="ia-btn" id="ia-btn" aria-controls="ia-panel" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg><span>Asistente</span></button>
+  <section class="ia-panel" id="ia-panel" role="dialog" aria-labelledby="ia-tit" hidden>
+    <div class="ia-cab">
+      <h2 id="ia-tit">Asistente<small id="ia-sub">Sin conectar</small></h2>
+      <button type="button" class="ia-ico" id="ia-nuevo" aria-label="Nueva conversación" title="Nueva conversación"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" class="ia-ico" id="ia-cfg-btn" aria-label="Conectar IA" title="Conectar IA"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
+      <button type="button" class="ia-ico" id="ia-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="ia-cuerpo" id="ia-cuerpo" aria-live="polite"></div>
+    <form class="ia-pie" id="ia-form">
+      <textarea id="ia-txt" rows="1" maxlength="4000" placeholder="Pregunta sobre tus casos, pagos o audiencias…" aria-label="Mensaje para el asistente" enterkeyhint="send"></textarea>
+      <button type="submit" class="ia-env" id="ia-env" aria-label="Enviar"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
+    </form>
   </section>
 </div>
 
@@ -2974,6 +3024,235 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
     }, () => {});
+  }
+  // ── Asistente IA ──
+  // Each person connects their own AI. The key stays in this browser (localStorage) and the app talks to the provider directly.
+  {
+    const IA_PROV = {
+      claude: { nombre: 'Claude (Anthropic)', corto: 'Claude', modelo: 'claude-opus-5-5', modelos: ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'], link: 'https://console.anthropic.com/settings/keys', ph: 'sk-ant-…' },
+      openai: { nombre: 'ChatGPT (OpenAI)', corto: 'ChatGPT', modelo: 'gpt-5', modelos: ['gpt-5', 'gpt-5-mini'], link: 'https://platform.openai.com/api-keys', ph: 'sk-…' },
+      gemini: { nombre: 'Gemini (Google)', corto: 'Gemini', modelo: 'gemini-2.5-flash', modelos: ['gemini-2.5-flash', 'gemini-2.5-pro'], link: 'https://aistudio.google.com/app/apikey', ph: 'AIza…' }
+    };
+    const IA_KEY = 'libro-ia';
+    const leerCfg = () => { try { const c = JSON.parse(localStorage.getItem(IA_KEY) || '{}'); return { prov: IA_PROV[c.prov] ? c.prov : '', claves: c.claves || {}, modelos: c.modelos || {} }; } catch (e) { return { prov: '', claves: {}, modelos: {} }; } };
+    const guardarCfg = (c) => { try { localStorage.setItem(IA_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } };
+    let iaCfg = leerCfg();
+    let iaHist = []; // [{ role: 'user'|'assistant', text }]
+    let iaVista = 'chat';
+    let iaCorriendo = null;
+    const conectado = () => !!(iaCfg.prov && iaCfg.claves[iaCfg.prov]);
+    const modeloAct = () => (iaCfg.modelos[iaCfg.prov] || IA_PROV[iaCfg.prov].modelo).trim();
+    const btn = $('ia-btn'), panel = $('ia-panel'), cuerpo = $('ia-cuerpo'), txt = $('ia-txt'), env = $('ia-env');
+
+    function pintarSub() { $('ia-sub').textContent = conectado() ? `${IA_PROV[iaCfg.prov].corto} · ${modeloAct()}` : 'Sin conectar'; }
+    function abrir(v) {
+      panel.hidden = !v; btn.hidden = v; btn.setAttribute('aria-expanded', String(v));
+      if (v) { iaVista = conectado() ? 'chat' : 'cfg'; pintar(); setTimeout(() => (iaVista === 'chat' ? txt : panel.querySelector('select'))?.focus(), 30); } else btn.focus();
+    }
+    btn.addEventListener('click', () => abrir(true));
+    $('ia-cerrar').addEventListener('click', () => abrir(false));
+    panel.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
+    $('ia-cfg-btn').addEventListener('click', () => { iaVista = iaVista === 'cfg' && conectado() ? 'chat' : 'cfg'; pintar(); });
+    $('ia-nuevo').addEventListener('click', () => { if (iaCorriendo) iaCorriendo.abort(); iaHist = []; iaVista = conectado() ? 'chat' : 'cfg'; pintar(); txt.focus(); });
+
+    // Light Markdown: paragraphs, lists, **bold**, *italic*, `code`. Text is escaped first.
+    const escH = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    const enLinea = (s) => escH(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    function md(t) {
+      const out = []; let lista = null;
+      const cerrar = () => { if (lista) { out.push(`</${lista}>`); lista = null; } };
+      t.split('\n').forEach((l) => {
+        const ul = l.match(/^\s*[-*•]\s+(.*)/), ol = l.match(/^\s*\d+[.)]\s+(.*)/), h = l.match(/^\s*#{1,6}\s+(.*)/);
+        if (ul || ol) { const k = ul ? 'ul' : 'ol'; if (lista !== k) { cerrar(); out.push(`<${k}>`); lista = k; } out.push(`<li>${enLinea((ul || ol)[1])}</li>`); return; }
+        cerrar();
+        if (h) out.push(`<p><b>${enLinea(h[1])}</b></p>`);
+        else if (l.trim()) out.push(`<p>${enLinea(l)}</p>`);
+      });
+      cerrar(); return out.join('');
+    }
+    const burbuja = (m) => { const d = document.createElement('div'); d.className = 'ia-msg ' + (m.role === 'user' ? 'yo' : 'ia'); if (m.role === 'user') d.textContent = m.text; else d.innerHTML = md(m.text); return d; };
+
+    function sugerencias() {
+      const s = ['¿Qué audiencias tengo esta semana?', '¿Qué casos no he revisado en e-SATJE hace tiempo?', '¿Qué notas tengo pendientes?'];
+      if (!sinDinero()) s.unshift('¿Quién me debe más dinero?', 'Resume mis ingresos y gastos de este mes');
+      return s;
+    }
+    function pintarChat() {
+      const kids = [];
+      if (!iaHist.length) {
+        const h = document.createElement('div'); h.className = 'ia-hola';
+        const p = document.createElement('p'); p.style.margin = '0'; p.textContent = 'Hola. Conozco tus casos, audiencias y notas' + (sinDinero() ? '' : ', y los pagos y movimientos del mes') + '. Pregúntame lo que necesites.';
+        const sg = document.createElement('div'); sg.className = 'ia-sug';
+        sugerencias().forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = q; b.addEventListener('click', () => enviar(q)); sg.appendChild(b); });
+        h.append(p, sg); kids.push(h);
+      }
+      iaHist.forEach((m) => kids.push(burbuja(m)));
+      cuerpo.replaceChildren(...kids);
+      cuerpo.scrollTop = cuerpo.scrollHeight;
+    }
+    function pintarCfg() {
+      const f = document.createElement('form'); f.className = 'ia-conf';
+      const t = document.createElement('p'); t.className = 'ia-aviso';
+      t.innerHTML = '<b>Conecta tu inteligencia artificial.</b> Usa tu propia clave de API. Se guarda solo en este navegador y nunca se envía a la app. Al preguntar, los datos de tus casos, audiencias, notas' + (sinDinero() ? '' : ' y pagos') + ' se envían directamente al proveedor que elijas, que cobra según su tarifa.';
+      const lp = document.createElement('label'); lp.textContent = 'Proveedor';
+      const sel = document.createElement('select'); sel.id = 'ia-prov';
+      Object.entries(IA_PROV).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v.nombre; sel.appendChild(o); });
+      sel.value = iaCfg.prov || 'claude'; lp.appendChild(sel);
+      const lk = document.createElement('label'); lk.textContent = 'Clave de API';
+      const key = document.createElement('input'); key.type = 'password'; key.id = 'ia-clave'; key.autocomplete = 'off'; key.spellcheck = false; lk.appendChild(key);
+      const lm = document.createElement('label'); lm.textContent = 'Modelo';
+      const mod = document.createElement('input'); mod.type = 'text'; mod.id = 'ia-modelo'; mod.autocomplete = 'off'; mod.spellcheck = false; mod.setAttribute('list', 'ia-modelos');
+      const dl = document.createElement('datalist'); dl.id = 'ia-modelos'; lm.append(mod, dl);
+      const ayuda = document.createElement('p'); ayuda.className = 'ia-estado';
+      const acts = document.createElement('div'); acts.className = 'ia-acts';
+      const ok = document.createElement('button'); ok.type = 'submit'; ok.className = 'btn'; ok.textContent = 'Guardar y conectar';
+      const qt = document.createElement('button'); qt.type = 'button'; qt.className = 'ghost'; qt.textContent = 'Quitar clave';
+      acts.append(ok, qt);
+      const est = document.createElement('p'); est.className = 'ia-estado'; est.setAttribute('role', 'status');
+      const llenar = () => {
+        const p = IA_PROV[sel.value];
+        key.value = iaCfg.claves[sel.value] || ''; key.placeholder = p.ph;
+        mod.value = iaCfg.modelos[sel.value] || p.modelo;
+        dl.replaceChildren(...p.modelos.map((m) => { const o = document.createElement('option'); o.value = m; return o; }));
+        ayuda.innerHTML = `¿No tienes clave? Créala en <a href="${p.link}" target="_blank" rel="noopener">${new URL(p.link).hostname}</a> y pégala aquí.`;
+        qt.hidden = !iaCfg.claves[sel.value];
+      };
+      sel.addEventListener('change', llenar); llenar();
+      qt.addEventListener('click', () => { delete iaCfg.claves[sel.value]; if (iaCfg.prov === sel.value) iaCfg.prov = ''; guardarCfg(iaCfg); llenar(); pintarSub(); est.textContent = 'Clave quitada de este navegador.'; });
+      f.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const k = key.value.trim();
+        if (!k) { est.textContent = 'Pega tu clave de API.'; key.focus(); return; }
+        iaCfg.prov = sel.value; iaCfg.claves[sel.value] = k; iaCfg.modelos[sel.value] = mod.value.trim() || IA_PROV[sel.value].modelo;
+        if (!guardarCfg(iaCfg)) est.textContent = 'Este navegador no permite guardar la clave; funcionará hasta que cierres la página.';
+        pintarSub(); iaVista = 'chat'; pintar(); txt.focus();
+      });
+      f.append(t, lp, lk, lm, ayuda, acts, est);
+      cuerpo.replaceChildren(f);
+    }
+    function pintar() {
+      pintarSub();
+      $('ia-form').hidden = iaVista !== 'chat';
+      if (iaVista === 'cfg') pintarCfg(); else pintarChat();
+    }
+
+    // What the assistant knows: a snapshot of the book as the signed-in person sees it.
+    function contexto() {
+      const dinero = !sinDinero();
+      const hoy = hoyYmd(), mes = $('mes').value || thisMonth;
+      const L = [];
+      L.push(`Hoy es ${hoy} (${new Date().toLocaleDateString('es-EC', { weekday: 'long' })}). Mes que está viendo: ${mes}. Moneda: USD.`);
+      L.push(invitado ? `Quien pregunta es ${invitado.nombre || 'un asistente'}, asistente del despacho.` : 'Quien pregunta es el abogado dueño del libro.');
+      const nomCaso = new Map(casos.map((c) => [c.id, c.nombre]));
+      const pagos = (id) => rows.filter((r) => r.casoId === id && !r.registro).reduce((s, r) => s + r.bruto, 0);
+      const f2 = (n) => (Math.round(n * 100) / 100).toFixed(2);
+      L.push('', '## Casos');
+      if (!casos.length) L.push('(sin casos)');
+      [...casos].sort((a, b) => Number(a.archivado) - Number(b.archivado) || a.nombre.localeCompare(b.nombre)).forEach((c) => {
+        const p = [`- ${c.nombre}${c.archivado ? ' [ARCHIVADO]' : ''}`];
+        if (c.archivo) p.push(`archivo ${c.archivo}`);
+        const cs = causasDe(c); if (cs.length) p.push(`causa ${cs.join(', ')}`);
+        const es = estadosDe(c); if (es.length) p.push(`estados: ${es.join('; ')}`);
+        if (dinero) { const pg = pagos(c.id) + c.ajuste; p.push(`total $${f2(c.total)}, pagado $${f2(pg)}, falta $${f2(Math.max(0, c.total - pg))}`); if (c.parte !== 100) p.push(`mi parte ${c.parte}%`); }
+        if (c.ultActuacion) p.push(`última actuación e-SATJE${c.ultActFecha ? ' (' + c.ultActFecha + ')' : ''}: ${c.ultActuacion.slice(0, 200)}`);
+        p.push(c.revisado ? `revisado en e-SATJE el ${c.revisado}` : 'nunca revisado en e-SATJE');
+        if (c.observacion) p.push(`observación: ${c.observacion.replace(/\s+/g, ' ').slice(0, 300)}`);
+        L.push(p.join(' | '));
+      });
+      L.push('', '## Audiencias y diligencias (desde hace 30 días)');
+      const desde = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+      const as = auds.filter((a) => (a.fecha || a.inicio.slice(0, 10)) >= desde).sort((a, b) => a.inicio.localeCompare(b.inicio)).slice(0, 80);
+      if (!as.length) L.push('(ninguna)');
+      as.forEach((a) => L.push(`- ${a.fecha || a.inicio.slice(0, 10)} ${a.hora || a.inicio.slice(11, 16)} | ${claseDe(a)}${a.tipo ? ': ' + a.tipo : ''} | caso: ${(a.casoId && nomCaso.get(a.casoId)) || a.caso || '—'}${a.lugar ? ' | lugar: ' + a.lugar : ''}`));
+      const nomM = (id) => { const m = miembros.find((x) => x.id === id); return m ? (m.nombre || m.email) : (id === (invitado ? invitado.owner : yoUid) ? 'el dueño' : 'el dueño'); };
+      L.push('', '## Notas sin revisar');
+      const ns = notas.filter((n) => !n.hecha).sort((a, b) => b.creado.localeCompare(a.creado)).slice(0, 40);
+      if (!ns.length) L.push('(ninguna)');
+      ns.forEach((n) => L.push(`- ${n.creado.slice(0, 10)} de ${n.autorNombre || 'el dueño'} para ${n.para ? nomM(n.para) : 'sí mismo'}: ${n.texto.replace(/\s+/g, ' ').slice(0, 300)}${n.archivos.length ? ` (${n.archivos.length} adjunto/s)` : ''}${n.respuestas.length ? ` | respuestas: ${n.respuestas.map((r) => (r.texto || '[archivo]').replace(/\s+/g, ' ').slice(0, 120)).join(' / ')}` : ''}`));
+      if (dinero) {
+        const del = entriesFor(mes);
+        const ing = sum(del, 'Ingreso'), gas = sum(del, 'Gasto'), inv = sum(del, 'Inversión');
+        L.push('', `## Movimientos de ${mes}`, `Totales: ingresos $${f2(ing)}, gastos $${f2(gas)}, invertido $${f2(inv)}, disponible $${f2(ing - gas)}.`);
+        del.sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 200).forEach((r) => L.push(`- ${r.fecha} | ${r.tipo} | ${r.categoria || '—'} | $${f2(r.monto)}${r.registro ? ' (solo registro, no suma)' : ''}${r.casoId && nomCaso.get(r.casoId) ? ' | caso: ' + nomCaso.get(r.casoId) : ''}${r.descripcion ? ' | ' + r.descripcion : ''}`));
+        const meses = []; let m = mes; for (let i = 0; i < 6; i++) { m = prevMonth(m); meses.push(m); }
+        L.push('', '## Meses anteriores (totales)');
+        meses.forEach((mm) => { const d = entriesFor(mm); L.push(`- ${mm}: ingresos $${f2(sum(d, 'Ingreso'))}, gastos $${f2(sum(d, 'Gasto'))}, invertido $${f2(sum(d, 'Inversión'))}`); });
+      }
+      try { if (biblio.length) { L.push('', '## Biblioteca (solo nombres)'); biblio.slice(0, 80).forEach((b) => L.push(`- ${b.categoria}: ${b.nombre}`)); } } catch (e) {}
+      return L.join('\n');
+    }
+    const sistema = () => [
+      'Eres el asistente del "Libro de cuentas", una app que usa un abogado en Ecuador para llevar sus casos, audiencias, notas y finanzas.',
+      'Responde siempre en español, de forma breve y clara. Usa listas cortas cuando ayuden. Usa solo los datos de abajo; si algo no está, dilo y no lo inventes.',
+      'No puedes cambiar nada en la app: si te piden registrar o editar algo, explica dónde hacerlo en la app.',
+      sinDinero() ? 'Esta persona no tiene acceso a montos ni pagos: no hables de dinero.' : '',
+      '', '# Datos del libro', contexto()
+    ].filter((x) => x !== null).join('\n');
+
+    // Streaming from each provider. All three speak Server-Sent Events.
+    async function leerSSE(res, alDato) {
+      const rd = res.body.getReader(), dec = new TextDecoder(); let buf = '';
+      for (;;) {
+        const { done, value } = await rd.read(); if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i; while ((i = buf.indexOf('\n')) >= 0) { const l = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (l.startsWith('data:')) { const d = l.slice(5).trim(); if (d && d !== '[DONE]') { try { alDato(JSON.parse(d)); } catch (e) {} } } }
+      }
+    }
+    async function pedir(alTexto, signal) {
+      const prov = iaCfg.prov, clave = iaCfg.claves[prov], modelo = modeloAct(), sys = sistema();
+      const hist = iaHist.slice(-20).filter((m) => m.text);
+      let res;
+      if (prov === 'claude') {
+        res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-api-key': clave, 'anthropic-version': '2026-10-21', 'anthropic-dangerous-direct-browser-access': 'true' },
+          body: JSON.stringify({ model: modelo, max_tokens: 4096, stream: true, system: sys, messages: hist.map((m) => ({ role: m.role, content: m.text })) }) });
+        if (!res.ok) throw await errorDe(res);
+        await leerSSE(res, (d) => { if (d.type === 'content_block_delta' && d.delta && d.delta.type === 'text_delta') alTexto(d.delta.text); else if (d.type === 'error') throw new Error((d.error && d.error.message) || 'Error del proveedor'); });
+      } else if (prov === 'openai') {
+        res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', signal, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave },
+          body: JSON.stringify({ model: modelo, stream: true, messages: [{ role: 'system', content: sys }, ...hist.map((m) => ({ role: m.role, content: m.text }))] }) });
+        if (!res.ok) throw await errorDe(res);
+        await leerSSE(res, (d) => { const c = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content; if (c) alTexto(c); });
+      } else {
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:streamGenerateContent?alt=sse`, { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': clave },
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: hist.map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] })) }) });
+        if (!res.ok) throw await errorDe(res);
+        await leerSSE(res, (d) => { const ps = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts; if (ps) ps.forEach((p) => { if (p.text && !p.thought) alTexto(p.text); }); });
+      }
+    }
+    async function errorDe(res) {
+      let det = ''; try { const j = await res.json(); det = (j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
+      const s = res.status;
+      const e = new Error(s === 401 || s === 403 ? 'La clave no es válida o no tiene permiso. Revísala en Conectar IA.' : s === 429 ? 'El proveedor rechazó la consulta por límite de uso o falta de saldo en tu cuenta. Intenta en un momento o revisa tu saldo.' : s === 404 ? `El modelo "${modeloAct()}" no existe en ${IA_PROV[iaCfg.prov].corto}. Cámbialo en Conectar IA.` : `El proveedor respondió con un error (${s}).${det ? ' ' + det : ''}`);
+      e.det = det; return e;
+    }
+    async function enviar(q) {
+      q = String(q || '').trim(); if (!q || iaCorriendo) return;
+      if (!conectado()) { iaVista = 'cfg'; pintar(); return; }
+      iaHist.push({ role: 'user', text: q }); txt.value = ''; ajustar();
+      const resp = { role: 'assistant', text: '' }; iaHist.push(resp);
+      pintarChat();
+      const b = cuerpo.lastElementChild; b.classList.add('pensando');
+      const ctl = new AbortController(); iaCorriendo = ctl; env.disabled = true;
+      let pend = false;
+      try {
+        await pedir((t) => { resp.text += t; if (!pend) { pend = true; requestAnimationFrame(() => { pend = false; b.classList.remove('pensando'); b.innerHTML = md(resp.text); cuerpo.scrollTop = cuerpo.scrollHeight; }); } }, ctl.signal);
+        if (!resp.text) resp.text = '(Sin respuesta)';
+      } catch (e) {
+        if (ctl.signal.aborted) return;
+        iaHist.pop(); iaHist.pop();
+        pintarChat(); txt.value = q; ajustar();
+        const er = document.createElement('div'); er.className = 'ia-msg err';
+        er.textContent = e instanceof TypeError ? 'No se pudo conectar con el proveedor. Revisa tu internet o la clave.' : e.message;
+        cuerpo.appendChild(er); cuerpo.scrollTop = cuerpo.scrollHeight;
+        return;
+      } finally { if (iaCorriendo === ctl) { iaCorriendo = null; env.disabled = false; } }
+      b.classList.remove('pensando'); b.innerHTML = md(resp.text); cuerpo.scrollTop = cuerpo.scrollHeight;
+    }
+    const ajustar = () => { txt.style.height = 'auto'; txt.style.height = Math.min(140, txt.scrollHeight) + 'px'; };
+    txt.addEventListener('input', ajustar);
+    txt.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); enviar(txt.value); } });
+    $('ia-form').addEventListener('submit', (e) => { e.preventDefault(); enviar(txt.value); });
+    pintarSub();
   }
 })();
 </script>
