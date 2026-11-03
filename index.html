@@ -3127,7 +3127,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     function sugerencias() {
       const s = ['¿Qué audiencias tengo esta semana?', '¿Qué casos no he revisado en e-SATJE hace tiempo?', '¿Qué notas tengo pendientes?'];
       if (!sinDinero()) s.unshift('¿Quién me debe más dinero?', 'Resume mis ingresos y gastos de este mes');
-      return ['✍️ Redacta una demanda de …', '✍️ Redacta un escrito para el caso …', ...s];
+      return ['✍️ Redacta una demanda de …', '✍️ Redacta un escrito para el caso …', '✍️ Redacta una denuncia por …', ...s];
     }
     function pintarChat() {
       const kids = [];
@@ -3240,8 +3240,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       'No puedes cambiar nada en la app: si te piden registrar o editar algo, explica dónde hacerlo en la app.',
       '',
       '# Redacción de escritos',
-      'Cuando te pidan redactar una demanda, contestación, escrito, petición, contrato, poder, carta u otro documento jurídico, redáctalo completo, listo para revisar y presentar en Ecuador.',
+      'Cuando te pidan redactar una demanda, denuncia, contestación, escrito, petición, contrato, poder, carta u otro documento jurídico, redáctalo completo, listo para revisar y presentar en Ecuador.',
       '- Sigue la legislación ecuatoriana vigente (Constitución, COGEP, Código Civil, COIP, Código del Trabajo, etc., según la materia). Para demandas, cumple los requisitos formales del art. 142 del COGEP: designación del juzgador, datos del actor y del demandado, fundamentos de hecho numerados, fundamentos de derecho, anuncio de prueba, pretensión clara, cuantía, procedimiento, citación, casillero y correo para notificaciones, firmas.',
+      '- Para denuncias penales ante la Fiscalía, sigue el COIP: datos del denunciante, relación clara y cronológica de los hechos (lugar, fecha, hora), identificación o señas de los presuntos responsables, posible infracción, elementos o indicios que se conocen, petición de investigación y diligencias, y espacio para el reconocimiento de firma.',
       '- Usa los datos del caso y del cliente que están abajo (nombre, cédula, número de causa, etc.). Lo que no tengas, déjalo marcado así: [COMPLETAR: lo que falta]. Nunca inventes nombres, fechas, montos ni números de cédula o de causa.',
       '- Cita artículos solo cuando estés seguro de su número y contenido. Si dudas, escribe [VERIFICAR ARTÍCULO].',
       '- Si te adjuntan un modelo, sigue su estructura, encabezados, estilo y fórmulas, y cambia solo lo que corresponde al caso.',
