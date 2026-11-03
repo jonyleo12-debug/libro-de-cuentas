@@ -691,7 +691,29 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .ia-hola { color: var(--muted); font-size: 14px; display: grid; gap: 10px; }
 .ia-sug { display: flex; flex-wrap: wrap; gap: 6px; }
 .ia-sug button { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; font: 13px var(--font-body); color: var(--fg); cursor: pointer; text-align: left; }
-.ia-pie { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end; }
+.ia-pie { border-top: 1px solid var(--line); padding: 8px 12px 10px; display: grid; gap: 6px; position: relative; }
+.ia-fila { display: flex; gap: 6px; align-items: flex-end; }
+.ia-mas { flex: none; width: 34px; height: 38px; border: 0; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; border-radius: 8px; position: relative; }
+.ia-mas:hover { color: var(--accent); }
+.ia-mas svg { width: 20px; height: 20px; }
+.ia-mas input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.ia-adjs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ia-adjs:empty { display: none; }
+.ia-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; background: var(--accent-soft); color: var(--fg); border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12.5px; }
+.ia-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ia-chip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 3px; }
+.ia-msg.yo .ia-chip { background: rgba(255,255,255,.2); color: #fff; margin-top: 6px; }
+.ia-bib { position: absolute; left: 10px; right: 10px; bottom: calc(100% + 6px); max-height: 300px; overflow-y: auto; background: var(--panel); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.2); padding: 8px; display: grid; gap: 2px; z-index: 2; }
+.ia-bib[hidden] { display: none; }
+.ia-bib p { margin: 4px 6px; font-size: 12px; color: var(--muted); }
+.ia-bib button { text-align: left; border: 0; background: none; color: var(--fg); font: 13.5px var(--font-body); padding: 7px 8px; border-radius: 8px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ia-bib button:hover { background: var(--accent-soft); }
+.ia-bib button small { color: var(--muted); margin-left: 6px; }
+.ia-acc { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.ia-acc button { border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 4px 11px; font: 12.5px var(--font-body); cursor: pointer; }
+.ia-acc button:hover { border-color: var(--accent); color: var(--accent); }
+.ia-panel.ancho { width: min(920px, calc(100vw - 32px)); height: calc(100dvh - 36px); }
+.ia-panel.ancho .ia-msg { max-width: 94%; }
 .ia-pie textarea { flex: 1; min-width: 0; resize: none; max-height: 140px; font: 14px/1.4 var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; }
 .ia-env { flex: none; width: 38px; height: 38px; border-radius: 999px; border: 0; background: var(--accent); color: #fff; cursor: pointer; display: grid; place-items: center; }
 .ia-env:disabled { opacity: .45; cursor: default; }
@@ -703,7 +725,7 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
 .ia-conf .ia-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .ia-conf a { color: var(--accent); }
 .ia-estado { font-size: 13px; color: var(--muted); margin: 0; }
-@media (max-width: 640px) { .ia-btn span { display: none; } .ia-btn { padding: 13px; } .ia-panel { right: 8px; left: 8px; width: auto; bottom: 8px; height: calc(100dvh - 16px); } }
+@media (max-width: 640px) { .ia-btn span { display: none; } .ia-btn { padding: 13px; } .ia-panel, .ia-panel.ancho { right: 8px; left: 8px; width: auto; bottom: 8px; height: calc(100dvh - 16px); } #ia-ancho { display: none; } }
 @media print { .ia-btn, .ia-panel { display: none !important; } }
 </style>
 </head>
@@ -945,14 +967,21 @@ th .arch-btn { text-transform: none; letter-spacing: 0; font-size: 12px; }
   <section class="ia-panel" id="ia-panel" role="dialog" aria-labelledby="ia-tit" hidden>
     <div class="ia-cab">
       <h2 id="ia-tit">Asistente<small id="ia-sub">Sin conectar</small></h2>
+      <button type="button" class="ia-ico" id="ia-ancho" aria-label="Agrandar" title="Agrandar" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
       <button type="button" class="ia-ico" id="ia-nuevo" aria-label="Nueva conversación" title="Nueva conversación"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></svg></button>
       <button type="button" class="ia-ico" id="ia-cfg-btn" aria-label="Conectar IA" title="Conectar IA"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
       <button type="button" class="ia-ico" id="ia-cerrar" aria-label="Cerrar">✕</button>
     </div>
     <div class="ia-cuerpo" id="ia-cuerpo" aria-live="polite"></div>
     <form class="ia-pie" id="ia-form">
-      <textarea id="ia-txt" rows="1" maxlength="4000" placeholder="Pregunta sobre tus casos, pagos o audiencias…" aria-label="Mensaje para el asistente" enterkeyhint="send"></textarea>
-      <button type="submit" class="ia-env" id="ia-env" aria-label="Enviar"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
+      <div class="ia-bib" id="ia-bib" hidden></div>
+      <ul class="ia-adjs" id="ia-adjs"></ul>
+      <div class="ia-fila">
+        <label class="ia-mas" title="Adjuntar documento (PDF, Word o foto)" aria-label="Adjuntar documento"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg><input type="file" id="ia-file" multiple accept=".pdf,.docx,.txt,image/png,image/jpeg,image/webp"></label>
+        <button type="button" class="ia-mas" id="ia-bib-btn" title="Usar un modelo de la Biblioteca" aria-label="Usar un modelo de la Biblioteca" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 6.5C10 5 7 4.6 3.5 5v13c3.5-.4 6.5 0 8.5 1.5M12 6.5C14 5 17 4.6 20.5 5v13c-3.5-.4-6.5 0-8.5 1.5M12 6.5v13"/></svg></button>
+        <textarea id="ia-txt" rows="1" maxlength="8000" placeholder="Pregunta o pide un escrito…" aria-label="Mensaje para el asistente" enterkeyhint="send"></textarea>
+        <button type="submit" class="ia-env" id="ia-env" aria-label="Enviar"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"/></svg></button>
+      </div>
     </form>
   </section>
 </div>
@@ -3053,7 +3082,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('ia-cerrar').addEventListener('click', () => abrir(false));
     panel.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
     $('ia-cfg-btn').addEventListener('click', () => { iaVista = iaVista === 'cfg' && conectado() ? 'chat' : 'cfg'; pintar(); });
-    $('ia-nuevo').addEventListener('click', () => { if (iaCorriendo) iaCorriendo.abort(); iaHist = []; iaVista = conectado() ? 'chat' : 'cfg'; pintar(); txt.focus(); });
+    $('ia-nuevo').addEventListener('click', () => { if (iaCorriendo) iaCorriendo.abort(); iaHist = []; adjPend = []; pintarAdjs(); iaVista = conectado() ? 'chat' : 'cfg'; pintar(); txt.focus(); });
 
     // Light Markdown: paragraphs, lists, **bold**, *italic*, `code`. Text is escaped first.
     const escH = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -3070,20 +3099,43 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       cerrar(); return out.join('');
     }
-    const burbuja = (m) => { const d = document.createElement('div'); d.className = 'ia-msg ' + (m.role === 'user' ? 'yo' : 'ia'); if (m.role === 'user') d.textContent = m.text; else d.innerHTML = md(m.text); return d; };
+    const chip = (nombre, quitar) => { const li = document.createElement('li'); li.className = 'ia-chip'; const sp = document.createElement('span'); sp.textContent = '📄 ' + nombre; li.appendChild(sp); if (quitar) { const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', 'Quitar ' + nombre); x.addEventListener('click', quitar); li.appendChild(x); } return li; };
+    function burbuja(m) {
+      const d = document.createElement('div'); d.className = 'ia-msg ' + (m.role === 'user' ? 'yo' : 'ia');
+      if (m.role === 'user') { d.textContent = m.text; if (m.files && m.files.length) { const ul = document.createElement('ul'); ul.className = 'ia-adjs'; m.files.forEach((f) => ul.appendChild(chip(f.nombre))); d.appendChild(ul); } return d; }
+      const t = document.createElement('div'); t.className = 'ia-cont'; t.innerHTML = md(m.text); d.appendChild(t);
+      if (m.text && m.listo !== false) acciones(d, m);
+      return d;
+    }
+    // Copy and download a reply as a Word document (HTML that Word and Pages open directly).
+    function acciones(d, m) {
+      const a = document.createElement('div'); a.className = 'ia-acc';
+      const cp = document.createElement('button'); cp.type = 'button'; cp.textContent = 'Copiar';
+      cp.addEventListener('click', () => { const plano = m.text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^\s*#{1,6}\s+/gm, ''); copiarTexto(plano); cp.textContent = 'Copiado ✓'; setTimeout(() => { cp.textContent = 'Copiar'; }, 1500); });
+      const wd = document.createElement('button'); wd.type = 'button'; wd.textContent = 'Descargar Word';
+      wd.addEventListener('click', () => descargarWord(m.text));
+      a.append(cp, wd); d.appendChild(a);
+    }
+    function descargarWord(texto) {
+      const prim = (texto.split('\n').find((l) => l.trim()) || 'escrito').replace(/[#*`]/g, '').trim();
+      const nombre = (prim.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\- ]+/g, '').trim().slice(0, 60).replace(/\s+/g, '_') || 'escrito') + '.doc';
+      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escH(prim)}</title><style>@page { size: 21cm 29.7cm; margin: 2.5cm; } body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; } p { margin: 0 0 10pt; text-align: justify; } li { text-align: justify; }</style></head><body>${md(texto)}</body></html>`;
+      const url = URL.createObjectURL(new Blob(['\ufeff', html], { type: 'application/msword' }));
+      const a = document.createElement('a'); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+    }
 
     function sugerencias() {
       const s = ['¿Qué audiencias tengo esta semana?', '¿Qué casos no he revisado en e-SATJE hace tiempo?', '¿Qué notas tengo pendientes?'];
       if (!sinDinero()) s.unshift('¿Quién me debe más dinero?', 'Resume mis ingresos y gastos de este mes');
-      return s;
+      return ['✍️ Redacta una demanda de …', '✍️ Redacta un escrito para el caso …', ...s];
     }
     function pintarChat() {
       const kids = [];
       if (!iaHist.length) {
         const h = document.createElement('div'); h.className = 'ia-hola';
-        const p = document.createElement('p'); p.style.margin = '0'; p.textContent = 'Hola. Conozco tus casos, audiencias y notas' + (sinDinero() ? '' : ', y los pagos y movimientos del mes') + '. Pregúntame lo que necesites.';
+        const p = document.createElement('p'); p.style.margin = '0'; p.textContent = 'Hola. Conozco tus casos, audiencias y notas' + (sinDinero() ? '' : ', y los pagos y movimientos del mes') + '. Pregúntame lo que necesites o pídeme que redacte una demanda o escrito. Puedes adjuntar un modelo con el clip o elegirlo de la Biblioteca con el libro.';
         const sg = document.createElement('div'); sg.className = 'ia-sug';
-        sugerencias().forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = q; b.addEventListener('click', () => enviar(q)); sg.appendChild(b); });
+        sugerencias().forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = q; b.addEventListener('click', () => { if (q.startsWith('✍️')) { txt.value = q.replace('✍️ ', '').replace(' …', ' '); ajustar(); txt.focus(); txt.setSelectionRange(txt.value.length, txt.value.length); } else enviar(q); }); sg.appendChild(b); });
         h.append(p, sg); kids.push(h);
       }
       iaHist.forEach((m) => kids.push(burbuja(m)));
@@ -3151,6 +3203,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       [...casos].sort((a, b) => Number(a.archivado) - Number(b.archivado) || a.nombre.localeCompare(b.nombre)).forEach((c) => {
         const p = [`- ${c.nombre}${c.archivado ? ' [ARCHIVADO]' : ''}`];
         if (c.archivo) p.push(`archivo ${c.archivo}`);
+        if (c.cedula) p.push(`cédula ${c.cedula}`); if (c.telefono) p.push(`teléfono ${c.telefono}`); if (c.correo) p.push(`correo ${c.correo}`);
         const cs = causasDe(c); if (cs.length) p.push(`causa ${cs.join(', ')}`);
         const es = estadosDe(c); if (es.length) p.push(`estados: ${es.join('; ')}`);
         if (dinero) { const pg = pagos(c.id) + c.ajuste; p.push(`total $${f2(c.total)}, pagado $${f2(pg)}, falta $${f2(Math.max(0, c.total - pg))}`); if (c.parte !== 100) p.push(`mi parte ${c.parte}%`); }
@@ -3183,8 +3236,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
     const sistema = () => [
       'Eres el asistente del "Libro de cuentas", una app que usa un abogado en Ecuador para llevar sus casos, audiencias, notas y finanzas.',
-      'Responde siempre en español, de forma breve y clara. Usa listas cortas cuando ayuden. Usa solo los datos de abajo; si algo no está, dilo y no lo inventes.',
+      'Responde siempre en español. Para preguntas, sé breve y claro, con listas cortas cuando ayuden. Usa solo los datos de abajo; si algo no está, dilo y no lo inventes.',
       'No puedes cambiar nada en la app: si te piden registrar o editar algo, explica dónde hacerlo en la app.',
+      '',
+      '# Redacción de escritos',
+      'Cuando te pidan redactar una demanda, contestación, escrito, petición, contrato, poder, carta u otro documento jurídico, redáctalo completo, listo para revisar y presentar en Ecuador.',
+      '- Sigue la legislación ecuatoriana vigente (Constitución, COGEP, Código Civil, COIP, Código del Trabajo, etc., según la materia). Para demandas, cumple los requisitos formales del art. 142 del COGEP: designación del juzgador, datos del actor y del demandado, fundamentos de hecho numerados, fundamentos de derecho, anuncio de prueba, pretensión clara, cuantía, procedimiento, citación, casillero y correo para notificaciones, firmas.',
+      '- Usa los datos del caso y del cliente que están abajo (nombre, cédula, número de causa, etc.). Lo que no tengas, déjalo marcado así: [COMPLETAR: lo que falta]. Nunca inventes nombres, fechas, montos ni números de cédula o de causa.',
+      '- Cita artículos solo cuando estés seguro de su número y contenido. Si dudas, escribe [VERIFICAR ARTÍCULO].',
+      '- Si te adjuntan un modelo, sigue su estructura, encabezados, estilo y fórmulas, y cambia solo lo que corresponde al caso.',
+      '- Escribe el documento con formato limpio: títulos en una línea con **negrita**, párrafos completos, numeración en los hechos. No pongas comentarios dentro del documento; si necesitas aclarar algo, agrégalo en una nota breve al final, separada por una línea con ---.',
+      '- Si falta un dato esencial para saber qué redactar (por ejemplo, qué tipo de demanda o contra quién), pregúntalo antes en una sola línea.',
       sinDinero() ? 'Esta persona no tiene acceso a montos ni pagos: no hables de dinero.' : '',
       '', '# Datos del libro', contexto()
     ].filter((x) => x !== null).join('\n');
@@ -3201,20 +3263,26 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     async function pedir(alTexto, signal) {
       const prov = iaCfg.prov, clave = iaCfg.claves[prov], modelo = modeloAct(), sys = sistema();
       const hist = iaHist.slice(-20).filter((m) => m.text);
+      // Attached files: PDFs and photos go as files; Word and text files were already turned into text.
+      const conTexto = (m) => m.text + (m.files || []).filter((f) => f.texto != null).map((f) => `\n\n--- Documento adjunto: ${f.nombre} ---\n${f.texto}\n--- Fin de ${f.nombre} ---`).join('');
+      const bins = (m) => (m.files || []).filter((f) => f.b64);
+      const cClaude = (m) => { const b = m.role === 'user' ? bins(m) : []; if (!b.length) return conTexto(m); return [...b.map((f) => f.mime === 'application/pdf' ? { type: 'document', title: f.nombre, source: { type: 'base64', media_type: f.mime, data: f.b64 } } : { type: 'image', source: { type: 'base64', media_type: f.mime, data: f.b64 } }), { type: 'text', text: conTexto(m) }]; };
+      const cOpenai = (m) => { const b = m.role === 'user' ? bins(m) : []; if (!b.length) return conTexto(m); return [...b.map((f) => f.mime === 'application/pdf' ? { type: 'file', file: { filename: f.nombre, file_data: `data:${f.mime};base64,${f.b64}` } } : { type: 'image_url', image_url: { url: `data:${f.mime};base64,${f.b64}` } }), { type: 'text', text: conTexto(m) }]; };
+      const pGemini = (m) => [...(m.role === 'user' ? bins(m) : []).map((f) => ({ inlineData: { mimeType: f.mime, data: f.b64 } })), { text: conTexto(m) }];
       let res;
       if (prov === 'claude') {
         res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-api-key': clave, 'anthropic-version': '2026-10-21', 'anthropic-dangerous-direct-browser-access': 'true' },
-          body: JSON.stringify({ model: modelo, max_tokens: 4096, stream: true, system: sys, messages: hist.map((m) => ({ role: m.role, content: m.text })) }) });
+          body: JSON.stringify({ model: modelo, max_tokens: 16000, stream: true, system: sys, messages: hist.map((m) => ({ role: m.role, content: cClaude(m) })) }) });
         if (!res.ok) throw await errorDe(res);
         await leerSSE(res, (d) => { if (d.type === 'content_block_delta' && d.delta && d.delta.type === 'text_delta') alTexto(d.delta.text); else if (d.type === 'error') throw new Error((d.error && d.error.message) || 'Error del proveedor'); });
       } else if (prov === 'openai') {
         res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', signal, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave },
-          body: JSON.stringify({ model: modelo, stream: true, messages: [{ role: 'system', content: sys }, ...hist.map((m) => ({ role: m.role, content: m.text }))] }) });
+          body: JSON.stringify({ model: modelo, stream: true, messages: [{ role: 'system', content: sys }, ...hist.map((m) => ({ role: m.role, content: cOpenai(m) }))] }) });
         if (!res.ok) throw await errorDe(res);
         await leerSSE(res, (d) => { const c = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content; if (c) alTexto(c); });
       } else {
         const llamar = (mo) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mo)}:streamGenerateContent?alt=sse`, { method: 'POST', signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': clave },
-          body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: hist.map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] })) }) });
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: hist.map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: pGemini(m) })) }) });
         res = await llamar(modelo);
         if (res.status === 503 || res.status === 500) { await new Promise((ok) => setTimeout(ok, 1500)); res = await llamar(modelo); }
         const falta = res.status === 404; // only a retired model is replaced for good; a busy one is skipped just this time
@@ -3250,28 +3318,82 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       e.det = det; return e;
     }
     async function enviar(q) {
-      q = String(q || '').trim(); if (!q || iaCorriendo) return;
+      q = String(q || '').trim(); if (iaCorriendo) return;
+      if (adjCargando) { avisoAdj('Espera a que termine de cargar el documento.'); return; }
+      if (!q && adjPend.length) q = 'Revisa el documento adjunto.';
+      if (!q) return;
       if (!conectado()) { iaVista = 'cfg'; pintar(); return; }
-      iaHist.push({ role: 'user', text: q }); txt.value = ''; ajustar();
-      const resp = { role: 'assistant', text: '' }; iaHist.push(resp);
+      const files = adjPend; adjPend = []; pintarAdjs();
+      iaHist.push({ role: 'user', text: q, files }); txt.value = ''; ajustar();
+      const resp = { role: 'assistant', text: '', listo: false }; iaHist.push(resp);
       pintarChat();
-      const b = cuerpo.lastElementChild; b.classList.add('pensando');
+      const b = cuerpo.lastElementChild, bt = b.querySelector('.ia-cont'); b.classList.add('pensando');
       const ctl = new AbortController(); iaCorriendo = ctl; env.disabled = true;
       let pend = false;
       try {
-        await pedir((t) => { resp.text += t; if (!pend) { pend = true; requestAnimationFrame(() => { pend = false; b.classList.remove('pensando'); b.innerHTML = md(resp.text); cuerpo.scrollTop = cuerpo.scrollHeight; }); } }, ctl.signal);
+        await pedir((t) => { resp.text += t; if (!pend) { pend = true; requestAnimationFrame(() => { pend = false; b.classList.remove('pensando'); bt.innerHTML = md(resp.text); cuerpo.scrollTop = cuerpo.scrollHeight; }); } }, ctl.signal);
         if (!resp.text) resp.text = '(Sin respuesta)';
       } catch (e) {
         if (ctl.signal.aborted) return;
         iaHist.pop(); iaHist.pop();
+        adjPend = files; pintarAdjs();
         pintarChat(); txt.value = q; ajustar();
         const er = document.createElement('div'); er.className = 'ia-msg err';
         er.textContent = e instanceof TypeError ? 'No se pudo conectar con el proveedor. Revisa tu internet o la clave.' : e.message;
         cuerpo.appendChild(er); cuerpo.scrollTop = cuerpo.scrollHeight;
         return;
       } finally { if (iaCorriendo === ctl) { iaCorriendo = null; env.disabled = false; } }
-      b.classList.remove('pensando'); b.innerHTML = md(resp.text); cuerpo.scrollTop = cuerpo.scrollHeight;
+      resp.listo = true; b.classList.remove('pensando'); bt.innerHTML = md(resp.text); acciones(b, resp); cuerpo.scrollTop = cuerpo.scrollHeight;
     }
+    // ── Attachments ──
+    let adjPend = [], adjCargando = 0;
+    const MAX_IA = 15 * 1024 * 1024;
+    function pintarAdjs() {
+      $('ia-adjs').replaceChildren(...adjPend.map((f) => chip(f.nombre, () => { adjPend = adjPend.filter((x) => x !== f); pintarAdjs(); })), ...(adjCargando ? [chip('Cargando documento…')] : []));
+    }
+    function avisoAdj(t) { const er = document.createElement('div'); er.className = 'ia-msg err'; er.textContent = t; if (iaVista === 'chat') { cuerpo.appendChild(er); cuerpo.scrollTop = cuerpo.scrollHeight; } }
+    const aB64 = (buf) => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+    let mammothP = null;
+    const cargarMammoth = () => mammothP || (mammothP = new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'; sc.onload = () => ok(window.mammoth); sc.onerror = () => { mammothP = null; mal(new Error('mammoth')); }; document.head.appendChild(sc); }));
+    async function adjuntar(blob, nombre) {
+      const e = extDe(nombre), mime = e === 'pdf' ? 'application/pdf' : /^jpe?g$/.test(e) ? 'image/jpeg' : e === 'png' ? 'image/png' : e === 'webp' ? 'image/webp' : e === 'docx' ? 'docx' : e === 'txt' ? 'text/plain' : '';
+      if (!mime) { avisoAdj(e === 'doc' ? `${nombre}: los Word antiguos (.doc) no se pueden leer. Guárdalo como .docx o PDF y vuelve a adjuntarlo.` : `${nombre}: solo puedo leer PDF, Word (.docx), texto y fotos.`); return; }
+      if (blob.size > MAX_IA) { avisoAdj(`${nombre} pesa más de 15 MB. Adjunta una versión más liviana.`); return; }
+      adjCargando++; pintarAdjs();
+      try {
+        const buf = await blob.arrayBuffer();
+        if (mime === 'docx') { const mm = await cargarMammoth(); const r = await mm.extractRawText({ arrayBuffer: buf }); adjPend.push({ nombre, texto: String(r.value || '').trim() }); }
+        else if (mime === 'text/plain') adjPend.push({ nombre, texto: new TextDecoder().decode(buf) });
+        else adjPend.push({ nombre, mime, b64: aB64(buf) });
+      } catch (er) { avisoAdj(`No pude leer ${nombre}.`); }
+      adjCargando--; pintarAdjs();
+    }
+    $('ia-file').addEventListener('change', (e) => { [...e.target.files].forEach((f) => adjuntar(f, f.name)); e.target.value = ''; txt.focus(); });
+    panel.addEventListener('dragover', (e) => { if (iaVista === 'chat' && e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+    panel.addEventListener('drop', (e) => { if (iaVista !== 'chat' || !e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); [...e.dataTransfer.files].forEach((f) => adjuntar(f, f.name)); });
+    const bibMenu = $('ia-bib'), bibBtn = $('ia-bib-btn');
+    const cerrarBib = () => { bibMenu.hidden = true; bibBtn.setAttribute('aria-expanded', 'false'); };
+    bibBtn.addEventListener('click', () => {
+      if (!bibMenu.hidden) { cerrarBib(); return; }
+      let docs = []; try { docs = biblio.filter((x) => /^(pdf|docx|txt)$/.test(extDe(x.nombre))); } catch (er) {}
+      const kids = [];
+      const h = document.createElement('p'); h.textContent = docs.length ? 'Elige un modelo de la Biblioteca' : 'No hay PDF ni Word en la Biblioteca todavía. Súbelos desde el libro en Notas.'; kids.push(h);
+      docs.sort((a, b) => a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre)).forEach((x) => {
+        const b = document.createElement('button'); b.type = 'button'; b.textContent = x.nombre; const sm = document.createElement('small'); sm.textContent = x.categoria; b.appendChild(sm);
+        b.addEventListener('click', async () => {
+          cerrarBib(); adjCargando++; pintarAdjs();
+          let blob = null; try { const r = await fetch(x.url); if (r.ok) blob = await r.blob(); } catch (er) {}
+          adjCargando--; pintarAdjs();
+          if (blob) adjuntar(blob, x.nombre); else avisoAdj(`No pude abrir "${x.nombre}" desde la Biblioteca. Descárgalo y adjúntalo con el clip.`);
+          txt.focus();
+        });
+        kids.push(b);
+      });
+      bibMenu.replaceChildren(...kids); bibMenu.hidden = false; bibBtn.setAttribute('aria-expanded', 'true');
+    });
+    document.addEventListener('pointerdown', (e) => { if (!bibMenu.hidden && !bibMenu.contains(e.target) && !bibBtn.contains(e.target)) cerrarBib(); });
+    $('ia-ancho').addEventListener('click', () => { const v = panel.classList.toggle('ancho'); $('ia-ancho').setAttribute('aria-pressed', String(v)); $('ia-ancho').setAttribute('aria-label', v ? 'Achicar' : 'Agrandar'); $('ia-ancho').title = v ? 'Achicar' : 'Agrandar'; try { localStorage.setItem('libro-ia-ancho', v ? '1' : ''); } catch (er) {} });
+    try { if (localStorage.getItem('libro-ia-ancho')) { panel.classList.add('ancho'); $('ia-ancho').setAttribute('aria-pressed', 'true'); } } catch (er) {}
     const ajustar = () => { txt.style.height = 'auto'; txt.style.height = Math.min(140, txt.scrollHeight) + 'px'; };
     txt.addEventListener('input', ajustar);
     txt.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); enviar(txt.value); } });
