@@ -1407,9 +1407,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Deleting a business removes it from the list and erases every record it kept.
   async function borrarNegocio(n) {
     const base = libroRef.collection('negocios').doc(n.id);
-    const leer = (c) => new Promise((ok) => { let un = null, listo = false; un = c.onSnapshot((snap) => { if (listo) return; listo = true; ok(snap.docs.map((d) => d.id)); setTimeout(() => { try { un && un(); } catch (e) {} }, 0); }, () => { if (!listo) { listo = true; ok([]); } }); });
+    const leer = (c) => new Promise((ok) => { let un = null, listo = false; un = c.onSnapshot((snap) => { if (listo) return; listo = true; ok(snap.docs.map((d) => { const x = d.data() || {}; if (x.ruta) { try { deleteObject(sRef(storage, String(x.ruta))).catch(() => {}); } catch (e) {} } return d.id; })); setTimeout(() => { try { un && un(); } catch (e) {} }, 0); }, () => { if (!listo) { listo = true; ok([]); } }); });
     negocios = negocios.filter((x) => x.id !== n.id); borrarNeg = null; guardarNegs();
-    for (const name of ['movimientos', 'fijos', 'inversiones', 'casos', 'audiencias', 'respaldos']) {
+    for (const name of ['movimientos', 'fijos', 'inversiones', 'casos', 'audiencias', 'respaldos', 'biblioteca']) {
       const c = base.collection(name); const ids = await leer(c);
       ids.forEach((id) => { try { c.doc(id).delete(); } catch (e) {} });
     }
@@ -2797,7 +2797,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       nm.append(ln, sm); it.append(ic, nm);
       if (!invitado || d.por === yoUid) it.appendChild(delBtn('bib:' + d.id, async () => {
         try { await deleteObject(sRef(storage, d.ruta)); } catch (e) { if (e && e.code !== 'storage/object-not-found') { setMsg('No se pudo borrar el documento. Intenta de nuevo.', true); return; } }
-        await libroRef.collection('biblioteca').doc(d.id).delete(); setMsg(`Se borró ${d.nombre}.`);
+        await baseNegocio('biblioteca').collection('biblioteca').doc(d.id).delete(); setMsg(`Se borró ${d.nombre}.`);
       }, 'Borrar', '¿Borrar?'));
       return it;
     });
@@ -2823,7 +2823,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       async () => {
         try {
           const url = await getDownloadURL(tarea.snapshot.ref);
-          await libroRef.collection('biblioteca').add({ nombre: f.name, ruta, url, tipo, tam: f.size, categoria, subido: new Date().toISOString(), por: invitado ? yoUid : 'dueno', porNombre: invitado ? (invitado.nombre || '') : '' });
+          await baseNegocio('biblioteca').collection('biblioteca').add({ nombre: f.name, ruta, url, tipo, tam: f.size, categoria, subido: new Date().toISOString(), por: invitado ? yoUid : 'dueno', porNombre: invitado ? (invitado.nombre || '') : '' });
           setMsg(`${f.name} quedó en ${categoria}.`);
         } catch (e) { setMsg(`No se pudo guardar ${f.name} en la biblioteca.`, true); }
         fin();
@@ -2838,7 +2838,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     caja.addEventListener('drop', (e) => { if (!tieneArch(e)) return; e.preventDefault(); n = 0; caja.classList.remove('soltar'); [...e.dataTransfer.files].forEach(subirBiblio); }); }
   function suscribirBiblio() {
     if (!libroRef) return;
-    libroRef.collection('biblioteca').onSnapshot((snap) => {
+    baseNegocio('biblioteca').collection('biblioteca').onSnapshot((snap) => {
       biblio = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Documento'), ruta: String(x.ruta || ''), url: String(x.url || ''), tipo: String(x.tipo || ''), tam: Number(x.tam) || 0, categoria: BIB_CATS.includes(x.categoria) ? x.categoria : 'Otros', por: String(x.por || ''), porNombre: String(x.porNombre || '') }; }).filter((d) => d.url);
       renderBiblio();
     }, () => { biblio = []; renderBiblio(); });
