@@ -763,7 +763,17 @@ body.invitado .neg-mas { display: none; }
 .neg-pop button:hover { background: var(--accent-soft); }
 .neg-pop button[aria-checked="true"] { font-weight: 600; color: var(--accent); }
 body.invitado .hero-neg-btn { pointer-events: none; } body.invitado .hero-neg-btn .hero-caret { display: none; }
-body.inmob #sec-casos, body.inmob .caso-f { display: none !important; }
+body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[aria-labelledby="h-mov"], body.sin-t-inv #sec-inv, body.sin-t-fijos #sec-fijos, body.sin-t-mapa #sec-mapa { display: none !important; }
+body.sin-t-mov #app > .grid2 { grid-template-columns: minmax(0, 1fr); }
+body.invitado.sin-t-casos #sec-casos { display: grid !important; }
+.cats-sec { font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 6px 0 0; }
+.tablas-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.dlg-cats { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.tablas-list label { text-transform: none; letter-spacing: 0; color: var(--fg); display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; font-size: 15px; }
+.tablas-list label:hover { background: var(--accent-soft); }
+.tablas-list input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.tablas-list .n { color: var(--muted); width: 1.4em; flex: none; }
+.tablas-fija { color: var(--muted); font-size: 13px; margin: 0 10px; }
 
 /* Opciones de categorías */
 .ajustes-btn { align-self: center; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--panel); color: var(--muted); box-shadow: var(--raise-sm); cursor: pointer; display: grid; place-items: center; transition: color .15s, transform .3s; }
@@ -839,7 +849,7 @@ body.invitado .ajustes-btn { display: none; }
 </div>
 <div class="wrap" id="app" hidden>
   <nav class="side menu" aria-label="Menú">
-    <button type="button" class="ajustes-btn" id="ajustes-btn" aria-label="Opciones de categorías" title="Opciones de categorías"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4c.6.2 1.2.6 1.7 1l2.3-.8 1.7 3-1.8 1.6c.1.6.1 1.3 0 1.9l1.8 1.6-1.7 3-2.3-.8c-.5.4-1.1.8-1.7 1l-.5 2.4h-3.4l-.5-2.4c-.6-.2-1.2-.6-1.7-1l-2.3.8-1.7-3 1.8-1.6a6 6 0 0 1 0-1.9L3.9 8.6l1.7-3 2.3.8c.5-.4 1.1-.8 1.7-1z"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    <button type="button" class="ajustes-btn" id="ajustes-btn" aria-label="Opciones" title="Opciones"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4c.6.2 1.2.6 1.7 1l2.3-.8 1.7 3-1.8 1.6c.1.6.1 1.3 0 1.9l1.8 1.6-1.7 3-2.3-.8c-.5.4-1.1.8-1.7 1l-.5 2.4h-3.4l-.5-2.4c-.6-.2-1.2-.6-1.7-1l-2.3.8-1.7-3 1.8-1.6a6 6 0 0 1 0-1.9L3.9 8.6l1.7-3 2.3.8c.5-.4 1.1-.8 1.7-1z"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     <div class="usr">
       <div><span class="usr-l">Usuario</span><b id="u-name">Cargando…</b><span class="sync" id="sync">Sincronizado</span></div>
       <button type="button" class="ghost" id="logout">Salir</button>
@@ -1366,7 +1376,26 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const docNegocio = () => negocio === 'juridico' ? libroRef : libroRef.collection('negocios').doc(negocio);
   let catsTab = 'Ingreso';
   const limpiarLista = (xs) => [...new Set((Array.isArray(xs) ? xs : []).map((x) => String(x || '').trim().slice(0, 40)).filter(Boolean))];
+  // Which tables this business shows. The law firm starts with all of them; other businesses start without Casos.
+  const TABLAS = [['mov', 'Movimientos del mes'], ['casos', 'Casos'], ['inv', 'Mis inversiones'], ['fijos', 'Fijos de cada mes'], ['mapa', 'Mapa']];
+  let tablas = {};
+  const tablaOn = (k) => tablas[k] != null ? !!tablas[k] : !(k === 'casos' && negocio !== 'juridico');
+  function pintarTablas() {
+    TABLAS.forEach(([k]) => document.body.classList.toggle('sin-t-' + k, !tablaOn(k)));
+    $('tablas-sub').textContent = `Elige qué tablas se ven en ${nombreNeg(negocio)}. Ocultar una tabla no borra sus datos.`;
+    $('tablas-list').replaceChildren(...TABLAS.map(([k, t], i) => {
+      const li = document.createElement('li'); const lb = document.createElement('label');
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = (i + 1) + '.';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = tablaOn(k);
+      cb.addEventListener('change', () => { tablas = { ...tablas, [k]: cb.checked }; try { localStorage.setItem('libro-tablas-' + negocio, JSON.stringify(tablas)); } catch (e) {} pintarTablas(); docNegocio().set({ tablas }).catch(() => setCatsMsg('No se pudo guardar. Revisa tu internet.', true)); });
+      const tx = document.createElement('span'); tx.textContent = t;
+      lb.append(n, cb, tx); li.appendChild(lb); return li;
+    }));
+  }
+  try { tablas = JSON.parse(localStorage.getItem('libro-tablas-' + negocio) || '{}') || {}; } catch (e) {}
+  pintarTablas();
   function aplicarCats(dv) {
+    if (dv && dv.tablas && typeof dv.tablas === 'object') { tablas = { ...dv.tablas }; try { localStorage.setItem('libro-tablas-' + negocio, JSON.stringify(tablas)); } catch (e) {} pintarTablas(); }
     const c = dv && dv.categorias && typeof dv.categorias === 'object' ? dv.categorias : null;
     Object.keys(CAT_DEF).forEach((k) => { const l = c ? limpiarLista(c[k]) : []; CATS[k] = l.length ? l : [...CAT_DEF[k]]; });
     if (!CATS['Ingreso'].includes(HON)) CATS['Ingreso'].splice(1, 0, HON);
@@ -1425,7 +1454,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     b.classList.remove('armado'); b.textContent = 'Volver a las opciones originales';
     Object.keys(CAT_DEF).forEach((k) => { CATS[k] = [...CAT_DEF[k]]; }); honNombre = 'Honorarios'; guardarCats(); fillCats(); pintarCats(); setCatsMsg('Se restauraron las opciones originales.');
   });
-  $('ajustes-btn').addEventListener('click', () => { if (invitado || !libroRef) return; setCatsMsg(''); pintarCats(); $('dlg-cats').showModal(); });
+  $('ajustes-btn').addEventListener('click', () => { if (invitado || !libroRef) return; setCatsMsg(''); pintarTablas(); pintarCats(); $('dlg-cats').showModal(); });
   $('cats-cerrar').addEventListener('click', () => $('dlg-cats').close());
   $('dlg-cats').addEventListener('click', (e) => { if (e.target === $('dlg-cats')) $('dlg-cats').close(); });
   let catsUnsub = null;
@@ -1551,7 +1580,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pintarNegocio() {
     if (!invitado && !negocios.some((x) => x.id === negocio)) { negocio = 'juridico'; try { localStorage.setItem('libro-negocio', 'juridico'); } catch (e) {} location.reload(); return; }
     $('neg-nombre').textContent = nombreNeg(negocio);
-    document.body.classList.toggle('inmob', negocio !== 'juridico');
     document.title = nombreNeg(negocio) + ' · Libro de cuentas';
     pintarMenuNeg();
     $('neg-prev').hidden = $('neg-next').hidden = negocios.length < 2;
@@ -3660,7 +3688,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 </script>
 <dialog class="dlg-usr dlg-cats" id="dlg-cats" aria-labelledby="cats-tit">
   <div class="cats-in">
-    <div class="cats-cab"><h3 id="cats-tit">Opciones de categorías</h3><button type="button" class="ghost" id="cats-cerrar">Listo</button></div>
+    <div class="cats-cab"><h3 id="cats-tit">Opciones</h3><button type="button" class="ghost" id="cats-cerrar">Listo</button></div>
+    <h4 class="cats-sec">Tipos de tablas</h4>
+    <p class="sub" style="margin:0" id="tablas-sub"></p>
+    <ul class="tablas-list" id="tablas-list"></ul>
+    <p class="tablas-fija">Respaldo se muestra siempre.</p>
+    <h4 class="cats-sec">Categorías</h4>
     <p class="sub" style="margin:0" id="cats-sub"></p>
     <div class="cats-tabs" id="cats-tabs" role="tablist"></div>
     <ul class="cats-list" id="cats-list"></ul>
