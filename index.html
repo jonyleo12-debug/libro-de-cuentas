@@ -3715,7 +3715,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const esCorreo = (t) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t);
   let correosUsados = []; try { correosUsados = JSON.parse(localStorage.getItem('libro-correos') || '[]').filter(esCorreo).slice(0, 8); } catch (e) {}
   const guardarCorreos = () => { try { localStorage.setItem('libro-correos', JSON.stringify(correosUsados)); } catch (e) {} };
-  const mapMsg = (d) => { const x = d.data() || {}; return { id: d.id, de: String(x.de || ''), deEmail: String(x.deEmail || ''), para: String(x.para || ''), texto: String(x.texto || ''), creado: String(x.creado || ''), ocultoPara: x.ocultoPara === true, respuestas: Array.isArray(x.respuestas) ? x.respuestas : [] }; };
+  const mapMsg = (d) => { const x = d.data() || {}; return { id: d.id, de: String(x.de || ''), deEmail: String(x.deEmail || ''), para: String(x.para || ''), texto: String(x.texto || ''), creado: String(x.creado || ''), ocultoPara: x.ocultoPara === true, archivos: Array.isArray(x.archivos) ? x.archivos : [], respuestas: Array.isArray(x.respuestas) ? x.respuestas : [] }; };
   function juntarMsgs() {
     const m = {}; Object.values(msgPor).forEach((a) => a.forEach((x) => { m[x.id] = x; }));
     const yo = miCorreo();
@@ -3728,9 +3728,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     c.onSnapshotDonde('de', '==', auth.currentUser.uid, (s) => { msgPor.de = s.docs.map(mapMsg); juntarMsgs(); }, () => {});
     if (miCorreo()) c.onSnapshotDonde('para', '==', miCorreo(), (s) => { msgPor.para = s.docs.map(mapMsg); juntarMsgs(); }, () => {});
   }
-  function enviarMensaje(para, texto) {
+  function enviarMensaje(para, texto, archivos) {
     const c = wrapCol(collection(fs, 'mensajes'));
-    return c.add({ de: auth.currentUser.uid, deEmail: auth.currentUser.email || '', para, texto: texto.slice(0, 2000), creado: new Date().toISOString(), respuestas: [] });
+    const d = { de: auth.currentUser.uid, deEmail: auth.currentUser.email || '', para, texto: texto.slice(0, 2000), creado: new Date().toISOString(), respuestas: [] };
+    if (archivos && archivos.length) d.archivos = archivos;
+    return c.add(d);
+  }
+  // Documents travel as their download link, so the other account can open them.
+  function listaArch(archivos) {
+    const ul = document.createElement('ul'); ul.className = 'nota-arch';
+    archivos.filter((a) => a && a.url).forEach((a) => {
+      const li = document.createElement('li'); const ln = document.createElement('a'); ln.href = a.url; ln.target = '_blank'; ln.rel = 'noopener'; ln.title = a.nombre;
+      const tp = tipoArchivo(a.nombre, a.tipo); const ic = document.createElement('span'); ic.className = 'arch-ic t-' + tp;
+      if (tp === 'img') { const im = document.createElement('img'); im.src = a.url; im.alt = ''; im.loading = 'lazy'; ic.appendChild(im); } else ic.textContent = { pdf: 'PDF', doc: 'WORD', xls: 'EXCEL', aud: 'AUDIO' }[tp] || 'ARCH';
+      const nm = document.createElement('span'); nm.textContent = a.nombre;
+      ln.append(ic, nm); li.appendChild(ln); ul.appendChild(li);
+    });
+    return ul;
   }
   function cardsMensajes() {
     const yo = miCorreo();
@@ -3741,7 +3755,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const k = document.createElement('div'); k.className = 'nota-k'; const kt = document.createElement('span'); kt.textContent = (soyRem ? 'Para ' : 'De ') + otro; k.appendChild(kt);
       const ic = document.createElement('span'); ic.textContent = '✉'; ic.title = 'Mensaje con otra cuenta'; k.appendChild(ic);
       const t = document.createElement('p'); t.className = 'nota-msg-txt'; t.textContent = x.texto;
-      card.append(k, t);
+      card.append(k); if (x.texto) card.append(t); if (x.archivos.length) card.append(listaArch(x.archivos));
       if (x.respuestas.length) {
         const ul = document.createElement('ul'); ul.className = 'nota-resps';
         x.respuestas.slice().sort((a, b) => String(a.creado || '').localeCompare(String(b.creado || ''))).forEach((r) => {
@@ -3749,28 +3763,45 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           const b = document.createElement('b'); b.textContent = mio ? 'Tú' : otro;
           const tx = document.createElement('span'); tx.textContent = String(r.texto || '');
           const fh = document.createElement('small'); fh.textContent = r.creado ? new Date(r.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-          li.append(b, tx, fh); ul.appendChild(li);
+          li.append(b); if (r.texto) li.append(tx); if (Array.isArray(r.archivos) && r.archivos.length) li.append(listaArch(r.archivos)); li.append(fh); ul.appendChild(li);
         });
         card.append(ul);
       }
       if (msgResp === x.id) {
         const ta = document.createElement('textarea'); ta.className = 'nota-resp-in'; ta.rows = 2; ta.maxLength = 2000; ta.placeholder = 'Escribe tu respuesta y presiona Enter…'; ta.setAttribute('aria-label', 'Responder mensaje');
         ta.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') { msgResp = null; renderNotas(); return; }
+          if (e.key === 'Escape') { soltarRespAdj(); msgResp = null; renderNotas(); return; }
           if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
-          e.preventDefault(); const texto = ta.value.trim(); if (!texto) return;
-          wrapDoc(doc(fs, 'mensajes', x.id)).update({ respuestas: arrayUnion({ texto: texto.slice(0, 2000), de: soyRem ? 'remitente' : 'destinatario', creado: new Date().toISOString() }), ...(soyRem ? {} : { ocultoPara: false }) });
-          msgResp = null; renderNotas(); setMsg('Respuesta enviada a ' + otro + '.');
+          e.preventDefault();
+          if (respAdj.some((u) => !u.a)) { setMsg('Espera a que terminen de subir los documentos.', true); return; }
+          const archivos = respAdj.map((u) => u.a); const texto = ta.value.trim(); if (!texto && !archivos.length) return;
+          const r = { texto: texto.slice(0, 2000), de: soyRem ? 'remitente' : 'destinatario', creado: new Date().toISOString() }; if (archivos.length) r.archivos = archivos;
+          wrapDoc(doc(fs, 'mensajes', x.id)).update({ respuestas: arrayUnion(r), ...(soyRem ? {} : { ocultoPara: false }) });
+          respAdj = []; msgResp = null; renderNotas(); setMsg('Respuesta enviada a ' + otro + '.');
         });
-        card.append(ta); setTimeout(() => ta.focus(), 0);
+        const caja = document.createElement('div'); caja.className = 'nota-caja resp-caja';
+        const adj = document.createElement('label'); adj.className = 'nota-adj'; adj.title = 'Adjuntar documento'; adj.setAttribute('aria-label', 'Adjuntar documento a la respuesta');
+        adj.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>';
+        const fi = document.createElement('input'); fi.type = 'file'; fi.multiple = true; fi.accept = ACEPTA_ARCH; fi.hidden = true;
+        fi.addEventListener('change', () => { const fl = [...fi.files]; fi.value = ''; fl.forEach((f) => adjuntarANota(f, true)); ta.focus(); });
+        adj.appendChild(fi);
+        { let dn = 0; const tieneArch = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+          caja.addEventListener('dragenter', (e) => { if (!tieneArch(e)) return; e.preventDefault(); dn++; caja.classList.add('soltar'); });
+          caja.addEventListener('dragover', (e) => { if (!tieneArch(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+          caja.addEventListener('dragleave', () => { dn = Math.max(0, dn - 1); if (!dn) caja.classList.remove('soltar'); });
+          caja.addEventListener('drop', (e) => { if (!tieneArch(e)) return; e.preventDefault(); dn = 0; caja.classList.remove('soltar'); [...e.dataTransfer.files].forEach((f) => adjuntarANota(f, true)); }); }
+        const sol = document.createElement('div'); sol.className = 'nota-soltar'; sol.setAttribute('aria-hidden', 'true'); sol.textContent = 'Suelta el documento aquí';
+        caja.append(ta, adj, sol);
+        const ra = document.createElement('ul'); ra.className = 'nota-adjs'; ra.id = 'resp-adjs';
+        card.append(caja, ra); pintarAdjResp(); setTimeout(() => ta.focus(), 0);
       }
       const pie = document.createElement('div'); pie.className = 'nota-pie';
       const f = document.createElement('span'); f.textContent = x.creado ? new Date(x.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
       const acts = document.createElement('span'); acts.className = 'acts';
       const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ghost'; rb.textContent = msgResp === x.id ? 'Cancelar' : 'Responder';
-      rb.addEventListener('click', () => { msgResp = msgResp === x.id ? null : x.id; renderNotas(); });
+      rb.addEventListener('click', () => { soltarRespAdj(); respAbierta = null; msgResp = msgResp === x.id ? null : x.id; renderNotas(); });
       const db2 = document.createElement('button'); db2.type = 'button'; db2.className = 'ghost'; db2.textContent = 'Borrar';
-      db2.addEventListener('click', () => { const r = wrapDoc(doc(fs, 'mensajes', x.id)); if (soyRem) r.delete(); else r.update({ ocultoPara: true }); setMsg('Mensaje borrado.'); });
+      db2.addEventListener('click', () => { const r = wrapDoc(doc(fs, 'mensajes', x.id)); if (soyRem) { x.archivos.concat(...x.respuestas.map((q) => (q.de === 'remitente' && Array.isArray(q.archivos)) ? q.archivos : [])).forEach((a) => { if (a.ruta && a.ruta.startsWith('users/' + yoUid + '/')) deleteObject(sRef(storage, a.ruta)).catch(() => {}); }); r.delete(); } else r.update({ ocultoPara: true }); setMsg('Mensaje borrado.'); });
       acts.append(rb, db2); pie.append(f, acts); card.append(pie);
       return card;
     });
@@ -3938,7 +3969,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const acts = document.createElement('span'); acts.className = 'acts';
       const puedeMarcar = !invitado;
       if (n.para) { const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ghost'; rb.textContent = respAbierta === n.id ? 'Cancelar' : 'Responder';
-        rb.addEventListener('click', () => { soltarRespAdj(); respAbierta = respAbierta === n.id ? null : n.id; respDraft = ''; renderNotas(); }); acts.appendChild(rb); }
+        rb.addEventListener('click', () => { soltarRespAdj(); msgResp = null; respAbierta = respAbierta === n.id ? null : n.id; respDraft = ''; renderNotas(); }); acts.appendChild(rb); }
       if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Revisado';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
       if (esMia || !invitado) { const db = document.createElement('button'); db.type = 'button'; db.className = 'ghost'; db.textContent = 'Borrar';
@@ -4091,11 +4122,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const yo = yoUid;
     const pv = $('nota-para').value;
     if (!invitado && pv.startsWith('mail:')) {
-      if (archivos.length) { setMsg('Por ahora los documentos no se pueden enviar a otra cuenta. Quítalos y envía solo el texto.', true); return; }
-      if (!texto) return;
       const para = pv.slice(5);
-      enviarMensaje(para, texto).then(() => setMsg('Mensaje enviado a ' + para + '.')).catch(() => setMsg('No se pudo enviar. Falta actualizar las reglas de Firestore en Firebase.', true));
-      $('nota-txt').value = ''; return;
+      enviarMensaje(para, texto, archivos).then(() => setMsg('Mensaje enviado a ' + para + '.')).catch(() => setMsg('No se pudo enviar. Falta actualizar las reglas de Firestore en Firebase.', true));
+      $('nota-txt').value = ''; notaAdj = []; pintarAdjNota(); return;
     }
     const d = invitado
       ? { texto, para: 'dueno', autor: yo, autorNombre: invitado.nombre || '', color: invitado.color || '', creado: new Date().toISOString(), hecha: false }
