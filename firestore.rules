@@ -61,5 +61,18 @@ service cloud.firestore {
       allow update: if firmado() && resource.data.owner == request.auth.uid && request.resource.data.owner == request.auth.uid;
       allow delete: if firmado() && resource.data.owner == request.auth.uid;
     }
+
+    // Mensajes entre cuentas: solo el que envía y la cuenta con ese correo pueden leerlos.
+    match /mensajes/{id} {
+      function miCorreo() { return request.auth.token.email.lower(); }
+      allow read: if firmado() && (resource.data.de == request.auth.uid || resource.data.para == miCorreo());
+      allow create: if firmado() && request.resource.data.de == request.auth.uid
+        && request.resource.data.deEmail == request.auth.token.email
+        && request.resource.data.para is string && request.resource.data.para.size() < 200
+        && request.resource.data.texto is string && request.resource.data.texto.size() <= 2000;
+      allow update: if firmado() && (resource.data.de == request.auth.uid || resource.data.para == miCorreo())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respuestas', 'ocultoPara']);
+      allow delete: if firmado() && resource.data.de == request.auth.uid;
+    }
   }
 }

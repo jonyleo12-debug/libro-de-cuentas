@@ -433,6 +433,8 @@ body.invitado #sec-casos { display: grid !important; }
 #sec-notas.vuelta.biblio { min-height: 470px; }
 .libros-btn { position: absolute; z-index: 2; left: 26px; bottom: 10px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
 .libros-btn:hover { transform: scale(1.08); }
+.nota-msg { --nc: #7a8ca8; }
+.nota-msg-txt { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
 .calc-btn { left: 70px; }
 .calc-btn svg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
 body.invitado .calc-btn { display: none; }
@@ -3697,6 +3699,75 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   });
 
   // Notes: owner writes for themself or for a user; a user sees notes for them and can write back to the owner
+  // ── Mensajes a otra cuenta (por correo) ──
+  // Top-level collection "mensajes": {de: uid, deEmail, para: email (minúsculas), texto, creado, respuestas: [{texto, de: 'remitente'|'destinatario', creado}], ocultoPara}.
+  // Only the sender and the account with that email can read it (see firestore.rules).
+  let mensajes = [], msgResp = null;
+  const msgPor = {};
+  const miCorreo = () => String((auth.currentUser && auth.currentUser.email) || '').toLowerCase();
+  const esCorreo = (t) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t);
+  let correosUsados = []; try { correosUsados = JSON.parse(localStorage.getItem('libro-correos') || '[]').filter(esCorreo).slice(0, 8); } catch (e) {}
+  const guardarCorreos = () => { try { localStorage.setItem('libro-correos', JSON.stringify(correosUsados)); } catch (e) {} };
+  const mapMsg = (d) => { const x = d.data() || {}; return { id: d.id, de: String(x.de || ''), deEmail: String(x.deEmail || ''), para: String(x.para || ''), texto: String(x.texto || ''), creado: String(x.creado || ''), ocultoPara: x.ocultoPara === true, respuestas: Array.isArray(x.respuestas) ? x.respuestas : [] }; };
+  function juntarMsgs() {
+    const m = {}; Object.values(msgPor).forEach((a) => a.forEach((x) => { m[x.id] = x; }));
+    const yo = miCorreo();
+    mensajes = Object.values(m).filter((x) => !(x.para === yo && x.de !== yoUid && x.ocultoPara));
+    renderNotas();
+  }
+  function suscribirMensajes() {
+    if (invitado || !auth.currentUser) return;
+    const c = wrapCol(collection(fs, 'mensajes'));
+    c.onSnapshotDonde('de', '==', auth.currentUser.uid, (s) => { msgPor.de = s.docs.map(mapMsg); juntarMsgs(); }, () => {});
+    if (miCorreo()) c.onSnapshotDonde('para', '==', miCorreo(), (s) => { msgPor.para = s.docs.map(mapMsg); juntarMsgs(); }, () => {});
+  }
+  function enviarMensaje(para, texto) {
+    const c = wrapCol(collection(fs, 'mensajes'));
+    return c.add({ de: auth.currentUser.uid, deEmail: auth.currentUser.email || '', para, texto: texto.slice(0, 2000), creado: new Date().toISOString(), respuestas: [] });
+  }
+  function cardsMensajes() {
+    const yo = miCorreo();
+    const ultimo = (x) => x.respuestas.reduce((t, r) => (String(r.creado || '') > t ? String(r.creado) : t), x.creado);
+    return mensajes.slice().sort((a, b) => ultimo(b).localeCompare(ultimo(a))).map((x) => {
+      const soyRem = x.de === yoUid; const otro = soyRem ? x.para : x.deEmail;
+      const card = document.createElement('div'); card.className = 'nota nota-msg';
+      const k = document.createElement('div'); k.className = 'nota-k'; const kt = document.createElement('span'); kt.textContent = (soyRem ? 'Para ' : 'De ') + otro; k.appendChild(kt);
+      const ic = document.createElement('span'); ic.textContent = '✉ Otra cuenta'; k.appendChild(ic);
+      const t = document.createElement('p'); t.className = 'nota-msg-txt'; t.textContent = x.texto;
+      card.append(k, t);
+      if (x.respuestas.length) {
+        const ul = document.createElement('ul'); ul.className = 'nota-resps';
+        x.respuestas.slice().sort((a, b) => String(a.creado || '').localeCompare(String(b.creado || ''))).forEach((r) => {
+          const li = document.createElement('li'); const mio = (r.de === 'remitente') === soyRem;
+          const b = document.createElement('b'); b.textContent = mio ? 'Tú' : otro;
+          const tx = document.createElement('span'); tx.textContent = String(r.texto || '');
+          const fh = document.createElement('small'); fh.textContent = r.creado ? new Date(r.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+          li.append(b, tx, fh); ul.appendChild(li);
+        });
+        card.append(ul);
+      }
+      if (msgResp === x.id) {
+        const ta = document.createElement('textarea'); ta.className = 'nota-resp-in'; ta.rows = 2; ta.maxLength = 2000; ta.placeholder = 'Escribe tu respuesta y presiona Enter…'; ta.setAttribute('aria-label', 'Responder mensaje');
+        ta.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { msgResp = null; renderNotas(); return; }
+          if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+          e.preventDefault(); const texto = ta.value.trim(); if (!texto) return;
+          wrapDoc(doc(fs, 'mensajes', x.id)).update({ respuestas: arrayUnion({ texto: texto.slice(0, 2000), de: soyRem ? 'remitente' : 'destinatario', creado: new Date().toISOString() }), ...(soyRem ? {} : { ocultoPara: false }) });
+          msgResp = null; renderNotas(); setMsg('Respuesta enviada a ' + otro + '.');
+        });
+        card.append(ta); setTimeout(() => ta.focus(), 0);
+      }
+      const pie = document.createElement('div'); pie.className = 'nota-pie';
+      const f = document.createElement('span'); f.textContent = x.creado ? new Date(x.creado).toLocaleString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+      const acts = document.createElement('span'); acts.className = 'acts';
+      const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ghost'; rb.textContent = msgResp === x.id ? 'Cancelar' : 'Responder';
+      rb.addEventListener('click', () => { msgResp = msgResp === x.id ? null : x.id; renderNotas(); });
+      const db2 = document.createElement('button'); db2.type = 'button'; db2.className = 'ghost'; db2.textContent = 'Borrar';
+      db2.addEventListener('click', () => { const r = wrapDoc(doc(fs, 'mensajes', x.id)); if (soyRem) r.delete(); else r.update({ ocultoPara: true }); setMsg('Mensaje borrado.'); });
+      acts.append(rb, db2); pie.append(f, acts); card.append(pie);
+      return card;
+    });
+  }
   let notas = [];
   let yoUid = '';
   const notasPor = {};
@@ -3705,9 +3776,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const sel = $('nota-para');
     if (invitado) { $('nota-para-l').hidden = true; const t = $('nota-para-txt'); t.hidden = false; t.textContent = 'Para ' + nombreDueno(); return; }
     const prev = sel.value;
-    sel.replaceChildren(...[['', 'Para mí'], ...(miembros.length > 1 ? [['__todos', 'Todos']] : []), ...miembros.map((m) => [m.id, m.nombre || usuarioDe(m.email)])].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
+    sel.replaceChildren(...[['', 'Para mí'], ...(miembros.length > 1 ? [['__todos', 'Todos']] : []), ...miembros.map((m) => [m.id, m.nombre || usuarioDe(m.email)]), ...correosUsados.map((c) => ['mail:' + c, '✉ ' + c]), ['__correo', '✉ Otra cuenta (correo)…']].map(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; return o; }));
     if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
-    $('nota-para-l').hidden = !miembros.length;
+    $('nota-para-l').hidden = false;
   }
   function juntarNotas() { const m = {}; Object.values(notasPor).forEach((arr) => arr.forEach((n) => { m[n.id] = n; })); notas = Object.values(m); renderNotas(); }
   const mapNota = (d) => { const x = d.data() || {}; return { id: d.id, texto: String(x.texto || ''), para: String(x.para || ''), autor: String(x.autor || ''), autorNombre: String(x.autorNombre || ''), color: String(x.color || ''), creado: String(x.creado || ''), hecha: x.hecha === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.url) : [], respuestas: Array.isArray(x.respuestas) ? x.respuestas.filter((r) => r && (r.texto || (Array.isArray(r.archivos) && r.archivos.length))) : [] }; };
@@ -3838,7 +3909,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const pend = lista.filter((n) => !n.hecha && (invitado ? n.para === yo : n.para === '' || n.para === 'dueno')).length;
     $('notas-n').textContent = pend ? `${pend} ${pend === 1 ? 'pendiente' : 'pendientes'}` : '';
     renderAcciones();
-    box.replaceChildren(...lista.map((n) => {
+    const tarjetasMsg = invitado ? [] : cardsMensajes();
+    box.replaceChildren(...tarjetasMsg, ...lista.map((n) => {
       const card = document.createElement('div'); card.className = 'nota' + (n.hecha ? ' hecha' : '');
       let etiqueta = 'Personal', colorK = '';
       if (invitado) {
@@ -3943,6 +4015,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       return card;
     }));
   }
+  let paraPrevio = '';
+  $('nota-para').addEventListener('focus', () => { paraPrevio = $('nota-para').value; });
+  $('nota-para').addEventListener('change', () => {
+    const sel = $('nota-para'); if (sel.value !== '__correo') { paraPrevio = sel.value; return; }
+    const c = String(prompt('Correo de la otra cuenta (la persona debe estar registrada en la app con ese correo):') || '').trim().toLowerCase();
+    if (!c) { sel.value = paraPrevio; return; }
+    if (!esCorreo(c)) { alert('Ese correo no parece válido.'); sel.value = paraPrevio; return; }
+    if (c === miCorreo()) { alert('Ese es tu propio correo. Usa "Para mí".'); sel.value = paraPrevio; return; }
+    correosUsados = [c, ...correosUsados.filter((x) => x !== c)].slice(0, 8); guardarCorreos();
+    pintarParaNotas(); sel.value = 'mail:' + c; paraPrevio = sel.value; $('nota-txt').focus();
+  });
   $('nota-txt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('nota-form').requestSubmit(); } });
   // Documents attached to a new note upload right away; the note keeps the finished ones when it is sent.
   let notaAdj = [], respAdj = [];
@@ -3997,6 +4080,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const archivos = notaAdj.map((u) => u.a);
     const texto = $('nota-txt').value.trim(); if ((!texto && !archivos.length) || !libroRef) return;
     const yo = yoUid;
+    const pv = $('nota-para').value;
+    if (!invitado && pv.startsWith('mail:')) {
+      if (archivos.length) { setMsg('Por ahora los documentos no se pueden enviar a otra cuenta. Quítalos y envía solo el texto.', true); return; }
+      if (!texto) return;
+      const para = pv.slice(5);
+      enviarMensaje(para, texto).then(() => setMsg('Mensaje enviado a ' + para + '.')).catch(() => setMsg('No se pudo enviar. Falta actualizar las reglas de Firestore en Firebase.', true));
+      $('nota-txt').value = ''; return;
+    }
     const d = invitado
       ? { texto, para: 'dueno', autor: yo, autorNombre: invitado.nombre || '', color: invitado.color || '', creado: new Date().toISOString(), hecha: false }
       : { texto, para: $('nota-para').value || '', autor: 'dueno', autorNombre: '', color: '', creado: new Date().toISOString(), hecha: false };
@@ -4124,7 +4215,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       renderPronto();
     }, lost);
     suscribirCasos(lost);
-    suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares();
+    suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares(); suscribirMensajes();
     col('miembros').onSnapshot((snap) => {
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
