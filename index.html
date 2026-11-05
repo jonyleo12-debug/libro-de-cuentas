@@ -442,6 +442,12 @@ body.invitado .calc-btn { display: none; }
 .calc-sec { border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px 14px; margin: 0; display: grid; gap: 10px; min-width: 0; }
 .calc-sec legend { font: 600 13px var(--font-body); padding: 0 6px; color: var(--fg); }
 .calc-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.calc-cli { position: relative; display: grid; }
+.calc-sug { position: absolute; z-index: 5; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 6px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 40px -12px rgba(0,0,0,.35); max-height: 260px; overflow-y: auto; }
+.calc-sug[hidden] { display: none; }
+.calc-sug button { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; border: 0; background: none; color: var(--fg); font: 14.5px var(--font-body); padding: 8px 10px; border-radius: 9px; cursor: pointer; text-align: left; }
+.calc-sug button small { color: var(--muted); font-size: 11.5px; }
+.calc-sug button:hover, .calc-sug button.act { background: #fdf0c4; }
 .dlg-calc label input:not([type=checkbox]) { text-transform: none; letter-spacing: 0; font: 15px var(--font-body); color: var(--fg); }
 .calc-horas { display: grid; gap: 6px; }
 .dlg-calc label.calc-item { display: grid; grid-template-columns: 1fr 92px 30px; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--fg); }
@@ -3637,6 +3643,34 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   })));
   [['k-cliente', 'cliente'], ['k-servicio', 'servicio'], ['k-tarifa', 'tarifa'], ['k-valor', 'valor'], ['k-ant', 'ant']].forEach(([id, k]) => $(id).addEventListener('input', (e) => { calc[k] = k === 'valor' ? Number(e.target.value) : e.target.value; calcGuardar(); calcPintar(); }));
   [['k-gastos-ant', 'gastosAnt'], ['k-iva', 'iva'], ['k-redondear', 'redondear']].forEach(([id, k]) => $(id).addEventListener('change', (e) => { calc[k] = e.target.checked; calcGuardar(); calcPintar(); }));
+  // Client: free text, with suggestions from the case list as you type.
+  const normC = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function sugCerrar() { $('k-sug').hidden = true; $('k-cliente').setAttribute('aria-expanded', 'false'); }
+  function sugPintar() {
+    const q = normC($('k-cliente').value).trim(), ws = q.split(/\s+/).filter(Boolean);
+    const vistos = new Set();
+    const xs = !ws.length ? [] : casos.filter((c) => { const n = normC(c.nombre); if (!c.nombre || vistos.has(n) || !ws.every((w) => n.includes(w))) return false; vistos.add(n); return true; })
+      .sort((a, b) => (!!a.archivado - !!b.archivado) || a.nombre.localeCompare(b.nombre)).slice(0, 8);
+    if (!xs.length || (xs.length === 1 && normC(xs[0].nombre) === q)) { sugCerrar(); return; }
+    $('k-sug').replaceChildren(...xs.map((c) => {
+      const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.tabIndex = -1;
+      b.textContent = c.nombre; if (c.archivado) { const s = document.createElement('small'); s.textContent = 'archivado'; b.appendChild(s); }
+      b.addEventListener('mousedown', (e) => e.preventDefault());
+      b.addEventListener('click', () => { $('k-cliente').value = calc.cliente = c.nombre; calcGuardar(); sugCerrar(); $('k-servicio').focus(); });
+      li.appendChild(b); return li;
+    }));
+    $('k-sug').hidden = false; $('k-cliente').setAttribute('aria-expanded', 'true');
+  }
+  $('k-cliente').addEventListener('input', sugPintar);
+  $('k-cliente').addEventListener('focus', sugPintar);
+  $('k-cliente').addEventListener('blur', () => setTimeout(sugCerrar, 120));
+  $('k-cliente').addEventListener('keydown', (e) => {
+    const bs = [...$('k-sug').querySelectorAll('button')]; if ($('k-sug').hidden || !bs.length) return;
+    const i = bs.findIndex((b) => b.classList.contains('act'));
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const j = e.key === 'ArrowDown' ? (i + 1) % bs.length : (i <= 0 ? bs.length - 1 : i - 1); bs.forEach((b, k) => b.classList.toggle('act', k === j)); }
+    else if (e.key === 'Enter' && i >= 0) { e.preventDefault(); bs[i].click(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); sugCerrar(); }
+  });
   const dlgCalc = $('dlg-calc');
   $('calc-btn').addEventListener('click', () => { calcLlenar(); dlgCalc.showModal(); });
   $('calc-cerrar').addEventListener('click', () => dlgCalc.close());
@@ -4501,9 +4535,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <div class="calc-cuerpo">
       <div class="calc-datos">
         <fieldset class="calc-sec"><legend>Datos del caso</legend>
-          <div class="calc-2"><label>Cliente<input type="text" id="k-cliente" maxlength="120" placeholder="Ej.: Ana Martínez"></label>
-          <label>Tipo de servicio<input type="text" id="k-servicio" maxlength="80" placeholder="Ej.: Proceso de alimentos" list="k-servicios"></label></div>
-          <datalist id="k-servicios"><option>Proceso de alimentos</option><option>Divorcio</option><option>Juicio ejecutivo</option><option>Defensa penal</option><option>Denuncia</option><option>Contrato</option><option>Trámite notarial</option><option>Asesoría</option></datalist>
+          <div class="calc-2"><div class="calc-cli"><label>Cliente<input type="text" id="k-cliente" maxlength="120" placeholder="Escribe o busca en tus casos" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="k-sug"></label><ul class="calc-sug" id="k-sug" role="listbox" hidden></ul></div>
+          <label>Tipo de servicio<input type="text" id="k-servicio" maxlength="80" placeholder="Ej.: Proceso de alimentos" autocomplete="off"></label></div>
         </fieldset>
         <fieldset class="calc-sec"><legend>1. Tiempo</legend>
           <div class="calc-horas" id="k-horas"></div>
