@@ -434,6 +434,8 @@ body.invitado #sec-casos { display: grid !important; }
 .libros-btn { position: absolute; z-index: 2; left: 26px; bottom: 10px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
 .libros-btn:hover { transform: scale(1.08); }
 .nota-msg { --nc: #7a8ca8; }
+.nota-msg .nota-k span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.nota-msg .nota-k span + span { flex: none; white-space: nowrap; }
 .nota-msg-btn { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--panel); color: var(--accent); box-shadow: var(--raise-sm, 0 2px 8px rgba(0,0,0,.12)); cursor: pointer; transition: transform .15s; }
 .nota-msg-btn:hover { transform: scale(1.08); }
 body.invitado .nota-msg-btn { display: none; }
@@ -527,7 +529,7 @@ body.invitado .calc-btn { display: none; }
 @media (max-width: 900px) { .fila-nuevo { grid-template-columns: minmax(0, 1fr); } .fila-nuevo > #sec-notas { border-left: 0; border-top: 1px solid var(--line); } }
 body.invitado .fila-nuevo > #sec-notas { border: 0; }
 body.invitado .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
-#sec-notas .notas { grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; max-height: 300px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
+#sec-notas .notas { grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; max-height: 300px; overflow: auto; padding: 4px; margin: -4px -4px 48px; scrollbar-width: thin; }
 body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); max-height: none; }
 #sec-notas .nota-bar { justify-content: flex-start; }
 .notas-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
