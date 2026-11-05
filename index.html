@@ -433,6 +433,46 @@ body.invitado #sec-casos { display: grid !important; }
 #sec-notas.vuelta.biblio { min-height: 470px; }
 .libros-btn { position: absolute; z-index: 2; left: 26px; bottom: 10px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
 .libros-btn:hover { transform: scale(1.08); }
+.calc-btn { left: 70px; }
+.calc-btn svg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
+body.invitado .calc-btn { display: none; }
+.dlg-calc { width: min(860px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.calc-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; align-items: start; }
+.calc-datos { display: grid; gap: 12px; min-width: 0; }
+.calc-sec { border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px 14px; margin: 0; display: grid; gap: 10px; min-width: 0; }
+.calc-sec legend { font: 600 13px var(--font-body); padding: 0 6px; color: var(--fg); }
+.calc-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dlg-calc label input:not([type=checkbox]) { text-transform: none; letter-spacing: 0; font: 15px var(--font-body); color: var(--fg); }
+.calc-horas { display: grid; gap: 6px; }
+.dlg-calc label.calc-item { display: grid; grid-template-columns: 1fr 92px 30px; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--fg); }
+.calc-item input { padding: 7px 10px !important; text-align: right; }
+.calc-item small { color: var(--muted); font-size: 12px; }
+.calc-fila { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.calc-fila label { flex: 0 1 180px; }
+.calc-fila input[type=range] { flex: 1; accent-color: #e0a100; }
+.calc-sub { color: var(--muted); font-size: 13.5px; }
+.calc-sub b { color: var(--fg); }
+.calc-ayuda { color: var(--muted); font-size: 12.5px; }
+.calc-nivel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.calc-nivel button { display: grid; gap: 1px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 12px; padding: 8px; cursor: pointer; font: 14px var(--font-body); }
+.calc-nivel button small { color: var(--muted); font-size: 12px; }
+.calc-nivel button.on { background: #f2b705; border-color: #f2b705; color: #1b1b1d; }
+.calc-nivel button.on small { color: #4a3b00; }
+.calc-res { position: sticky; top: 0; display: grid; gap: 7px; background: linear-gradient(160deg, #fff7d6, #fdebb0); color: #2b2410; border-radius: 18px; padding: 16px; box-shadow: 0 10px 30px -14px rgba(120,90,0,.45); }
+.calc-l { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; }
+.calc-l[hidden] { display: none; }
+.calc-l span { color: #6b5a24; }
+.calc-l b { font-variant-numeric: tabular-nums; text-align: right; }
+.calc-l.fuerte { border-top: 1px solid rgba(107,90,36,.25); padding-top: 7px; }
+.calc-l.fuerte span, .calc-l.fuerte b { font-weight: 700; color: #2b2410; }
+.calc-total { display: grid; gap: 2px; margin: 6px 0 4px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,.6); text-align: center; }
+.calc-total span { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #6b5a24; }
+.calc-total strong { font-size: 30px; font-variant-numeric: tabular-nums; }
+.calc-res .btn { width: 100%; margin-top: 6px; }
+.calc-res .ghost { width: 100%; background: rgba(255,255,255,.5); color: #4a3b00; border-color: rgba(107,90,36,.3); padding: 7px; }
+.calc-res .msg { color: #8a2d1e; }
+@media (max-width: 720px) { .calc-cuerpo { grid-template-columns: 1fr; } .calc-res { position: static; } .calc-2 { grid-template-columns: 1fr; } }
+
 .libros-btn svg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
 .nf-dorso.nf-biblio { grid-template-rows: auto auto minmax(0, 1fr) auto; align-content: stretch; padding-bottom: 46px; }
 .nf-biblio.soltar .nota-soltar { display: grid; }
@@ -454,7 +494,7 @@ body.invitado #sec-casos { display: grid !important; }
 .bib-up { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 14px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--ink); }
 .bib-vacio { color: var(--muted); font-size: 13.5px; margin: 0; }
 .nf-cara, .nf-dorso { backface-visibility: hidden; -webkit-backface-visibility: hidden; padding: 26px; box-sizing: border-box; }
-@media (max-width: 640px) { .nf-cara, .nf-dorso { padding: 20px 16px; } .libros-btn { left: 16px; } }
+@media (max-width: 640px) { .nf-cara, .nf-dorso { padding: 20px 16px; } .libros-btn { left: 16px; } .calc-btn { left: 60px; } }
 .nf-cara { position: relative; display: grid; gap: 18px; align-content: start; }
 .nf-dorso { position: absolute; inset: 0; transform: rotateY(180deg); display: grid; grid-template-rows: auto 1fr; gap: 12px; overflow: hidden; background: var(--panel); border-radius: 0 var(--r) var(--r) 0; }
 .nf-dorso h2 { margin: 0; }
@@ -1084,6 +1124,7 @@ body.invitado .ajustes-btn { display: none; }
     </form>
     <div class="notas" id="notas"></div>
     <button type="button" class="libros-btn" aria-label="Abrir biblioteca y repositorio" title="Biblioteca y repositorio"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="var(--accent)"/><path fill="#fff" d="M10 13.2h1.6v13.2c2.6-.5 5.2-.2 7.6 1.1-2.6-.7-6-.8-9.2 0zM30 13.2h-1.6v13.2c-2.6-.5-5.2-.2-7.6 1.1 2.6-.7 6-.8 9.2 0z"/><path fill="#fff" d="M12.6 11.6c2.5-.4 4.9 0 6.9 1.3v13.4c-2-1.1-4.4-1.4-6.9-1.1zM27.4 11.6c-2.5-.4-4.9 0-6.9 1.3v13.4c2-1.1 4.4-1.4 6.9-1.1z"/></svg></button>
+    <button type="button" class="libros-btn calc-btn" id="calc-btn" aria-label="Calculadora de honorarios" title="Calculadora de honorarios"><svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#f2b705"/><rect x="12.5" y="9.5" width="15" height="21" rx="2.6" fill="#fff"/><rect x="15" y="12" width="10" height="4.2" rx="1" fill="#f2b705"/><g fill="#f2b705"><circle cx="16.2" cy="20" r="1.25"/><circle cx="20" cy="20" r="1.25"/><circle cx="23.8" cy="20" r="1.25"/><circle cx="16.2" cy="23.8" r="1.25"/><circle cx="20" cy="23.8" r="1.25"/><circle cx="23.8" cy="23.8" r="1.25"/><circle cx="16.2" cy="27.4" r="1.25"/><circle cx="20" cy="27.4" r="1.25"/><circle cx="23.8" cy="27.4" r="1.25"/></g></svg></button>
     <button type="button" class="doblez" aria-label="Ver acciones a revisar"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button>
    </div>
    <div class="nf-dorso" aria-hidden="true">
@@ -3541,6 +3582,86 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     setMsg(`Caso de ${nombre} creado.`);
   });
 
+  // ── Calculadora de honorarios (método de los 5 factores) ──
+  // Tiempo (horas × tarifa) × complejidad × responsabilidad, + % por valor aportado, + gastos. Optional IVA and rounding.
+  // The hourly rate, anticipo % and options are remembered in this browser.
+  const CALC_ACT = ['Diagnóstico jurídico', 'Revisión documental', 'Preparación de estrategia', 'Redacción de escritos', 'Audiencias', 'Seguimiento y comunicación'];
+  const CALC_GAS = ['Movilización', 'Certificaciones y copias', 'Peritajes / apoyo externo', 'Otros'];
+  const CALC_NIV = [['Baja', 1], ['Media', 1.15], ['Alta', 1.3]];
+  const calcDef = () => ({ cliente: '', servicio: '', horas: CALC_ACT.map(() => ''), gastos: CALC_GAS.map(() => ''), tarifa: 45, comp: 'Media', resp: 'Media', valor: 10, ant: 50, gastosAnt: false, iva: false, redondear: false });
+  let calc = calcDef();
+  try { const g = JSON.parse(localStorage.getItem('libro-calc') || 'null'); if (g) calc = { ...calc, ...g, horas: CALC_ACT.map((_, i) => (g.horas || [])[i] ?? ''), gastos: CALC_GAS.map((_, i) => (g.gastos || [])[i] ?? '') }; } catch (e) {}
+  const calcGuardar = () => { try { localStorage.setItem('libro-calc', JSON.stringify(calc)); } catch (e) {} };
+  const usd2 = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const numC = (v) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n > 0 ? n : 0; };
+  const multC = (k) => (CALC_NIV.find(([n]) => n === k) || CALC_NIV[1])[1];
+  function calcular() {
+    const horas = calc.horas.reduce((s, h) => s + numC(h), 0), tiempo = horas * numC(calc.tarifa);
+    const ajust = tiempo * multC(calc.comp) * multC(calc.resp), valor = ajust * (Number(calc.valor) || 0) / 100;
+    const hon = ajust + valor, iva = calc.iva ? hon * 0.15 : 0, gastos = calc.gastos.reduce((s, g) => s + numC(g), 0);
+    let total = hon + iva + gastos; if (calc.redondear && total > 0) total = Math.ceil(total / 10) * 10;
+    const r2 = (x) => Math.round(x * 100) / 100; total = r2(total);
+    const pct = Math.min(100, Math.max(0, Number(calc.ant) || 0)) / 100;
+    const ant = r2(calc.gastosAnt ? gastos + (total - gastos) * pct : total * pct);
+    return { horas, tiempo, ajust, valor, hon, iva, gastos, total, ant, saldo: r2(total - ant) };
+  }
+  function calcPintar() {
+    const r = calcular();
+    $('k-th').textContent = `${String(r.horas).replace('.', ',')} h`; $('k-st').textContent = usd2.format(r.tiempo);
+    $('k-valor-t').textContent = calc.valor + '%';
+    $('r-tiempo').textContent = usd2.format(r.tiempo); $('r-comp').textContent = `${calc.comp} · ${String(multC(calc.comp)).replace('.', ',')}`; $('r-resp').textContent = `${calc.resp} · ${String(multC(calc.resp)).replace('.', ',')}`;
+    $('r-ajust').textContent = usd2.format(r.ajust); $('r-valor').textContent = `${usd2.format(r.valor)} (${calc.valor}%)`; $('r-hon').textContent = usd2.format(r.hon);
+    $('r-iva-l').hidden = !calc.iva; $('r-iva').textContent = usd2.format(r.iva); $('r-gastos').textContent = usd2.format(r.gastos);
+    $('r-total').textContent = usd2.format(r.total); $('r-ant-t').textContent = `Anticipo (${calc.ant}%${calc.gastosAnt ? ' + gastos' : ''})`; $('r-ant').textContent = usd2.format(r.ant); $('r-saldo').textContent = usd2.format(r.saldo);
+    document.querySelectorAll('.calc-nivel button').forEach((b) => { const on = calc[b.parentElement.dataset.k] === b.dataset.v; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+  }
+  function calcFilas(boxId, nombres, key, unidad) {
+    $(boxId).replaceChildren(...nombres.map((n, i) => {
+      const l = document.createElement('label'); l.className = 'calc-item'; const s = document.createElement('span'); s.textContent = n;
+      const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.step = unidad === 'h' ? '0.5' : '1'; inp.inputMode = 'decimal'; inp.placeholder = '0'; inp.value = calc[key][i];
+      inp.setAttribute('aria-label', n + (unidad === 'h' ? ' (horas)' : ' (USD)'));
+      inp.addEventListener('input', () => { calc[key][i] = inp.value; calcGuardar(); calcPintar(); });
+      const u = document.createElement('small'); u.textContent = unidad === 'h' ? 'h' : 'USD';
+      l.append(s, inp, u); return l;
+    }));
+  }
+  function calcLlenar() {
+    calcFilas('k-horas', CALC_ACT, 'horas', 'h'); calcFilas('k-gastos', CALC_GAS, 'gastos', '$');
+    $('k-cliente').value = calc.cliente; $('k-servicio').value = calc.servicio; $('k-tarifa').value = calc.tarifa; $('k-valor').value = calc.valor; $('k-ant').value = calc.ant;
+    $('k-gastos-ant').checked = calc.gastosAnt; $('k-iva').checked = calc.iva; $('k-redondear').checked = calc.redondear; $('calc-msg').textContent = '';
+    calcPintar();
+  }
+  document.querySelectorAll('.calc-nivel').forEach((g) => g.replaceChildren(...CALC_NIV.map(([n, m]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.v = n; b.setAttribute('role', 'radio'); b.innerHTML = `<b>${n}</b><small>× ${String(m).replace('.', ',')}</small>`;
+    b.addEventListener('click', () => { calc[g.dataset.k] = n; calcGuardar(); calcPintar(); }); return b;
+  })));
+  [['k-cliente', 'cliente'], ['k-servicio', 'servicio'], ['k-tarifa', 'tarifa'], ['k-valor', 'valor'], ['k-ant', 'ant']].forEach(([id, k]) => $(id).addEventListener('input', (e) => { calc[k] = k === 'valor' ? Number(e.target.value) : e.target.value; calcGuardar(); calcPintar(); }));
+  [['k-gastos-ant', 'gastosAnt'], ['k-iva', 'iva'], ['k-redondear', 'redondear']].forEach(([id, k]) => $(id).addEventListener('change', (e) => { calc[k] = e.target.checked; calcGuardar(); calcPintar(); }));
+  const dlgCalc = $('dlg-calc');
+  $('calc-btn').addEventListener('click', () => { calcLlenar(); dlgCalc.showModal(); });
+  $('calc-cerrar').addEventListener('click', () => dlgCalc.close());
+  dlgCalc.addEventListener('click', (e) => { if (e.target === dlgCalc) dlgCalc.close(); });
+  $('calc-limpiar').addEventListener('click', () => { const d = calcDef(); calc = { ...d, tarifa: calc.tarifa, ant: calc.ant, gastosAnt: calc.gastosAnt, iva: calc.iva, redondear: calc.redondear }; calcGuardar(); calcLlenar(); });
+  function calcResumen() {
+    const r = calcular(), f = usd2.format;
+    return [`Honorarios calculados (5 factores)${calc.servicio ? ' · ' + calc.servicio : ''}`,
+      `Tiempo: ${String(r.horas).replace('.', ',')} h × ${f(numC(calc.tarifa))} = ${f(r.tiempo)}`,
+      `Complejidad ${calc.comp} (×${String(multC(calc.comp)).replace('.', ',')}) · Responsabilidad ${calc.resp} (×${String(multC(calc.resp)).replace('.', ',')}) · Valor aportado ${calc.valor}%`,
+      `Honorario: ${f(r.hon)}${calc.iva ? ` + IVA ${f(r.iva)}` : ''} · Gastos: ${f(r.gastos)}`,
+      `TOTAL: ${f(r.total)} · Anticipo: ${f(r.ant)} · Saldo: ${f(r.saldo)}`].join('\n');
+  }
+  $('calc-copiar').addEventListener('click', async () => { try { await navigator.clipboard.writeText((calc.cliente ? 'Cliente: ' + calc.cliente + '\n' : '') + calcResumen()); $('calc-msg').textContent = 'Resumen copiado.'; } catch (e) { $('calc-msg').textContent = 'No se pudo copiar.'; } });
+  $('calc-crear').addEventListener('click', async () => {
+    const nombre = String(calc.cliente || '').trim().replace(/\s+/g, ' ');
+    if (!nombre) { $('calc-msg').textContent = 'Escribe el nombre del cliente arriba.'; $('k-cliente').focus(); return; }
+    const r = calcular(); if (!r.total) { $('calc-msg').textContent = 'El total está en cero: pon las horas y la tarifa.'; return; }
+    if (casos.some((c) => c.nombre.trim().toLowerCase() === nombre.toLowerCase()) && !confirm(`Ya existe un caso de ${nombre}. ¿Crear otro igual?`)) return;
+    try {
+      await col('casos').add({ nombre, archivo: '', total: r.total, observacion: calcResumen(), creado: new Date().toISOString() });
+      $('calc-msg').textContent = ''; dlgCalc.close(); setMsg(`Caso de ${nombre} creado con un total de ${usd2.format(r.total)}. Cuando cobres el anticipo, anótalo como honorario.`);
+    } catch (e) { $('calc-msg').textContent = 'No se pudo crear el caso.'; }
+  });
+
   // Notes: owner writes for themself or for a user; a user sees notes for them and can write back to the owner
   let notas = [];
   let yoUid = '';
@@ -4371,6 +4492,55 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     </div>
     <p class="msg" id="p-msg" role="status"></p>
     <div class="det-acts"><button type="button" class="ghost prop-borrar" id="p-borrar" hidden>Borrar propiedad</button><button type="submit" class="btn" id="p-ok">Guardar</button></div>
+  </form>
+</dialog>
+<dialog class="dlg-usr dlg-calc" id="dlg-calc" aria-labelledby="calc-tit">
+  <form id="calc-form" method="dialog">
+    <div class="cats-cab"><h3 id="calc-tit">Calculadora de honorarios</h3><button type="button" class="ghost" id="calc-cerrar">Cerrar</button></div>
+    <p class="sub" style="margin:0">Método de los 5 factores: tiempo, complejidad, responsabilidad, gastos y valor aportado.</p>
+    <div class="calc-cuerpo">
+      <div class="calc-datos">
+        <fieldset class="calc-sec"><legend>Datos del caso</legend>
+          <div class="calc-2"><label>Cliente<input type="text" id="k-cliente" maxlength="120" placeholder="Ej.: Ana Martínez"></label>
+          <label>Tipo de servicio<input type="text" id="k-servicio" maxlength="80" placeholder="Ej.: Proceso de alimentos" list="k-servicios"></label></div>
+          <datalist id="k-servicios"><option>Proceso de alimentos</option><option>Divorcio</option><option>Juicio ejecutivo</option><option>Defensa penal</option><option>Denuncia</option><option>Contrato</option><option>Trámite notarial</option><option>Asesoría</option></datalist>
+        </fieldset>
+        <fieldset class="calc-sec"><legend>1. Tiempo</legend>
+          <div class="calc-horas" id="k-horas"></div>
+          <div class="calc-fila"><label>Tarifa por hora (USD)<input type="number" id="k-tarifa" min="0" step="1" inputmode="decimal"></label><span class="calc-sub">Total: <b id="k-th">0 h</b> · <b id="k-st">$0</b></span></div>
+        </fieldset>
+        <fieldset class="calc-sec"><legend>2. Complejidad</legend><div class="calc-nivel" data-k="comp" role="radiogroup" aria-label="Complejidad"></div></fieldset>
+        <fieldset class="calc-sec"><legend>3. Responsabilidad</legend><div class="calc-nivel" data-k="resp" role="radiogroup" aria-label="Responsabilidad"></div></fieldset>
+        <fieldset class="calc-sec"><legend>4. Gastos</legend><div class="calc-horas" id="k-gastos"></div></fieldset>
+        <fieldset class="calc-sec"><legend>5. Valor aportado</legend>
+          <div class="calc-fila"><input type="range" id="k-valor" min="0" max="20" step="1" aria-label="Porcentaje por valor aportado"><b id="k-valor-t">10%</b></div>
+          <small class="calc-ayuda">Adicional por prevención y tranquilidad que le das al cliente (sugerido 0% a 20%).</small>
+        </fieldset>
+        <fieldset class="calc-sec"><legend>Opciones</legend>
+          <div class="calc-fila"><label>Anticipo (%)<input type="number" id="k-ant" min="0" max="100" step="5" inputmode="numeric"></label></div>
+          <label class="usr-check"><input type="checkbox" id="k-gastos-ant"><span>Cobrar los gastos completos en el anticipo<small>El porcentaje de anticipo se aplica solo al honorario.</small></span></label>
+          <label class="usr-check"><input type="checkbox" id="k-iva"><span>Sumar IVA (15%) al honorario</span></label>
+          <label class="usr-check"><input type="checkbox" id="k-redondear"><span>Redondear el total a los $10 siguientes</span></label>
+        </fieldset>
+      </div>
+      <aside class="calc-res" aria-live="polite">
+        <div class="calc-l"><span>Tiempo</span><b id="r-tiempo"></b></div>
+        <div class="calc-l"><span>× Complejidad</span><b id="r-comp"></b></div>
+        <div class="calc-l"><span>× Responsabilidad</span><b id="r-resp"></b></div>
+        <div class="calc-l"><span>Subtotal ajustado</span><b id="r-ajust"></b></div>
+        <div class="calc-l"><span>+ Valor aportado</span><b id="r-valor"></b></div>
+        <div class="calc-l fuerte"><span>Honorario profesional</span><b id="r-hon"></b></div>
+        <div class="calc-l" id="r-iva-l"><span>+ IVA 15%</span><b id="r-iva"></b></div>
+        <div class="calc-l"><span>+ Gastos</span><b id="r-gastos"></b></div>
+        <div class="calc-total"><span>Honorario total</span><strong id="r-total"></strong></div>
+        <div class="calc-l"><span id="r-ant-t">Anticipo</span><b id="r-ant"></b></div>
+        <div class="calc-l"><span>Saldo</span><b id="r-saldo"></b></div>
+        <p class="msg" id="calc-msg" role="status"></p>
+        <button type="button" class="btn" id="calc-crear">Crear caso con este total</button>
+        <button type="button" class="ghost" id="calc-copiar">Copiar resumen</button>
+        <button type="button" class="ghost" id="calc-limpiar">Empezar de nuevo</button>
+      </aside>
+    </div>
   </form>
 </dialog>
 <dialog class="dlg-usr" id="dlg-usr">
