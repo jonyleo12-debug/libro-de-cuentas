@@ -348,6 +348,14 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .sat-lado { display: flex; flex-direction: column; overflow: hidden; text-transform: none; letter-spacing: 0; }
 .sat-mini { border: 0; background: none; box-shadow: none; padding: 0 4px; font: inherit; font-size: 12.5px; font-weight: 600; color: #5b4bb7; cursor: pointer; white-space: nowrap; text-align: left; display: flex; align-items: center; }
 .sat-mini:hover { text-decoration: underline; }
+.sat-fila { display: flex; align-items: center; gap: 2px; }
+.sat-fila input[type=file] { display: none; }
+.sat-up { border: 0; background: none; box-shadow: none; padding: 0 4px; height: 100%; color: #5b4bb7; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font: inherit; font-size: 11.5px; font-weight: 700; border-radius: 8px; }
+.sat-up:hover { background: color-mix(in srgb, #5b4bb7 10%, transparent); }
+.sat-up svg { width: 16px; height: 16px; flex: none; }
+.arch-grupo { margin: 4px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.arch-grupo:not(:first-child) { margin-top: 14px; }
+.arch-grupo span { font-weight: 500; letter-spacing: 0; text-transform: none; }
 .sat-nums { display: flex; flex-wrap: wrap; gap: 8px; }
 .sat-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-variant-numeric: tabular-nums; }
 .sat-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
@@ -1446,7 +1454,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const tipoArchivo = (n, t) => { const e = extDe(n); t = String(t || ''); if (e === 'pdf' || t === 'application/pdf') return 'pdf'; if (e === 'doc' || e === 'docx' || /word/.test(t)) return 'doc'; if (/^(xlsx?|csv)$/.test(e) || /excel|spreadsheet|text\/csv/.test(t)) return 'xls'; if (/^image\//.test(t) || /^(jpe?g|png|gif|webp|heic|heif)$/.test(e)) return 'img'; if (/^audio\//.test(t) || /^(mp3|m4a|wav|aac|ogg|opus)$/.test(e)) return 'aud'; return 'otro'; };
   const tamTexto = (b) => { b = Number(b) || 0; if (!b) return ''; if (b < 1024 * 1024) return Math.max(1, Math.round(b / 1024)) + ' KB'; return (b / 1024 / 1024).toFixed(b < 10 * 1024 * 1024 ? 1 : 0).replace('.', ',') + ' MB'; };
   const subiendo = {};
-  function subirArchivo(c, f) {
+  function subirArchivo(c, f, causa) {
     const tipo = TIPOS_EXT[extDe(f.name)] || f.type || '';
     if (tipoArchivo(f.name, tipo) === 'otro' || !tipo) { setMsg(`${f.name}: solo se aceptan PDF, Word, Excel, audios y fotos.`, true); return; }
     if (f.size > MAX_ARCH) { setMsg(`${f.name} pesa más de 50 MB.`, true); return; }
@@ -1468,8 +1476,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const url = await getDownloadURL(tarea.snapshot.ref);
         const a = { nombre: f.name, ruta, url, tipo, tam: f.size, subido: new Date().toISOString() };
         if (invitado) a.porNombre = invitado.nombre || '';
+        if (causa) a.causa = String(causa).slice(0, 80);
         col('casos').doc(c.id).update({ archivos: arrayUnion(a) });
-        setMsg(`${f.name} se subió a ${c.nombre}.`);
+        setMsg(`${f.name} se subió a ${c.nombre}${causa ? ' · causa ' + causa : ''}.`);
       } catch (e) { setMsg(`No se pudo terminar de subir ${f.name}.`, true); }
       quitar(); render();
     });
@@ -2820,8 +2829,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       {
         const lista = c.archivos.slice().sort((a, b) => String(b.subido || '').localeCompare(String(a.subido || '')));
         if (lista.length) {
+          // Files uploaded from a case-number row are grouped under that number; the rest go under "Generales".
+          const nums = causasDe(c);
+          const grupos = [...nums.map((n) => [n, lista.filter((a) => a.causa === n)]), ...[...new Set(lista.map((a) => a.causa).filter((x) => x && !nums.includes(x)))].map((n) => [n, lista.filter((a) => a.causa === n)]), ['', lista.filter((a) => !a.causa)]].filter(([, l]) => l.length);
+          const conGrupos = lista.some((a) => a.causa);
+          grupos.forEach(([n, l]) => {
+          if (conGrupos) { const h = document.createElement('div'); h.className = 'arch-grupo'; h.textContent = n ? 'Causa ' + n : 'Generales'; const k = document.createElement('span'); k.textContent = l.length + (l.length === 1 ? ' archivo' : ' archivos'); h.appendChild(k); cArc.appendChild(h); }
           const ul = document.createElement('ul'); ul.className = 'arch-list';
-          lista.forEach((a) => {
+          l.forEach((a) => {
             const li = document.createElement('li'); li.className = 'arch-it';
             const t = tipoArchivo(a.nombre, a.tipo);
             const ic = document.createElement('a'); ic.className = 'arch-ic t-' + t; ic.href = a.url; ic.target = '_blank'; ic.rel = 'noopener'; ic.setAttribute('aria-hidden', 'true'); ic.tabIndex = -1;
@@ -2837,6 +2852,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             li.append(ic, nm, del); ul.appendChild(li);
           });
           cArc.appendChild(ul);
+          });
         } else { const p0 = document.createElement('p'); p0.className = 'det-nota'; p0.textContent = 'Aún no hay archivos en este caso.'; cArc.appendChild(p0); }
         (subiendo[c.id] || []).forEach((u) => { const pu = document.createElement('p'); pu.className = 'arch-up'; pu.id = 'up-' + u.key; pu.textContent = `Subiendo ${u.nombre}… ${u.pct}%`; cArc.appendChild(pu); });
         const sb = document.createElement('div'); sb.className = 'arch-sub';
@@ -2882,7 +2898,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
               const b = document.createElement('button'); b.type = 'button'; b.className = 'sat-mini'; b.style.height = lh + 'px';
               b.textContent = 'Revisar en e-SATJE ↗'; b.title = 'Copiar ' + n + ' y abrir e-SATJE';
               b.addEventListener('click', (e) => { e.preventDefault(); abrirEsatje(n, c); });
-              return b;
+              // Upload documents that belong only to this case number.
+              const fila = document.createElement('div'); fila.className = 'sat-fila'; fila.style.height = lh + 'px';
+              const fi = document.createElement('input'); fi.type = 'file'; fi.multiple = true; fi.accept = ACEPTA_ARCH;
+              fi.addEventListener('change', () => { const fl = [...fi.files]; fi.value = ''; fl.forEach((f) => subirArchivo(c, f, n)); });
+              const up = document.createElement('button'); up.type = 'button'; up.className = 'sat-up';
+              const cuantos = c.archivos.filter((a) => a.causa === n).length;
+              up.title = 'Subir documentos de la causa ' + n + (cuantos ? ` (${cuantos} guardados)` : '');
+              up.setAttribute('aria-label', up.title);
+              up.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>' + (cuantos ? `<b>${cuantos}</b>` : '');
+              up.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); fi.click(); });
+              fila.append(b, up, fi);
+              return fila;
             }));
           };
           inp.addEventListener('input', pintar);
