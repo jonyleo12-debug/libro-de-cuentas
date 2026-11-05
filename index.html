@@ -434,6 +434,9 @@ body.invitado #sec-casos { display: grid !important; }
 .libros-btn { position: absolute; z-index: 2; left: 26px; bottom: 10px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
 .libros-btn:hover { transform: scale(1.08); }
 .nota-msg { --nc: #7a8ca8; }
+.nota-msg-btn { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--panel); color: var(--accent); box-shadow: var(--raise-sm, 0 2px 8px rgba(0,0,0,.12)); cursor: pointer; transition: transform .15s; }
+.nota-msg-btn:hover { transform: scale(1.08); }
+body.invitado .nota-msg-btn { display: none; }
 .nota-msg-txt { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
 .calc-btn { left: 70px; }
 .calc-btn svg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.15)); }
@@ -527,8 +530,8 @@ body.invitado .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
 #sec-notas .notas { grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; max-height: 300px; overflow: auto; padding: 4px; margin: -4px; scrollbar-width: thin; }
 body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); max-height: none; }
 #sec-notas .nota-bar { justify-content: flex-start; }
-.notas-cab { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px 14px; }
-.notas-cab .nota-para-l { min-width: 0; margin: 0; flex: 1 1 0; max-width: 220px; display: block; }
+.notas-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.notas-cab .nota-para-l { min-width: 130px; margin: 0; flex: 1 1 0; max-width: 220px; display: block; }
 .notas-cab #notas-n { white-space: nowrap; font-size: 13px; }
 .notas-cab .nota-para-l[hidden] { display: none; }
 .notas-cab select { width: 100%; padding: 7px 12px; font-size: 14px; }
@@ -1121,7 +1124,7 @@ body.invitado .ajustes-btn { display: none; }
   <section class="panel" id="sec-notas" aria-labelledby="h-notas">
    <div class="nf-in">
    <div class="nf-cara">
-    <div class="notas-cab"><h2 id="h-notas">Notas</h2><span class="nota-para-l" id="nota-para-l"><select id="nota-para" aria-label="Para quién es la nota" form="nota-form"></select></span><span class="sub" style="margin:0" id="nota-para-txt" hidden></span><span class="sub" style="display:inline;margin:0 0 0 auto" id="notas-n"></span></div>
+    <div class="notas-cab"><h2 id="h-notas">Notas</h2><span class="nota-para-l" id="nota-para-l"><select id="nota-para" aria-label="Para quién es la nota" form="nota-form"></select></span><button type="button" class="nota-msg-btn" id="nota-msg-btn" title="Enviar un mensaje a otra cuenta (por correo)" aria-label="Enviar un mensaje a otra cuenta"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 7.5l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="sub" style="margin:0" id="nota-para-txt" hidden></span><span class="sub" style="display:inline;margin:0 0 0 auto" id="notas-n"></span></div>
     <form class="nota-form" id="nota-form">
       <div class="nota-caja" id="nota-caja">
         <textarea id="nota-txt" class="obs" rows="3" maxlength="2000" placeholder="Escribe una nota y presiona Enter… También puedes arrastrar documentos aquí." aria-label="Nueva nota" enterkeyhint="send"></textarea>
@@ -4019,13 +4022,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('nota-para').addEventListener('focus', () => { paraPrevio = $('nota-para').value; });
   $('nota-para').addEventListener('change', () => {
     const sel = $('nota-para'); if (sel.value !== '__correo') { paraPrevio = sel.value; return; }
-    const c = String(prompt('Correo de la otra cuenta (la persona debe estar registrada en la app con ese correo):') || '').trim().toLowerCase();
+    const c = String(prompt('Correo de la otra cuenta (la persona debe estar registrada en la app con ese correo):', correosUsados[0] || '') || '').trim().toLowerCase();
     if (!c) { sel.value = paraPrevio; return; }
     if (!esCorreo(c)) { alert('Ese correo no parece válido.'); sel.value = paraPrevio; return; }
     if (c === miCorreo()) { alert('Ese es tu propio correo. Usa "Para mí".'); sel.value = paraPrevio; return; }
     correosUsados = [c, ...correosUsados.filter((x) => x !== c)].slice(0, 8); guardarCorreos();
     pintarParaNotas(); sel.value = 'mail:' + c; paraPrevio = sel.value; $('nota-txt').focus();
   });
+  $('nota-msg-btn').addEventListener('click', () => { const sel = $('nota-para'); paraPrevio = sel.value; sel.value = '__correo'; sel.dispatchEvent(new Event('change')); });
   $('nota-txt').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('nota-form').requestSubmit(); } });
   // Documents attached to a new note upload right away; the note keeps the finished ones when it is sent.
   let notaAdj = [], respAdj = [];
