@@ -3608,7 +3608,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function calcPintar() {
     const r = calcular();
     $('k-th').textContent = `${String(r.horas).replace('.', ',')} h`; $('k-st').textContent = usd2.format(r.tiempo);
-    $('k-valor-t').textContent = calc.valor + '%';
+    $('k-valor-t').textContent = `${calc.valor}% · +${usd2.format(r.valor)}`;
     $('r-tiempo').textContent = usd2.format(r.tiempo); $('r-comp').textContent = `${calc.comp} · ${String(multC(calc.comp)).replace('.', ',')}`; $('r-resp').textContent = `${calc.resp} · ${String(multC(calc.resp)).replace('.', ',')}`;
     $('r-ajust').textContent = usd2.format(r.ajust); $('r-valor').textContent = `${usd2.format(r.valor)} (${calc.valor}%)`; $('r-hon').textContent = usd2.format(r.hon);
     $('r-iva-l').hidden = !calc.iva; $('r-iva').textContent = usd2.format(r.iva); $('r-gastos').textContent = usd2.format(r.gastos);
@@ -4514,7 +4514,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         <fieldset class="calc-sec"><legend>4. Gastos</legend><div class="calc-horas" id="k-gastos"></div></fieldset>
         <fieldset class="calc-sec"><legend>5. Valor aportado</legend>
           <div class="calc-fila"><input type="range" id="k-valor" min="0" max="20" step="1" aria-label="Porcentaje por valor aportado"><b id="k-valor-t">10%</b></div>
-          <small class="calc-ayuda">Adicional por prevención y tranquilidad que le das al cliente (sugerido 0% a 20%).</small>
+          <small class="calc-ayuda">Un extra por el beneficio que recibe el cliente más allá de tus horas: que le evitas un problema mayor, que le ahorras dinero o que le das tranquilidad. Mueve la barra entre 0% (caso sencillo) y 20% (le resuelves algo muy importante). El porcentaje se suma sobre el honorario ya ajustado.</small>
         </fieldset>
         <fieldset class="calc-sec"><legend>Opciones</legend>
           <div class="calc-fila"><label>Anticipo (%)<input type="number" id="k-ant" min="0" max="100" step="5" inputmode="numeric"></label></div>
