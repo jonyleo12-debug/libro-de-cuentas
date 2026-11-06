@@ -1717,7 +1717,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Each property is a record in the business's "lugares" collection. With the owner's Google Maps key the map is Google's;
   // without one it falls back to Leaflet + OpenStreetMap. Photos go to Storage under users/{owner}/propiedades/.
   const PUYO = [-1.4924, -78.0024];
-  const TIPOS_PROP = ['Casa', 'Departamento', 'Terreno', 'Local comercial', 'Oficina', 'Cuarto', 'Quinta', 'Otro'];
+  const TIPOS_PROP = ['Casa', 'Departamento', 'Terreno', 'Local comercial', 'Oficina', 'Otro'];
   let motor = null; // 'g' | 'l'
   let mapaL = null, mapaCapas = null, casasCapa = null, mapaG = null, marcasG = [], infoG = null, PillG = null;
   let lugares = [], marcando = false, lugaresUnsub = null, propSel = null, propHover = null;
@@ -1755,11 +1755,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const GLIFOS = {
     'Casa': 'M4 11.6 12 4.8l8 6.8V20a1 1 0 0 1-1 1h-4.6v-5.2H9.6V21H5a1 1 0 0 1-1-1z',
     'Departamento': 'M5 3h14v18h-5v-4h-4v4H5zM8 6v3h3V6zm5 0v3h3V6zm-5 5v3h3v-3zm5 0v3h3v-3z',
-    'Terreno': 'M3 20l3.5-7h11l3.5 7zM11 3h1.8v9H11zm1.8.4 5.4 2.3-5.4 2.3z',
+    'Terreno': 'M7.5 2a4.3 4.3 0 0 1 4.3 4.3c0 2.9-4.3 7.3-4.3 7.3S3.2 9.2 3.2 6.3A4.3 4.3 0 0 1 7.5 2zm0 2.6a1.7 1.7 0 1 0 0 3.4 1.7 1.7 0 0 0 0-3.4zM3.6 11.6H5l2.5 3.3 2.5-3.3 1.2-1.6h9l.3 2.2h-4V16H2.9zM3 17h8v5H2.2zm9.2 0h5.4v-3.7h3.1L22 22h-9.8z',
     'Local comercial': 'M3 9 5 4h14l2 5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zm2 4.2h14V21h-5v-5h-4v5H5z',
     'Oficina': 'M9 4h6a1 1 0 0 1 1 1v2h4a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1zm1 1.8V7h4V5.8zM3 12.5h18v1.6H3z',
-    'Cuarto': 'M2.5 6h2.2v7.5H21.5V19h-2.2v-2H4.7v2H2.5zM6.5 9.2a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM12 9.5h5.5a4 4 0 0 1 4 3.5H12z',
-    'Quinta': 'M12 2a5 5 0 0 1 4.9 4.1A4.5 4.5 0 0 1 15.5 15H13v6h-2v-6H8.5a4.5 4.5 0 0 1-1.4-8.9A5 5 0 0 1 12 2z',
     'Otro': 'M12 2.8l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.6l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z',
     '': 'M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z'
   };
