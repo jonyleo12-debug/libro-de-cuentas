@@ -917,6 +917,20 @@ body.invitado .ajustes-btn { display: none; }
 .prop-datos { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); }
 .prop-datos span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .prop-datos svg { width: 16px; height: 16px; flex: none; }
+.prop-datos.edit { display: grid; gap: 1px; }
+.pd-it { display: inline-flex; align-items: center; gap: 4px; width: fit-content; text-transform: none; letter-spacing: 0; font-size: 12.5px; color: var(--muted); border-radius: 8px; cursor: pointer; }
+.pd-it.vacio { opacity: .6; }
+.pd-it select, .pd-it input { font: inherit; color: inherit; background: transparent; border: 0; box-shadow: none; padding: 1px 2px; margin: 0; border-radius: 6px; cursor: pointer; min-width: 0; -webkit-appearance: none; appearance: none; }
+.pd-area { gap: 2px; }
+.pd-area svg { margin-right: 2px; }
+.pd-it input[type=number] { padding: 1px 1px; -moz-appearance: textfield; cursor: text; text-align: left; font-variant-numeric: tabular-nums; }
+.pd-it input::-webkit-outer-spin-button, .pd-it input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pd-it:hover select, .pd-it:hover input, .pd-it select:focus, .pd-it input:focus { background: color-mix(in srgb, var(--accent) 10%, transparent); outline: none; }
+.prop-servs.edit { gap: 2px 6px; }
+.ps-it { border: 0; background: none; box-shadow: none; padding: 2px; margin: 0; border-radius: 8px; color: #b4b7bd; cursor: pointer; display: inline-grid; place-items: center; transition: color .15s, transform .15s; }
+.ps-it.on { color: var(--accent); }
+.ps-it:hover:not(:disabled) { transform: scale(1.12); }
+.ps-it:disabled { cursor: default; }
 .prop-pie { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 8px; margin-top: 2px; min-width: 0; }
 .prop-pie strong { font-size: 16px; color: var(--fg); font-variant-numeric: tabular-nums; margin-left: auto; text-align: right; }
 .prop-ubic-t { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
@@ -1804,6 +1818,55 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     add('hab', x.hab ? `${x.hab} hab.` : ''); add('banos', x.banos ? `${String(x.banos).replace('.', ',')} baño${x.banos === 1 ? '' : 's'}` : ''); add('area', x.area ? `${x.area} m²` : ''); add('parq', x.parq ? `${x.parq} parq.` : '');
     return d;
   }
+  // In the list cards the four data chips are always shown and can be changed right there.
+  function guardarCampo(x, datos) {
+    if (invitado || !x.id) return;
+    Object.assign(x, datos);
+    col('lugares').doc(x.id).update(datos).catch(() => setMsg('No se pudo guardar el cambio. Revisa tu internet.', true));
+  }
+  function datosEdit(x) {
+    const d = document.createElement('div'); d.className = 'prop-datos edit';
+    const parar = (el) => ['click', 'keydown', 'mousedown'].forEach((ev) => el.addEventListener(ev, (e) => e.stopPropagation()));
+    const sel = (k, txt, vals) => {
+      const s = document.createElement('label'); s.className = 'pd-it' + (x[k] ? '' : ' vacio'); s.innerHTML = icoSvg[k];
+      const se = document.createElement('select'); se.setAttribute('aria-label', txt(2).replace(/^2\s*/, ''));
+      const vs = vals.includes(x[k]) ? vals : [...vals, x[k]].sort((a, b) => a - b);
+      vs.forEach((v) => se.add(new Option(v ? txt(v) : '– ' + txt(2).replace(/^2\s*/, ''), String(v))));
+      se.value = String(x[k] || 0); se.disabled = !!invitado;
+      se.addEventListener('change', () => guardarCampo(x, { [k]: Number(se.value) || 0 }));
+      parar(s); s.appendChild(se); d.appendChild(s);
+    };
+    const rango = (n, paso) => Array.from({ length: n }, (_, i) => i * (paso || 1));
+    sel('hab', (v) => `${v} hab.`, rango(11));
+    sel('banos', (v) => `${String(v).replace('.', ',')} baño${v === 1 ? '' : 's'}`, rango(13, 0.5));
+    { // area: free number
+      const s = document.createElement('label'); s.className = 'pd-it pd-area' + (x.area ? '' : ' vacio'); s.innerHTML = icoSvg.area;
+      const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.step = '1'; inp.inputMode = 'numeric'; inp.placeholder = '–'; inp.value = x.area ? String(x.area) : ''; inp.setAttribute('aria-label', 'Área en m²'); inp.disabled = !!invitado;
+      inp.style.width = `calc(${Math.max(1, String(inp.value).length)}ch + 3px)`;
+      inp.addEventListener('input', () => { inp.style.width = `calc(${Math.max(1, inp.value.length)}ch + 3px)`; });
+      const ok = () => { const v = Math.max(0, Math.round(parseFloat(inp.value) || 0)); if (v !== (x.area || 0)) guardarCampo(x, { area: v }); };
+      inp.addEventListener('change', ok); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+      parar(s); s.append(inp, 'm²'); d.appendChild(s);
+    }
+    sel('parq', (v) => `${v} parq.`, rango(11));
+    return d;
+  }
+  // Services in the list cards: all three always shown, gray when missing; a click turns one on or off.
+  function servEdit(x) {
+    const d = document.createElement('div'); d.className = 'prop-servs edit';
+    SERVICIOS.forEach(([k, t, path]) => {
+      const on = x.servicios.includes(k);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ps-it' + (on ? ' on' : ''); b.innerHTML = icoServ(path);
+      b.title = t + (on ? ' (sí tiene)' : ' (no tiene)'); b.setAttribute('aria-label', t); b.setAttribute('aria-pressed', String(on)); b.disabled = !!invitado;
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const nuevos = on ? x.servicios.filter((v) => v !== k) : [...x.servicios, k];
+        guardarCampo(x, { servicios: nuevos }); pintarLista();
+      });
+      d.appendChild(b);
+    });
+    return d;
+  }
   function fotoEl(x, cls) {
     const f = document.createElement('div'); f.className = cls;
     if (x.fotos[0]) {
@@ -1858,7 +1921,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       li.appendChild(fotoEl(x, 'prop-foto'));
       const info = document.createElement('div'); info.className = 'prop-info';
       const h = document.createElement('b'); h.textContent = x.nombre; info.appendChild(h);
-      info.appendChild(datosChips(x)); if (x.servicios.length) info.appendChild(servEl(x, false));
+      info.appendChild(datosEdit(x)); info.appendChild(servEdit(x));
       const s = document.createElement('small'); s.innerHTML = icoTipo(x.tipo || 'Casa'); s.append([x.tipo, x.dir].filter(Boolean).join(' · ') || 'Puyo'); info.appendChild(s);
       if (x.desc) { const ds = document.createElement('p'); ds.className = 'prop-desc'; ds.textContent = x.desc; info.appendChild(ds); }
       const pie = document.createElement('div'); pie.className = 'prop-pie';
