@@ -916,7 +916,7 @@ button.prop-op { border: 0; box-shadow: none; cursor: pointer; z-index: 2; margi
 button.prop-op:hover { filter: brightness(1.08); }
 .est-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none; }
 .est-dot.est-disp { background: #2e9d5b; } .est-dot.est-res { background: #e0a800; } .est-dot.est-vend { background: #d32f2f; }
-.prop-info { display: grid; gap: 4px; min-width: 0; align-content: start; padding-right: 22px; }
+.prop-info { display: grid; gap: 4px; min-width: 0; align-content: start; padding-right: 26px; }
 .prop-info b { font-size: 14.5px; line-height: 1.25; overflow-wrap: anywhere; }
 .prop-info small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prop-datos { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); }
@@ -941,6 +941,11 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-ubic-t { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
 .prop-ed { position: absolute; top: 8px; right: 8px; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
 .prop-ed:hover { color: var(--accent); background: var(--accent-soft); }
+.prop-acc { position: absolute; top: 6px; right: 6px; display: flex; flex-direction: column; gap: 2px; }
+.prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
+.prop-acc .prop-ed svg { width: 17px; height: 17px; }
+.prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
+.prop-ubi.activo { color: #fff; background: var(--accent); }
 .prop-vacio { color: var(--muted); padding: 24px 12px; text-align: center; border: 1px dashed var(--line); border-radius: 16px; }
 .prop-pill { position: absolute; transform: translate(-17px, -39px); display: flex; align-items: flex-start; border: 0; background: none; padding: 0; cursor: pointer; white-space: nowrap; }
 .prop-pill .pin-svg { flex: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); transition: transform .12s; transform-origin: 17px 39px; }
@@ -1768,7 +1773,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const TIPOS_PROP = ['Casa', 'Terreno', 'Local comercial', 'Departamento', 'Oficina', 'Otro'];
   let motor = null; // 'g' | 'l'
   let mapaL = null, mapaCapas = null, casasCapa = null, mapaG = null, marcasG = [], infoG = null, PillG = null;
-  let tituloPendiente = null;
+  let tituloPendiente = null, ubicandoId = null;
   let lugares = [], marcando = false, lugaresUnsub = null, propSel = null, propHover = null;
   let filtro = { op: '', tipo: '', hab: 0, min: '', max: '', cerradas: true, q: '' };
   let gmapsKey = ''; try { gmapsKey = localStorage.getItem('libro-gmaps') || ''; } catch (e) {}
@@ -2040,9 +2045,28 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         pr.addEventListener('click', editar); pr.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); editar(e); } });
       }
       pie.append(u, pr); info.appendChild(pie);
-      const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'prop-ed'; ed.textContent = '✎'; ed.title = 'Editar'; ed.setAttribute('aria-label', 'Editar ' + x.nombre);
+      const acc = document.createElement('div'); acc.className = 'prop-acc';
+      const nom = x.nombre || 'la propiedad';
+      const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'prop-ed'; ed.textContent = '✎'; ed.title = 'Editar'; ed.setAttribute('aria-label', 'Editar ' + nom);
       ed.addEventListener('click', (e) => { e.stopPropagation(); abrirProp(x); });
-      li.append(info, ed);
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'prop-ed prop-del'; del.title = 'Eliminar propiedad'; del.setAttribute('aria-label', 'Eliminar ' + nom);
+      del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12M10 11v6M14 11v6"/></svg>';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!del.classList.contains('armado')) { del.classList.add('armado'); del.title = 'Toca otra vez para eliminar'; avisoMapa(`Toca otra vez el ícono rojo para eliminar "${nom}".`); setTimeout(() => { if (del.isConnected) { del.classList.remove('armado'); del.title = 'Eliminar propiedad'; } }, 4000); return; }
+        x.fotos.forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
+        col('lugares').doc(x.id).delete(); avisoMapa(`Se eliminó "${nom}".`); setTimeout(() => avisoMapa(''), 2500);
+      });
+      const ub = document.createElement('button'); ub.type = 'button'; ub.className = 'prop-ed prop-ubi' + (ubicandoId === x.id ? ' activo' : ''); ub.title = tieneUbic(x) ? 'Cambiar ubicación en el mapa' : 'Elegir ubicación en el mapa'; ub.setAttribute('aria-label', ub.title);
+      ub.innerHTML = icoPin;
+      ub.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (ubicandoId === x.id) { ubicandoId = null; setMarcando(false); pintarLista(); return; }
+        ubicandoId = x.id; pintarLista(); await iniciarMapa(); setMarcando(true);
+        avisoMapa(`Toca en el mapa el lugar de "${nom}".`); $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+      acc.append(ed, del, ub);
+      li.append(info, acc);
       li.addEventListener('click', () => seleccionar(x.id, true));
       li.addEventListener('keydown', (e) => { if (e.key === 'Enter') seleccionar(x.id, true); });
       li.addEventListener('mouseenter', () => { propHover = x.id; marcarPills(); });
@@ -2191,7 +2215,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('prop-cancelar').addEventListener('click', () => cerrarProp(true));
   dlgP.addEventListener('cancel', (e) => { e.preventDefault(); cerrarProp(true); });
   $('p-ubic').addEventListener('click', async () => {
-    leerForm(); dlgP.close(); await iniciarMapa();
+    ubicandoId = null; leerForm(); dlgP.close(); await iniciarMapa();
     setMarcando(true); $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
   // Photos are shrunk in the browser before upload so they load fast on the phone.
@@ -2264,6 +2288,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const setMarcando = (v) => { marcando = v; $('mapa').classList.toggle('marcando', v); if (mapaG) mapaG.setOptions({ draggableCursor: v ? 'crosshair' : null }); avisoMapa(v ? 'Toca en el mapa el lugar de la propiedad.' : ''); };
   function marcarEn(lat, lng) {
     setMarcando(false);
+    if (ubicandoId) { // placing an existing property from its card
+      const x = lugares.find((p) => p.id === ubicandoId); ubicandoId = null; pintarLista();
+      if (!x) return;
+      const datos = { lat, lng }; guardarCampo(x, datos); pintarPins(); avisoMapa('Ubicación guardada.'); setTimeout(() => avisoMapa(''), 2500);
+      if (!x.dir) direccionDe(lat, lng).then((t) => { if (t) guardarCampo(x, { dir: t.slice(0, 120) }); });
+      return;
+    }
     if (!draft) return;
     draft.lat = lat; draft.lng = lng;
     llenarForm(); if (!dlgP.open) dlgP.showModal();
