@@ -966,6 +966,10 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-tipo-b { display: inline-flex; align-items: center; gap: 0; border: 0; background: none; box-shadow: none; padding: 1px 4px 1px 0; margin: 0; font: inherit; color: inherit; cursor: pointer; border-radius: 6px; vertical-align: middle; }
 .prop-tipo-b:hover:not(:disabled) { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .prop-tipo-b:disabled { cursor: default; }
+.prop-precio-ed { cursor: pointer; border-radius: 8px; padding: 1px 4px; margin-right: -4px; }
+.prop-precio-ed:hover, .prop-precio-ed:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); outline: none; }
+.prop-precio-ed input { width: 9ch; font: inherit; color: inherit; border: 0; box-shadow: none; padding: 0 2px; margin: 0; background: transparent; text-align: right; -moz-appearance: textfield; }
+.prop-precio-ed input::-webkit-outer-spin-button, .prop-precio-ed input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .isel-menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; color: var(--fg); font: 15px var(--font-body); padding: 8px 10px; border-radius: 9px; cursor: pointer; white-space: nowrap; text-transform: none; letter-spacing: 0; text-align: left; }
 .isel-menu button .ico-tipo { width: 20px; height: 20px; color: var(--accent); }
 .isel-menu button:hover, .isel-menu button:focus-visible { background: var(--accent-soft); outline: none; }
@@ -1978,6 +1982,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const pie = document.createElement('div'); pie.className = 'prop-pie';
       const u = document.createElement('span'); u.className = 'prop-ubic-t'; u.textContent = tieneUbic(x) ? (x.fotos.length ? `${x.fotos.length} foto${x.fotos.length === 1 ? '' : 's'}` : '') : 'Sin ubicación';
       const pr = document.createElement('strong'); pr.textContent = x.precio ? precioTxt(x) : 'A consultar';
+      if (!invitado) { // click the price to change it right here
+        pr.className = 'prop-precio-ed'; pr.tabIndex = 0; pr.title = 'Cambiar precio'; pr.setAttribute('role', 'button');
+        const editar = (e) => {
+          e.stopPropagation(); if (pr.querySelector('input')) return;
+          const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.step = '1'; inp.inputMode = 'numeric'; inp.placeholder = 'Precio'; inp.value = x.precio ? String(x.precio) : ''; inp.setAttribute('aria-label', 'Precio en USD');
+          let hecho = false;
+          const fin = (guardar) => { if (hecho) return; hecho = true; const v = Math.max(0, Math.round(parseFloat(inp.value) || 0)); if (guardar && v !== (x.precio || 0)) guardarCampo(x, { precio: v }); pintarLista(); if (guardar) pintarPins(); };
+          inp.addEventListener('keydown', (ev) => { ev.stopPropagation(); if (ev.key === 'Enter') { ev.preventDefault(); fin(true); } else if (ev.key === 'Escape') fin(false); });
+          inp.addEventListener('blur', () => fin(true)); inp.addEventListener('click', (ev) => ev.stopPropagation());
+          pr.replaceChildren('$', inp); inp.focus(); inp.select();
+        };
+        pr.addEventListener('click', editar); pr.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); editar(e); } });
+      }
       pie.append(u, pr); info.appendChild(pie);
       const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'prop-ed'; ed.textContent = '✎'; ed.title = 'Editar'; ed.setAttribute('aria-label', 'Editar ' + x.nombre);
       ed.addEventListener('click', (e) => { e.stopPropagation(); abrirProp(x); });
