@@ -2013,7 +2013,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const [, et, ec] = estadoDe(x);
     if (cls === 'prop-foto' && !invitado) {
       const t = document.createElement('button'); t.type = 'button'; t.className = 'prop-op est-' + ec; t.textContent = et; t.title = 'Cambiar estado'; t.setAttribute('aria-haspopup', 'listbox');
-      t.addEventListener('click', (e) => { e.stopPropagation(); menuOpciones(t, x, 'estado', ESTADOS_P.map(([v, tx, c]) => [v, tx, `<i class="est-dot est-${c}"></i>`]), estadoDe(x)[0]); });
+      t.addEventListener('click', (e) => { e.stopPropagation(); menuOpciones(t, x, 'estado', ESTADOS_P.map(([v, tx]) => [v, tx, '']), estadoDe(x)[0]); });
       f.appendChild(t);
     } else { const t = document.createElement('span'); t.className = 'prop-op est-' + ec; t.textContent = et; f.appendChild(t); }
     return f;
