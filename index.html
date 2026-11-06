@@ -1842,7 +1842,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     };
     const rango = (n, paso) => Array.from({ length: n }, (_, i) => i * (paso || 1));
     sel('hab', (v) => `${v} hab.`, rango(11));
-    sel('banos', (v) => `${String(v).replace('.', ',')} baño${v === 1 ? '' : 's'}`, rango(13, 0.5).filter((v) => v !== 0.5));
+    sel('banos', (v) => `${String(v).replace('.', ',')} baño${v === 1 ? '' : 's'}`, rango(6));
     { // area: free number
       const s = document.createElement('label'); s.className = 'pd-it pd-area' + (x.area ? '' : ' vacio'); s.innerHTML = icoSvg.area;
       const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.step = '1'; inp.inputMode = 'numeric'; inp.placeholder = '–'; inp.value = x.area ? String(x.area) : ''; inp.setAttribute('aria-label', 'Área en m²'); inp.disabled = !!invitado;
