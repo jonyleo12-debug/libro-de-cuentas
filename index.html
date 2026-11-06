@@ -1856,6 +1856,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const rango = (n, paso) => Array.from({ length: n }, (_, i) => i * (paso || 1));
     sel('hab', (v) => `${v} hab.`, rango(11));
     sel('banos', (v) => `${String(v).replace('.', ',')} baño${v === 1 ? '' : 's'}`, rango(6));
+    sel('parq', (v) => `${v} parq.`, rango(6));
     { // area: free number
       const s = document.createElement('label'); s.className = 'pd-it pd-area' + (x.area ? '' : ' vacio'); s.innerHTML = icoSvg.area;
       const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.step = '1'; inp.inputMode = 'numeric'; inp.placeholder = '–'; inp.value = x.area ? String(x.area) : ''; inp.setAttribute('aria-label', 'Área en m²'); inp.disabled = !!invitado;
@@ -1865,7 +1866,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       inp.addEventListener('change', ok); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
       parar(s); s.append(inp, 'm²'); d.appendChild(s);
     }
-    sel('parq', (v) => `${v} parq.`, rango(6));
     return d;
   }
   // Services in the list cards: all three always shown, gray when missing; a click turns one on or off.
