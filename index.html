@@ -966,6 +966,10 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-tipo-b { display: inline-flex; align-items: center; gap: 0; border: 0; background: none; box-shadow: none; padding: 1px 4px 1px 0; margin: 0; font: inherit; color: inherit; cursor: pointer; border-radius: 6px; vertical-align: middle; }
 .prop-tipo-b:hover:not(:disabled) { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .prop-tipo-b:disabled { cursor: default; }
+.prop-tit-ed { cursor: text; border-radius: 6px; margin: -1px -4px; padding: 1px 4px; }
+.prop-tit-ed:hover, .prop-tit-ed:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); outline: none; }
+.prop-tit-ed.sin-tit { color: var(--muted); font-weight: 500; font-style: italic; }
+.prop-tit-ed input { width: 100%; box-sizing: border-box; font: inherit; color: inherit; border: 0; box-shadow: none; padding: 0; margin: 0; background: transparent; outline: none; }
 .prop-precio-ed { cursor: pointer; border-radius: 8px; padding: 1px 4px; margin-right: -4px; }
 .prop-precio-ed:hover, .prop-precio-ed:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); outline: none; }
 .prop-precio-ed input { width: 9ch; font: inherit; color: inherit; border: 0; box-shadow: none; padding: 0 2px; margin: 0; background: transparent; text-align: right; -moz-appearance: textfield; }
@@ -1746,6 +1750,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const TIPOS_PROP = ['Casa', 'Departamento', 'Terreno', 'Local comercial', 'Oficina', 'Otro'];
   let motor = null; // 'g' | 'l'
   let mapaL = null, mapaCapas = null, casasCapa = null, mapaG = null, marcasG = [], infoG = null, PillG = null;
+  let tituloPendiente = null;
   let lugares = [], marcando = false, lugaresUnsub = null, propSel = null, propHover = null;
   let filtro = { op: '', tipo: '', hab: 0, min: '', max: '', cerradas: true, q: '' };
   let gmapsKey = ''; try { gmapsKey = localStorage.getItem('libro-gmaps') || ''; } catch (e) {}
@@ -1945,7 +1950,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     d.appendChild(fotoEl(x, 'prop-mini-foto'));
     const c = document.createElement('div'); c.className = 'prop-mini-c';
     const tp = document.createElement('small'); tp.className = 'prop-mini-tipo'; tp.innerHTML = icoTipo(x.tipo || 'Casa'); tp.append(x.tipo || 'Propiedad'); c.appendChild(tp);
-    const b = document.createElement('b'); b.textContent = x.nombre; c.appendChild(b);
+    const b = document.createElement('b'); b.textContent = x.nombre || 'Sin título'; c.appendChild(b);
     const pr = document.createElement('div'); pr.className = 'prop-mini-precio'; const ps = document.createElement('strong'); ps.textContent = precioTxt(x); pr.appendChild(ps); c.appendChild(pr);
     if (x.dir) { const s = document.createElement('small'); s.className = 'prop-mini-dir'; s.innerHTML = icoPin; s.append(x.dir); c.appendChild(s); }
     const dt = datosChips(x); if (dt.children.length) { dt.classList.add('caja'); c.appendChild(dt); }
@@ -1971,7 +1976,21 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const li = document.createElement('li'); li.className = 'prop-card' + (propSel === x.id ? ' sel' : '') + (cerrada(x) ? ' cerrada' : ''); li.dataset.id = x.id; li.tabIndex = 0;
       li.appendChild(fotoEl(x, 'prop-foto'));
       const info = document.createElement('div'); info.className = 'prop-info';
-      const h = document.createElement('b'); h.textContent = x.nombre; info.appendChild(h);
+      const h = document.createElement('b'); h.textContent = x.nombre || 'Sin título'; if (!x.nombre) h.classList.add('sin-tit'); info.appendChild(h);
+      if (!invitado) {
+        h.className += ' prop-tit-ed'; h.tabIndex = 0; h.title = 'Cambiar título'; h.setAttribute('role', 'button');
+        const editarT = (e) => {
+          if (e) e.stopPropagation(); if (h.querySelector('input')) return;
+          const inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 70; inp.value = x.nombre; inp.placeholder = 'Ej.: Casa en Barrio Obrero'; inp.setAttribute('aria-label', 'Título');
+          let hecho = false;
+          const fin = (guardar) => { if (hecho) return; hecho = true; const v = inp.value.trim().replace(/\s+/g, ' ').slice(0, 70); if (guardar && v !== x.nombre) guardarCampo(x, { nombre: v }); pintarLista(); if (guardar) pintarPins(); };
+          inp.addEventListener('keydown', (ev) => { ev.stopPropagation(); if (ev.key === 'Enter') { ev.preventDefault(); fin(true); } else if (ev.key === 'Escape') fin(false); });
+          inp.addEventListener('blur', () => fin(true)); inp.addEventListener('click', (ev) => ev.stopPropagation());
+          h.classList.remove('sin-tit'); h.replaceChildren(inp); inp.focus({ preventScroll: true }); inp.select();
+        };
+        h.addEventListener('click', editarT); h.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); editarT(e); } });
+        if (tituloPendiente === x.id) { tituloPendiente = null; requestAnimationFrame(() => { li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); editarT(); }); }
+      }
       info.appendChild(datosEdit(x)); info.appendChild(servEdit(x));
       const s = document.createElement('small'); s.className = 'prop-tipo-l';
       const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'prop-tipo-b'; tb.innerHTML = icoTipo(x.tipo || 'Casa'); tb.append(x.tipo || 'Casa'); tb.title = 'Cambiar tipo'; tb.disabled = !!invitado;
@@ -2047,7 +2066,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     marcarPills();
   }
   function pintarProps() { pintarLista(); pintarPins(); }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || 'Propiedad'), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
@@ -2104,7 +2123,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (cancelar) draftNuevas.forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (e) {} });
     draft = null; draftNuevas = []; if (dlgP.open) dlgP.close();
   }
-  $('prop-nueva').addEventListener('click', () => abrirProp(null));
+  async function crearProp(lat, lng) {
+    if (invitado) return;
+    const datos = { nombre: '', op: 'Venta', tipo: 'Casa', estado: 'Disponible', precio: 0, hab: 0, banos: 0, area: 0, parq: 0, dir: '', servicios: [], desc: '', nota: '', dueno: '', contacto: '', comision: '', fotos: [], lat: lat == null ? null : lat, lng: lng == null ? null : lng, creado: new Date().toISOString() };
+    try {
+      const ref = await col('lugares').add(datos);
+      if (ref && ref.id) { tituloPendiente = ref.id; propSel = ref.id; if (lugares.some((x) => x.id === ref.id)) pintarLista(); }
+      if (ref && ref.id && lat != null) direccionDe(lat, lng).then((t) => { if (t) col('lugares').doc(ref.id).update({ dir: t.slice(0, 120) }).catch(() => {}); });
+    } catch (e) { setMsg('No se pudo crear la propiedad. Revisa tu internet.', true); }
+  }
+  $('prop-nueva').addEventListener('click', () => crearProp());
   $('prop-cancelar').addEventListener('click', () => cerrarProp(true));
   dlgP.addEventListener('cancel', (e) => { e.preventDefault(); cerrarProp(true); });
   $('p-ubic').addEventListener('click', async () => {
@@ -2143,13 +2171,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('prop-form').addEventListener('submit', (e) => {
     e.preventDefault(); if (!draft) return;
     if (subiendoFotos) { pMsg('Espera a que terminen de subir las fotos.', true); return; }
-    leerForm(); if (!draft.nombre) { pMsg('Ponle un título.', true); $('p-nombre').focus(); return; }
+    leerForm();
     const { id, _m, _dirAuto, ...datos } = draft;
     // Photos removed from an existing property are deleted from Storage too.
     const antes = id ? (lugares.find((x) => x.id === id) || { fotos: [] }).fotos : [];
     antes.filter((f) => !datos.fotos.some((g) => g.ruta === f.ruta)).forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
     if (id) col('lugares').doc(id).update(datos); else col('lugares').add({ ...datos, creado: new Date().toISOString() });
-    draftNuevas = []; cerrarProp(false); avisoMapa(`Se guardó "${datos.nombre}".`); setTimeout(() => avisoMapa(''), 2500);
+    draftNuevas = []; cerrarProp(false); avisoMapa(`Se guardó "${datos.nombre || 'la propiedad'}".`); setTimeout(() => avisoMapa(''), 2500);
   });
   $('p-borrar').addEventListener('click', () => {
     const b = $('p-borrar'); if (!draft || !draft.id) return;
@@ -2225,7 +2253,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function nuevaEn(lat, lng) {
     if (invitado || !isFinite(lat) || !isFinite(lng)) return;
     if (dlgP.open) return;
-    setMarcando(false); abrirProp(null); marcarEn(lat, lng);
+    setMarcando(false); crearProp(lat, lng);
   }
   function borrarMapa() {
     if (mapaL) { mapaL.remove(); mapaL = null; casasCapa = null; }
@@ -4819,8 +4847,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 <dialog class="dlg-usr dlg-prop" id="dlg-prop" aria-labelledby="prop-tit">
   <form id="prop-form" method="dialog">
     <div class="cats-cab"><h3 id="prop-tit">Nueva propiedad</h3><button type="button" class="ghost" id="prop-cancelar">Cancelar</button></div>
-    <label class="prop-wide">Título<input type="text" id="p-nombre" maxlength="70" required placeholder="Ej.: Casa de 3 habitaciones en Barrio Obrero"></label>
-    <div class="prop-grid">
+    <label class="prop-wide" hidden>Título<input type="text" id="p-nombre" maxlength="70" placeholder="Ej.: Casa de 3 habitaciones en Barrio Obrero"></label>
+    <div class="prop-grid" hidden>
       <label>Tipo<select id="p-tipo"></select></label>
       <label>Precio (USD)<input type="number" id="p-precio" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Estado<select id="p-estado"><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select></label>
@@ -4829,8 +4857,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       <label>Baños<input type="number" id="p-banos" min="0" max="50" step="0.5" inputmode="decimal" placeholder="0"></label>
       <label>Parqueaderos<input type="number" id="p-parq" min="0" max="50" inputmode="numeric" placeholder="0"></label>
     </div>
-    <label class="prop-wide">Dirección o barrio<input type="text" id="p-dir" maxlength="120" placeholder="Se llena solo al marcar la ubicación en el mapa"></label>
-    <div class="prop-wide prop-serv-box"><span class="prop-l">Servicios básicos</span><div class="prop-serv" id="p-serv"></div></div>
+    <div class="prop-wide prop-serv-box" hidden><span class="prop-l">Servicios básicos</span><div class="prop-serv" id="p-serv"></div></div>
     <div class="prop-wide prop-duenio"><span class="prop-l">Datos del dueño <small>(privado)</small></span>
       <div class="prop-grid prop-grid3">
         <label>Dueño<input type="text" id="p-dueno" maxlength="80" placeholder="Ej.: Sr. Luis Pérez"></label>
@@ -4839,6 +4866,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       </div>
     </div>
     <label class="prop-wide">Descripción<textarea id="p-desc" class="obs" rows="3" maxlength="1500" placeholder="Lo que la hace especial: patio, vista, cerca del centro…"></textarea></label>
+    <label class="prop-wide">Dirección o barrio<input type="text" id="p-dir" maxlength="120" placeholder="Se llena solo al marcar la ubicación en el mapa"></label>
     <div class="prop-wide prop-fotos-box">
       <span class="prop-l">Fotos <small>(la primera es la portada)</small></span>
       <ul class="prop-fotos" id="p-fotos"></ul>
