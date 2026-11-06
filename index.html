@@ -892,7 +892,7 @@ body.invitado .ajustes-btn { display: none; }
 .prop-seg button { border: 0; background: none; color: var(--muted); font: 500 13.5px var(--font-body); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
 .prop-seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .prop-precio { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
-.prop-precio input { width: 118px; }
+.prop-precio input, .mapa-busca .prop-precio input { width: 118px; flex: none; font: 14px var(--font-body); padding: 9px 12px; }
 .prop-check { display: inline-flex; align-items: center; gap: 6px; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--muted); cursor: pointer; }
 .prop-check input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; box-shadow: none; }
 .prop-cuerpo { display: grid; grid-template-columns: minmax(270px, 290px) minmax(0, 1fr); gap: 12px; align-items: start; }
@@ -1234,11 +1234,11 @@ body.invitado .ajustes-btn { display: none; }
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio o calle" aria-label="Buscar propiedades o lugares">
       <div class="prop-seg" role="group" aria-label="Operación"><button type="button" data-op="" aria-pressed="true">Todas</button><button type="button" data-op="Venta" aria-pressed="false">Venta</button><button type="button" data-op="Arriendo" aria-pressed="false">Arriendo</button></div>
-      <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
+      <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
     </form>
     <div class="prop-filtros" id="prop-filtros">
+      <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
       <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select>
-      <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
     </div>
     <form class="mapa-gkey" id="mapa-gkey-form" hidden>
       <span>Para ver <b>Google Maps</b>, pega aquí tu clave de Google Maps:</span>
