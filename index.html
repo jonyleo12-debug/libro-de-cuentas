@@ -989,6 +989,8 @@ body.invitado .ajustes-btn { display: none; }
 .prop-mini.compacto { grid-template-columns: 108px 1fr; gap: 10px; font-size: 12px; } .prop-mini.compacto .prop-mini-foto { min-height: 150px; border-radius: 12px; } .prop-mini.compacto b { font-size: 15px; } .prop-mini.compacto .prop-mini-desc { -webkit-line-clamp: 2; } .prop-mini.compacto .prop-datos.caja { border: 0; padding: 0; } .prop-mini.compacto .prop-mini-precio strong { font-size: 17px; } .prop-mini.compacto .prop-servs span { font-size: 11px; }
 .dlg-prop { width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .dlg-prop .prop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.dlg-prop .prop-grid3 { grid-template-columns: 1.3fr 1fr .7fr; margin-top: 6px; }
+@media (max-width: 520px) { .dlg-prop .prop-grid3 { grid-template-columns: 1fr 1fr; } .dlg-prop .prop-grid3 label:first-child { grid-column: 1 / -1; } }
 .dlg-prop label input, .dlg-prop label select, .dlg-prop label textarea { text-transform: none; letter-spacing: 0; font: 15px var(--font-body); color: var(--fg); }
 .prop-l { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .prop-l small { text-transform: none; letter-spacing: 0; }
@@ -1916,7 +1918,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     marcarPills();
   }
   function pintarProps() { pintarLista(); pintarPins(); }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || 'Propiedad'), nota: String(v.nota || ''), creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || 'Propiedad'), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), creado: String(v.creado || ''),
     op: v.op === 'Arriendo' ? 'Arriendo' : 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
@@ -1956,13 +1958,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('prop-tit').textContent = draft.id ? 'Editar propiedad' : 'Nueva propiedad';
     $('p-nombre').value = draft.nombre || ''; $('p-op').value = draft.op || 'Venta'; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible'; $('p-tipo')._pintar();
     $('p-precio').value = draft.precio || ''; $('p-hab').value = draft.hab || ''; $('p-banos').value = draft.banos || ''; $('p-area').value = draft.area || ''; $('p-parq').value = draft.parq || '';
-    $('p-dir').value = draft.dir || ''; $('p-serv').querySelectorAll('input').forEach((c) => { c.checked = (draft.servicios || []).includes(c.value); }); $('p-desc').value = draft.desc || ''; $('p-nota').value = draft.nota || '';
+    $('p-dir').value = draft.dir || ''; $('p-serv').querySelectorAll('input').forEach((c) => { c.checked = (draft.servicios || []).includes(c.value); }); $('p-desc').value = draft.desc || ''; $('p-dueno').value = draft.dueno || ''; $('p-contacto').value = draft.contacto || ''; $('p-comision').value = draft.comision || ''; if (!$('p-estado').value) $('p-estado').value = 'Disponible';
     $('p-borrar').hidden = !draft.id; $('p-borrar').classList.remove('armado'); $('p-borrar').textContent = 'Borrar propiedad';
     pMsg(''); pintarDraft();
   }
   function leerForm() {
     const n = (id) => { const v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : 0; };
-    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: $('p-op').value, tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio')), hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: $('p-nota').value.trim().slice(0, 200), servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
+    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: $('p-op').value, tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio')), hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: '', dueno: $('p-dueno').value.trim().slice(0, 80), contacto: $('p-contacto').value.trim().slice(0, 80), comision: $('p-comision').value.trim().slice(0, 40), servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
   }
   function abrirProp(x) {
     if (invitado) return;
@@ -2038,7 +2040,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (draft.dir && draft.dir !== draft._dirAuto) return;
     const d = draft; $('p-dir').placeholder = 'Buscando la dirección…';
     direccionDe(lat, lng).then((t) => {
-      $('p-dir').placeholder = 'Ej.: Barrio Obrero, calle Atahualpa y 9 de Octubre';
+      $('p-dir').placeholder = 'Ej.: Atahualpa y 9 de Octubre, Barrio Obrero';
       if (!t || draft !== d || d.lat !== lat || ($('p-dir').value.trim() && $('p-dir').value.trim() !== d._dirAuto)) return;
       d.dir = d._dirAuto = t.slice(0, 120); $('p-dir').value = d.dir;
     });
@@ -2053,7 +2055,37 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       return [...new Set(partes)].join(', ') || String((j && j.display_name) || '').split(',').slice(0, 3).join(',');
     } catch (e) { return ''; }
   }
-  async function direccionDe(lat, lng) { let t = motor === 'g' ? await dirGoogle(lat, lng) : ''; if (!t) t = await dirOsm(lat, lng); return t; }
+  // The two nearest named streets (OpenStreetMap via Overpass), e.g. "Atahualpa y 9 de Octubre".
+  async function callesDe(lat, lng) {
+    try {
+      const q = `[out:json][timeout:8];way(around:90,${lat},${lng})[highway][name];out tags geom;`;
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 9000);
+      const r = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q), { signal: ctl.signal }); clearTimeout(tm);
+      const j = await r.json();
+      const k = Math.cos(lat * Math.PI / 180) * 111320, M = 110540;
+      const xy = (p) => [(p.lon - lng) * k, (p.lat - lat) * M];
+      const dSeg = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy; const t = L ? Math.max(0, Math.min(1, -(a[0] * dx + a[1] * dy) / L)) : 0; return Math.hypot(a[0] + t * dx, a[1] + t * dy); };
+      const best = new Map();
+      (j.elements || []).forEach((w) => {
+        const nm = String((w.tags || {}).name || '').trim(); const g = (w.geometry || []).map(xy); if (!nm || !g.length) return;
+        let d = Infinity; for (let i = 0; i < g.length; i++) d = Math.min(d, g.length > 1 && i ? dSeg(g[i - 1], g[i]) : Math.hypot(g[i][0], g[i][1]));
+        if (!best.has(nm) || d < best.get(nm)) best.set(nm, d);
+      });
+      return [...best].sort((a, b) => a[1] - b[1]).slice(0, 2).map(([n]) => n.replace(/^Calle\s+/i, ''));
+    } catch (e) { return []; }
+  }
+  async function barrioDe(lat, lng) {
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=17&addressdetails=1&lat=${lat}&lon=${lng}`, { headers: { 'Accept-Language': 'es' } });
+      const a = ((await r.json()) || {}).address || {};
+      return String(a.neighbourhood || a.suburb || a.quarter || a.hamlet || '');
+    } catch (e) { return ''; }
+  }
+  async function direccionDe(lat, lng) {
+    const [cs, b] = await Promise.all([callesDe(lat, lng), barrioDe(lat, lng)]);
+    if (cs.length) return [cs.join(' y '), b && !/^barrio\b/i.test(b) ? 'Barrio ' + b : b].filter(Boolean).join(', ');
+    let t = motor === 'g' ? await dirGoogle(lat, lng) : ''; if (!t) t = await dirOsm(lat, lng); return t;
+  }
   // Right click (or a long press on the phone) on the map: a new property right there.
   // The property popup closes with a click anywhere outside it (the map itself already does this).
   document.addEventListener('click', (e) => {
@@ -4663,16 +4695,22 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       <label>Operación<select id="p-op"><option>Venta</option><option>Arriendo</option></select></label>
       <label>Tipo<select id="p-tipo"></select></label>
       <label>Precio (USD)<input type="number" id="p-precio" min="0" step="1" inputmode="numeric" placeholder="0"></label>
-      <label>Estado<select id="p-estado"><option>Disponible</option><option>Reservada</option><option>Vendida</option><option>Arrendada</option></select></label>
+      <label>Estado<select id="p-estado"><option>Disponible</option><option>Reservada</option><option>Vendida</option></select></label>
+      <label>Área (m²)<input type="number" id="p-area" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Habitaciones<input type="number" id="p-hab" min="0" max="50" inputmode="numeric" placeholder="0"></label>
       <label>Baños<input type="number" id="p-banos" min="0" max="50" step="0.5" inputmode="decimal" placeholder="0"></label>
-      <label>Área (m²)<input type="number" id="p-area" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Parqueaderos<input type="number" id="p-parq" min="0" max="50" inputmode="numeric" placeholder="0"></label>
     </div>
     <label class="prop-wide">Dirección o barrio<input type="text" id="p-dir" maxlength="120" placeholder="Se llena solo al marcar la ubicación en el mapa"></label>
     <div class="prop-wide prop-serv-box"><span class="prop-l">Servicios básicos</span><div class="prop-serv" id="p-serv"></div></div>
+    <div class="prop-wide prop-duenio"><span class="prop-l">Datos privados <small>(solo tú los ves)</small></span>
+      <div class="prop-grid prop-grid3">
+        <label>Dueño<input type="text" id="p-dueno" maxlength="80" placeholder="Ej.: Sr. Luis Pérez"></label>
+        <label>Contacto<input type="text" id="p-contacto" maxlength="80" inputmode="tel" placeholder="Ej.: 0991234567"></label>
+        <label>Comisión<input type="text" id="p-comision" maxlength="40" placeholder="Ej.: 3%"></label>
+      </div>
+    </div>
     <label class="prop-wide">Descripción<textarea id="p-desc" class="obs" rows="3" maxlength="1500" placeholder="Lo que la hace especial: patio, vista, cerca del centro…"></textarea></label>
-    <label class="prop-wide">Dueño y contacto (privado)<input type="text" id="p-nota" maxlength="200" placeholder="Ej.: Sr. Luis Pérez · 0991234567 · comisión 3%"></label>
     <div class="prop-wide prop-fotos-box">
       <span class="prop-l">Fotos <small>(la primera es la portada)</small></span>
       <ul class="prop-fotos" id="p-fotos"></ul>
