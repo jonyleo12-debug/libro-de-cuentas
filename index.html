@@ -958,7 +958,18 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
 .prop-acc .prop-ed svg { width: 17px; height: 17px; }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
-.prop-ubi.activo { color: #fff; background: var(--accent); }
+.prop-ubi.activo, .prop-dib.activo { color: #fff; background: var(--accent); }
+.prop-dib.tiene { color: var(--accent); }
+.mapa-dib { position: absolute; left: 10px; right: 10px; bottom: 26px; z-index: 600; display: grid; gap: 8px; padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 8px 24px -8px rgba(0,0,0,.35); font-size: 13px; }
+.mapa-dib[hidden] { display: none; }
+.dib-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.dib-fila b { font-size: 13.5px; } .dib-fila span { color: var(--muted); }
+.dib-giro { display: inline-flex; align-items: center; gap: 6px; flex: 1 1 180px; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); }
+.dib-giro input { flex: 1; min-width: 80px; accent-color: var(--accent); box-shadow: none; padding: 0; }
+.dib-giro span { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.mapa-dib .ghost, .mapa-dib .btn { padding: 6px 12px; font-size: 13px; width: auto; }
+.mapa-dib button:disabled { opacity: .45; cursor: default; }
+.dib-vert { width: 14px !important; height: 14px !important; margin: -7px 0 0 -7px !important; border-radius: 50%; background: #fff; border: 2px solid var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.35); cursor: grab; }
 .prop-vacio { color: var(--muted); padding: 24px 12px; text-align: center; border: 1px dashed var(--line); border-radius: 16px; }
 .prop-pill { position: absolute; transform: translate(-17px, -39px); display: flex; align-items: flex-start; border: 0; background: none; padding: 0; cursor: pointer; white-space: nowrap; }
 .prop-pill .pin-svg { flex: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); transition: transform .12s; transform-origin: 17px 39px; }
@@ -1314,7 +1325,7 @@ button.prop-op:hover { filter: brightness(1.08); }
     <p class="mapa-aviso" id="mapa-aviso" role="status" hidden></p>
     <div class="prop-cuerpo">
       <ul class="prop-lista" id="prop-lista" aria-label="Propiedades"></ul>
-      <div class="mapa-box"><div id="mapa" class="mapa-lf" aria-label="Mapa de Puyo, Pastaza"></div><div class="mapa-ctrl" id="mapa-ctrl"><select id="mapa-estilo" aria-label="Estilo del mapa"></select><button type="button" class="ghost" id="mapa-gkey-quitar" title="Quitar la clave de Google Maps" hidden>Quitar clave</button></div></div>
+      <div class="mapa-box"><div id="mapa" class="mapa-lf" aria-label="Mapa de Puyo, Pastaza"></div><div class="mapa-dib" id="mapa-dib" hidden><div class="dib-fila"><b id="dib-tit">Dibujar terreno</b><span id="dib-txt">Toca el mapa para marcar cada esquina del terreno.</span></div><div class="dib-fila"><label class="dib-giro">Girar<input type="range" id="dib-giro" min="-180" max="180" step="1" value="0"><span id="dib-grados">0°</span></label><button type="button" class="ghost" id="dib-undo">Deshacer</button><button type="button" class="ghost" id="dib-borrar">Borrar</button><button type="button" class="ghost" id="dib-cancel">Cancelar</button><button type="button" class="btn" id="dib-ok">Guardar</button></div></div><div class="mapa-ctrl" id="mapa-ctrl"><select id="mapa-estilo" aria-label="Estilo del mapa"></select><button type="button" class="ghost" id="mapa-gkey-quitar" title="Quitar la clave de Google Maps" hidden>Quitar clave</button></div></div>
     </div>
   </section>
 
@@ -2113,7 +2124,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         ubicandoId = x.id; pintarLista(); await iniciarMapa(); setMarcando(true);
         avisoMapa(`Toca en el mapa el lugar de "${nom}".`); $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
       });
-      acc.append(ed, del, ub);
+      const dib = document.createElement('button'); dib.type = 'button'; dib.className = 'prop-ed prop-dib' + (dibujo && dibujo.id === x.id ? ' activo' : '') + (x.poligono.length > 2 ? ' tiene' : ''); dib.title = x.poligono.length > 2 ? 'Editar el dibujo del terreno' : 'Dibujar el terreno en el mapa'; dib.setAttribute('aria-label', dib.title);
+      dib.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M4 7.5 9.5 4l9.5 3.5-2 11.5L6 20z"/><circle cx="4" cy="7.5" r="1.6" fill="currentColor"/><circle cx="9.5" cy="4" r="1.6" fill="currentColor"/><circle cx="19" cy="7.5" r="1.6" fill="currentColor"/><circle cx="17" cy="19" r="1.6" fill="currentColor"/><circle cx="6" cy="20" r="1.6" fill="currentColor"/></svg>';
+      dib.addEventListener('click', (e) => { e.stopPropagation(); if (dibujo && dibujo.id === x.id) terminarDibujo(false); else empezarDibujo(x); });
+      acc.append(ed, del, ub, dib);
       cara.append(info, acc);
       const curl = (izq, txt) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'doblez izq'; b.setAttribute('aria-label', txt); b.innerHTML = '<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M5.5 6 A16.5 16.5 0 0 0 24 24.5"/></svg>'; b.addEventListener('click', (e) => { e.stopPropagation(); const v = li.classList.toggle('vuelta'); if (v) volteadas.add(x.id); else { volteadas.delete(x.id); delete ppCard[x.id]; } }); return b; };
       cara.appendChild(curl(true, 'Ver datos de dueños y compradores'));
@@ -2143,8 +2157,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     b.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(x.id, false); });
     return b;
   }
+  // Land outlines: the app color, half transparent (gray when sold).
+  let polysG = [];
+  const colorAcc = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2a52a8';
+  const colorPoli = (x) => cerrada(x) ? '#8a8a8a' : colorAcc();
+  function pintarPoligonos() {
+    const vs = visibles().filter((x) => x.poligono.length > 2 && !(dibujo && dibujo.id === x.id));
+    if (motor === 'g' && mapaG) {
+      polysG.forEach((p) => p.setMap(null)); polysG = [];
+      vs.forEach((x) => { const c = colorPoli(x); const pg = new google.maps.Polygon({ paths: x.poligono.map(([lat, lng]) => ({ lat, lng })), strokeColor: c, strokeWeight: 2, strokeOpacity: .9, fillColor: c, fillOpacity: .35, clickable: false, zIndex: 1 }); pg.setMap(mapaG); polysG.push(pg); });
+    } else if (motor === 'l' && mapaL && casasCapa) {
+      const L = window.L;
+      vs.forEach((x) => { const c = colorPoli(x); L.polygon(x.poligono, { color: c, weight: 2, opacity: .9, fillColor: c, fillOpacity: .35, interactive: false }).addTo(casasCapa); });
+    }
+  }
   function pintarPins() {
     const vs = visibles().filter(tieneUbic);
+    try { if (motor === 'l' && casasCapa) casasCapa.clearLayers(); pintarPoligonos(); } catch (e) {}
     if (motor === 'g' && mapaG) {
       marcasG.forEach((m) => m.setMap(null)); marcasG = [];
       if (!PillG) {
@@ -2157,7 +2186,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       vs.forEach((x) => { const o = new PillG(new google.maps.LatLng(x.lat, x.lng), pillEl(x)); o.setMap(mapaG); marcasG.push(o); });
     } else if (motor === 'l' && mapaL && casasCapa) {
-      const L = window.L; casasCapa.clearLayers();
+      const L = window.L;
       vs.forEach((x) => {
         const m = L.marker([x.lat, x.lng], { icon: L.divIcon({ className: 'prop-pin-l', html: '', iconSize: [0, 0] }), keyboard: false });
         m.on('add', () => { const el = m.getElement(); if (el) { el.replaceChildren(pillEl(x)); } });
@@ -2168,6 +2197,86 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     marcarPills();
   }
   function pintarProps() { pintarLista(); pintarPins(); }
+  // Drawing a property's outline: tap the map for each corner, drag corners to adjust, slider to rotate.
+  let dibujo = null; // { id, pts: [[lat,lng]], base, capa }
+  const aMetros = (pts) => { const lat0 = pts.reduce((a, q) => a + q[0], 0) / pts.length, k = Math.cos(lat0 * Math.PI / 180) * 111320; return pts.map(([a, b]) => [b * k, a * 110540]); };
+  function areaPoli(pts) { if (pts.length < 3) return 0; const m = aMetros(pts); let s2 = 0; for (let i = 0; i < m.length; i++) { const [x1, y1] = m[i], [x2, y2] = m[(i + 1) % m.length]; s2 += x1 * y2 - x2 * y1; } return Math.abs(s2) / 2; }
+  function rotar(pts, grados) {
+    if (pts.length < 2) return pts.slice();
+    const lat0 = pts.reduce((a, q) => a + q[0], 0) / pts.length, lng0 = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+    const kx = Math.cos(lat0 * Math.PI / 180) * 111320, ky = 110540, r = -grados * Math.PI / 180, c = Math.cos(r), sn = Math.sin(r);
+    return pts.map(([a, b]) => { const x = (b - lng0) * kx, y = (a - lat0) * ky; return [lat0 + (x * sn + y * c) / ky, lng0 + (x * c - y * sn) / kx]; });
+  }
+  function dibTexto() {
+    const n = dibujo.pts.length, a = areaPoli(dibujo.pts);
+    $('dib-txt').textContent = n < 3 ? `Toca el mapa para marcar cada esquina (${n} de al menos 3).` : `${Math.round(a).toLocaleString('es-EC')} m² aprox. · arrastra una esquina para ajustarla.`;
+    $('dib-ok').disabled = n > 0 && n < 3; $('dib-undo').disabled = !n; $('dib-borrar').disabled = !n;
+  }
+  function dibPintar() {
+    if (!dibujo) return;
+    const c = colorAcc(), pts = dibujo.pts;
+    if (dibujo.capa) { try { dibujo.capa.forEach((o) => (o.setMap ? o.setMap(null) : o.remove())); } catch (e) {} }
+    dibujo.capa = [];
+    if (motor === 'g' && mapaG) {
+      const pg = new google.maps.Polygon({ paths: pts.map(([lat, lng]) => ({ lat, lng })), strokeColor: c, strokeWeight: 2, fillColor: c, fillOpacity: .35, editable: true, draggable: pts.length > 2, clickable: true, zIndex: 5 });
+      pg.setMap(mapaG); dibujo.capa.push(pg);
+      const leer = () => { dibujo.pts = pg.getPath().getArray().map((q) => [q.lat(), q.lng()]); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); };
+      const path = pg.getPath(); ['set_at', 'insert_at', 'remove_at'].forEach((ev) => path.addListener(ev, leer)); pg.addListener('dragend', leer);
+      pg.addListener('click', (e) => { if (e.vertex == null && e.latLng && pts.length < 3) dibPunto(e.latLng.lat(), e.latLng.lng()); });
+    } else if (motor === 'l' && mapaL) {
+      const L = window.L;
+      const poli = (pts.length > 2 ? L.polygon(pts, { color: c, weight: 2, fillColor: c, fillOpacity: .35, interactive: false }) : L.polyline(pts, { color: c, weight: 2, interactive: false })).addTo(mapaL);
+      dibujo.capa.push(poli);
+      pts.forEach((q, i) => {
+        const mk = L.marker(q, { draggable: true, keyboard: false, icon: L.divIcon({ className: 'dib-vert', html: '', iconSize: [14, 14] }) }).addTo(mapaL);
+        mk.on('drag', () => { const ll = mk.getLatLng(); dibujo.pts[i] = [ll.lat, ll.lng]; poli.setLatLngs(dibujo.pts); });
+        mk.on('dragend', () => { dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); });
+        dibujo.capa.push(mk);
+      });
+    }
+    dibTexto();
+  }
+  function dibPunto(lat, lng) { if (!dibujo) return; dibujo.pts.push([lat, lng]); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibPintar(); }
+  async function empezarDibujo(x) {
+    if (invitado) return;
+    if (dibujo) terminarDibujo(false);
+    setMarcando(false); ubicandoId = null;
+    await iniciarMapa();
+    dibujo = { id: x.id, pts: x.poligono.map((q) => q.slice()), base: null, capa: [] };
+    $('dib-tit').textContent = 'Terreno: ' + (x.nombre || 'Sin título'); $('dib-giro').value = '0'; $('dib-grados').textContent = '0°';
+    $('mapa-dib').hidden = false; $('mapa').classList.add('marcando'); if (mapaG) mapaG.setOptions({ draggableCursor: 'crosshair' });
+    if (infoG) infoG.close(); if (mapaL) mapaL.closePopup();
+    pintarLista(); pintarPins(); dibPintar();
+    const centro = x.poligono.length ? x.poligono[0] : tieneUbic(x) ? [x.lat, x.lng] : null;
+    if (centro) { if (mapaG) { mapaG.panTo({ lat: centro[0], lng: centro[1] }); if (mapaG.getZoom() < 17) mapaG.setZoom(17); } else if (mapaL) mapaL.setView(centro, Math.max(mapaL.getZoom(), 17)); }
+    $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  function terminarDibujo(guardar) {
+    if (!dibujo) return;
+    const d = dibujo; dibujo = null;
+    try { d.capa.forEach((o) => (o.setMap ? o.setMap(null) : o.remove())); } catch (e) {}
+    $('mapa-dib').hidden = true; $('mapa').classList.remove('marcando'); if (mapaG) mapaG.setOptions({ draggableCursor: null });
+    const x = lugares.find((p) => p.id === d.id);
+    if (guardar && x) {
+      const pts = d.pts.length > 2 ? d.pts : [];
+      const datos = { poligono: pts.map(([lat, lng]) => ({ lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 })) };
+      if (pts.length && !tieneUbic(x)) { datos.lat = pts.reduce((a, q) => a + q[0], 0) / pts.length; datos.lng = pts.reduce((a, q) => a + q[1], 0) / pts.length; }
+      if (pts.length && !x.area) datos.area = Math.round(areaPoli(pts));
+      guardarCampo(x, datos); x.poligono = pts;
+      avisoMapa(pts.length ? `Terreno guardado (${Math.round(areaPoli(pts)).toLocaleString('es-EC')} m² aprox.).` : 'Se quitó el dibujo del terreno.'); setTimeout(() => avisoMapa(''), 3000);
+    }
+    pintarLista(); pintarPins();
+  }
+  $('dib-giro').addEventListener('input', () => {
+    if (!dibujo || dibujo.pts.length < 2) return;
+    if (!dibujo.base) dibujo.base = dibujo.pts.map((q) => q.slice());
+    const g = Number($('dib-giro').value) || 0; $('dib-grados').textContent = g + '°';
+    dibujo.pts = rotar(dibujo.base, g); dibPintar();
+  });
+  $('dib-undo').addEventListener('click', () => { if (!dibujo || !dibujo.pts.length) return; dibujo.pts.pop(); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibPintar(); });
+  $('dib-borrar').addEventListener('click', () => { if (!dibujo) return; dibujo.pts = []; dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibPintar(); });
+  $('dib-cancel').addEventListener('click', () => terminarDibujo(false));
+  $('dib-ok').addEventListener('click', () => terminarDibujo(true));
   const personasDe = (xs, def) => (Array.isArray(xs) ? xs : def).filter((p) => p && typeof p === 'object').map((p) => ({ nombre: String(p.nombre || '').slice(0, 80), contacto: String(p.contacto || '').slice(0, 80), comision: String(p.comision || '').slice(0, 40) }));
   // Owners and buyers in the edit dialog: one row each, "+" adds another.
   const GRUPOS_P = [['duenos', 'Dueño', 'Dueños', 'Ej.: Sr. Luis Pérez'], ['compradores', 'Comprador', 'Compradores', 'Ej.: Sra. Ana Torres']];
@@ -2195,7 +2304,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       box.appendChild(g);
     });
   }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
@@ -2409,6 +2518,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (infoG) infoG.close(); if (mapaL) mapaL.closePopup();
   });
   function nuevaEn(lat, lng) {
+    if (dibujo) return;
     if (invitado || !isFinite(lat) || !isFinite(lng)) return;
     if (dlgP.open) return;
     setMarcando(false); crearProp(lat, lng);
@@ -2433,7 +2543,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           motor = 'g';
           mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
           infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -40), maxWidth: 600, headerDisabled: true });
-          mapaG.addListener('click', (e) => { if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
+          mapaG.addListener('click', (e) => { if (dibujo && e.latLng) { dibPunto(e.latLng.lat(), e.latLng.lng()); return; } if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
           mapaG.addListener('contextmenu', (e) => { if (e.latLng) nuevaEn(e.latLng.lat(), e.latLng.lng()); });
           pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins(); return;
         } catch (e) { motor = null; avisoMapa('No se pudo cargar Google Maps. Uso el mapa gratuito.'); }
@@ -2448,7 +2558,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       mapaCapas.calles.addTo(mapaL);
       casasCapa = L.layerGroup().addTo(mapaL);
       mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
-      mapaL.on('click', (e) => { if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
+      mapaL.on('click', (e) => { if (dibujo) { dibPunto(e.latlng.lat, e.latlng.lng); return; } if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
       mapaL.on('contextmenu', (e) => { nuevaEn(e.latlng.lat, e.latlng.lng); });
       pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins();
     })();
