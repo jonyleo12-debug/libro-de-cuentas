@@ -966,6 +966,12 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-tipo-b { display: inline-flex; align-items: center; gap: 0; border: 0; background: none; box-shadow: none; padding: 1px 4px 1px 0; margin: 0; font: inherit; color: inherit; cursor: pointer; border-radius: 6px; vertical-align: middle; }
 .prop-tipo-b:hover:not(:disabled) { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .prop-tipo-b:disabled { cursor: default; }
+.prop-foto-up { position: absolute; right: 6px; bottom: 6px; z-index: 2; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.22); cursor: pointer; text-transform: none; letter-spacing: 0; transition: transform .15s; }
+.prop-foto-up:hover { transform: scale(1.08); }
+.prop-foto-up svg { width: 17px !important; height: 17px !important; opacity: 1 !important; }
+.prop-foto-up input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.pfu-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: pfu .8s linear infinite; }
+@keyframes pfu { to { transform: rotate(360deg); } }
 .prop-tit-ed { cursor: text; border-radius: 6px; margin: -1px -4px; padding: 1px 4px; }
 .prop-tit-ed:hover, .prop-tit-ed:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); outline: none; }
 .prop-tit-ed.sin-tit { color: var(--muted); font-weight: 500; font-style: italic; }
@@ -1986,7 +1992,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
     $('prop-lista').replaceChildren(...vs.map((x) => {
       const li = document.createElement('li'); li.className = 'prop-card' + (propSel === x.id ? ' sel' : '') + (cerrada(x) ? ' cerrada' : ''); li.dataset.id = x.id; li.tabIndex = 0;
-      li.appendChild(fotoEl(x, 'prop-foto'));
+      const fe = fotoEl(x, 'prop-foto'); li.appendChild(fe);
+      if (!invitado) { // upload photos straight from the card
+        const up = document.createElement('label'); up.className = 'prop-foto-up' + (fotosSubiendo[x.id] ? ' cargando' : ''); up.title = 'Subir fotos';
+        up.innerHTML = fotosSubiendo[x.id] ? '<span class="pfu-spin" aria-hidden="true"></span>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.5-2h5.6l1.5 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>';
+        const fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.multiple = true; fi.setAttribute('aria-label', 'Subir fotos de ' + (x.nombre || 'la propiedad'));
+        fi.addEventListener('change', () => { const fl = [...fi.files]; fi.value = ''; subirFotosCard(x, fl); });
+        up.addEventListener('click', (e) => e.stopPropagation()); up.appendChild(fi); fe.appendChild(up);
+      }
       const info = document.createElement('div'); info.className = 'prop-info';
       const h = document.createElement('b'); h.textContent = x.nombre || 'Sin título'; if (!x.nombre) h.classList.add('sin-tit'); info.appendChild(h);
       if (!invitado) {
@@ -2042,7 +2055,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     document.querySelectorAll('.prop-card').forEach((c) => c.classList.toggle('sel', c.dataset.id === id));
     if (!desdeLista) { const c = document.querySelector(`.prop-card[data-id="${id}"]`); if (c) c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
     marcarPills();
-    if (!tieneUbic(x)) { if (desdeLista) abrirProp(x); return; }
+    if (!tieneUbic(x)) return;
     if (motor === 'g' && mapaG) { mapaG.panTo({ lat: x.lat, lng: x.lng }); if (mapaG.getZoom() < 16) mapaG.setZoom(16); infoG.setContent(miniCard(x)); infoG.setPosition({ lat: x.lat, lng: x.lng }); infoG.open({ map: mapaG }); }
     else if (mapaL) { let ab = false; const abrir = () => { if (ab || !x._m) return; ab = true; x._m.openPopup(); }; mapaL.once('moveend', abrir); mapaL.flyTo([x.lat, x.lng], Math.max(mapaL.getZoom(), 16), { duration: 0.6 }); setTimeout(abrir, 1000); }
   }
@@ -2190,6 +2203,25 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       img.onerror = () => { URL.revokeObjectURL(u); ok(f); };
       img.src = u;
     });
+  }
+  const fotosSubiendo = {};
+  async function subirFotosCard(x, fs) {
+    if (invitado || !x.id || !fs.length) return;
+    fotosSubiendo[x.id] = (fotosSubiendo[x.id] || 0) + 1; pintarLista();
+    for (const f0 of fs) {
+      if (!/^image\//.test(f0.type) && !/\.(heic|heif|jpe?g|png|webp)$/i.test(f0.name)) { setMsg(`${f0.name} no es una foto.`, true); continue; }
+      const f = await achicar(f0);
+      const limpio = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-80) || 'foto.jpg';
+      const ruta = `users/${yoUid}/propiedades/${Date.now()}-${limpio}`;
+      await new Promise((ok) => {
+        const t = uploadBytesResumable(sRef(storage, ruta), f, { contentType: f.type || 'image/jpeg' });
+        t.on('state_changed', () => {}, (er) => { setMsg(er && er.code === 'storage/unauthorized' ? 'Falta actualizar las reglas de Storage en Firebase para subir fotos de propiedades.' : `No se pudo subir ${f0.name}.`, true); ok(); }, async () => {
+          try { const url = await getDownloadURL(t.snapshot.ref); await col('lugares').doc(x.id).update({ fotos: arrayUnion({ url, ruta }) }); } catch (er) { setMsg(`No se pudo subir ${f0.name}.`, true); }
+          ok();
+        });
+      });
+    }
+    fotosSubiendo[x.id]--; if (!fotosSubiendo[x.id]) delete fotosSubiendo[x.id]; pintarLista();
   }
   $('p-file').addEventListener('change', async (e) => {
     const fs = [...e.target.files]; e.target.value = ''; if (!draft) return;
