@@ -898,10 +898,23 @@ body.invitado .ajustes-btn { display: none; }
 .prop-cuerpo { display: grid; grid-template-columns: minmax(270px, 290px) minmax(0, 1fr); gap: 12px; align-items: start; }
 .prop-cuerpo .mapa-box { aspect-ratio: auto; height: clamp(448px, calc((100vh - 140px) * .8), 688px); position: sticky; top: 12px; }
 .prop-lista { list-style: none; margin: 0; padding: 2px 6px 2px 2px; overflow-x: hidden; display: grid; gap: 12px; max-height: clamp(448px, calc((100vh - 140px) * .8), 688px); overflow-y: auto; align-content: start; }
-.prop-card { position: relative; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; padding: 10px; overflow: hidden; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
-.prop-card:hover, .prop-card:focus-visible { border-color: var(--accent); outline: none; }
-.prop-card.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.prop-card.cerrada { opacity: .6; }
+.prop-card { position: relative; perspective: 1400px; cursor: pointer; outline: none; }
+.pc-in { display: grid; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
+.prop-card.vuelta .pc-in { transform: rotateY(180deg); }
+.pc-cara, .pc-dorso { grid-area: 1 / 1; position: relative; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; padding: 10px 10px 18px; overflow: hidden; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; transition: border-color .15s, box-shadow .15s; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-width: 0; }
+.pc-dorso { transform: rotateY(180deg); display: block; cursor: default; padding: 12px 12px 26px; }
+.prop-card:hover .pc-cara, .prop-card:focus-visible .pc-cara, .prop-card:hover .pc-dorso { border-color: var(--accent); }
+.prop-card.sel .pc-cara, .prop-card.sel .pc-dorso { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.prop-card.cerrada .pc-cara { opacity: .6; }
+.prop-card:not(.vuelta) .pc-dorso, .prop-card.vuelta .pc-cara { pointer-events: none; }
+.doblez.izq { right: auto; left: 0; border-radius: 0 0 0 16px; width: 26px; height: 26px; }
+.pc-dorso h4 { margin: 0 0 6px; font: 600 12px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pcd-grupo { display: grid; gap: 6px; margin-bottom: 10px; }
+.pcd-tit { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pcd-per { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(0, .7fr) 18px; grid-template-areas: "mas nom nom nom" ". con com q"; gap: 4px 6px; align-items: center; }
+.pcd-per .pp-mas { grid-area: mas; width: 24px; height: 24px; font-size: 16px; }
+.pcd-per .pcd-nom { grid-area: nom; } .pcd-per .pcd-con { grid-area: con; } .pcd-per .pcd-com { grid-area: com; } .pcd-per .pp-quitar { grid-area: q; width: 18px; height: 18px; font-size: 16px; }
+.pcd-per input { min-width: 0; width: 100%; box-sizing: border-box; font: 13px var(--font-body); color: var(--fg); padding: 6px 10px; border-radius: 10px; text-transform: none; letter-spacing: 0; }
 .prop-foto { width: 100%; align-self: start; aspect-ratio: 16 / 15 !important; }
 .prop-foto .prop-op { top: 5px; left: 5px; font-size: 10px; padding: 2px 7px; }
 .prop-foto, .prop-mini-foto { position: relative; border-radius: 12px; overflow: hidden; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; aspect-ratio: 4 / 3; }
@@ -1081,7 +1094,7 @@ button.prop-op:hover { filter: brightness(1.08); }
   .prop-cuerpo .mapa-box { order: -1; position: relative; height: 58vh; min-height: 300px; }
   .prop-lista { max-height: none; overflow: visible; padding: 0; }
 }
-@media (max-width: 480px) { .prop-card { grid-template-columns: 104px 1fr; } .prop-precio input { width: 96px; } }
+@media (max-width: 480px) { .pc-cara { grid-template-columns: 104px 1fr; } .prop-precio input { width: 96px; } }
 </style>
 </head>
 <body>
@@ -1941,6 +1954,36 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     document.body.appendChild(m); menuT = m; ubicarMenuTipo();
     (m.querySelector('[aria-selected="true"]') || m.querySelector('button')).focus({ preventScroll: true });
   }
+  // Back of a card: owners and buyers, edited in place.
+  const volteadas = new Set(), ppCard = {};
+  function datosDorso(x) {
+    const d = document.createElement('div');
+    const h = document.createElement('h4'); h.textContent = 'Datos'; d.appendChild(h);
+    const st = ppCard[x.id] = ppCard[x.id] || { duenos: personasDe(x.duenos, []), compradores: personasDe(x.compradores, []) };
+    const guardar = () => {
+      const limpio = (xs) => xs.map((p) => ({ nombre: p.nombre.trim(), contacto: p.contacto.trim(), comision: p.comision.trim() })).filter((p) => p.nombre || p.contacto || p.comision).slice(0, 20);
+      const du = limpio(st.duenos), co = limpio(st.compradores), d0 = du[0] || {};
+      if (JSON.stringify(du) === JSON.stringify(personasDe(x.duenos, [])) && JSON.stringify(co) === JSON.stringify(personasDe(x.compradores, []))) return;
+      guardarCampo(x, { duenos: du, compradores: co, dueno: d0.nombre || '', contacto: d0.contacto || '', comision: d0.comision || '', nota: '' });
+    };
+    GRUPOS_P.forEach(([k, tit, tits, ej]) => {
+      if (!st[k].length) st[k].push({ nombre: '', contacto: '', comision: '' });
+      const g = document.createElement('div'); g.className = 'pcd-grupo';
+      const t = document.createElement('span'); t.className = 'pcd-tit'; t.textContent = st[k].length > 1 ? tits : tit; g.appendChild(t);
+      st[k].forEach((per, i) => {
+        const f = document.createElement('div'); f.className = 'pcd-per';
+        const mas = document.createElement('button'); mas.type = 'button'; mas.className = 'pp-mas'; mas.textContent = '+'; mas.title = 'Agregar otro ' + tit.toLowerCase(); mas.setAttribute('aria-label', mas.title); mas.disabled = !!invitado;
+        mas.addEventListener('click', () => { st[k].splice(i + 1, 0, { nombre: '', contacto: '', comision: '' }); pintarLista(); requestAnimationFrame(() => { const el = document.querySelector(`#prop-lista [data-k="${x.id}:${k}:${i + 1}:nombre"]`); if (el) el.focus({ preventScroll: true }); }); });
+        const campo = (cl, cls, ph, max, im) => { const inp = document.createElement('input'); inp.type = 'text'; inp.className = cls; inp.maxLength = max; inp.placeholder = ph; inp.value = per[cl] || ''; inp.dataset.k = `${x.id}:${k}:${i}:${cl}`; if (im) inp.inputMode = im; inp.disabled = !!invitado; inp.setAttribute('aria-label', (cl === 'nombre' ? tit : cl === 'contacto' ? 'Contacto' : 'Comisión') + ' ' + (i + 1)); inp.addEventListener('input', () => { per[cl] = inp.value; }); inp.addEventListener('change', guardar); inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); }); return inp; };
+        const q = document.createElement('button'); q.type = 'button'; q.className = 'pp-quitar'; q.textContent = '×'; q.title = 'Quitar'; q.setAttribute('aria-label', 'Quitar ' + tit.toLowerCase() + ' ' + (i + 1)); q.hidden = st[k].length < 2 || !!invitado;
+        q.addEventListener('click', () => { st[k].splice(i, 1); guardar(); pintarLista(); });
+        f.append(mas, campo('nombre', 'pcd-nom', ej, 80), campo('contacto', 'pcd-con', 'Contacto', 80, 'tel'), campo('comision', 'pcd-com', 'Comisión', 40), q);
+        g.appendChild(f);
+      });
+      d.appendChild(g);
+    });
+    return d;
+  }
   function fotoEl(x, cls) {
     const f = document.createElement('div'); f.className = cls;
     if (x.fotos[0]) {
@@ -1995,9 +2038,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       li.textContent = lugares.length ? 'Ninguna propiedad cumple los filtros.' : 'Aún no tienes propiedades. Toca "+ Nueva propiedad" para agregar la primera.';
       $('prop-lista').replaceChildren(li); return;
     }
+    const act = document.activeElement, kAct = act && act.closest && act.closest('#prop-lista') ? act.dataset.k : null, selAct = kAct && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
+    requestAnimationFrame(() => { if (!kAct) return; const el = document.querySelector(`#prop-lista [data-k="${kAct}"]`); if (el && document.activeElement !== el) { el.focus({ preventScroll: true }); if (selAct) try { el.setSelectionRange(...selAct); } catch (e) {} } });
     $('prop-lista').replaceChildren(...vs.map((x) => {
       const li = document.createElement('li'); li.className = 'prop-card' + (propSel === x.id ? ' sel' : '') + (cerrada(x) ? ' cerrada' : ''); li.dataset.id = x.id; li.tabIndex = 0;
-      const fe = fotoEl(x, 'prop-foto'); li.appendChild(fe);
+      const pin = document.createElement('div'); pin.className = 'pc-in'; li.appendChild(pin);
+      const cara = document.createElement('div'); cara.className = 'pc-cara'; pin.appendChild(cara);
+      if (volteadas.has(x.id)) li.classList.add('vuelta');
+      const fe = fotoEl(x, 'prop-foto'); cara.appendChild(fe);
       if (!invitado) { // upload photos straight from the card
         const up = document.createElement('label'); up.className = 'prop-foto-up' + (fotosSubiendo[x.id] ? ' cargando' : ''); up.title = 'Subir fotos';
         up.innerHTML = fotosSubiendo[x.id] ? '<span class="pfu-spin" aria-hidden="true"></span>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.5-2h5.6l1.5 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>';
@@ -2066,7 +2114,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         avisoMapa(`Toca en el mapa el lugar de "${nom}".`); $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
       });
       acc.append(ed, del, ub);
-      li.append(info, acc);
+      cara.append(info, acc);
+      const curl = (izq, txt) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'doblez izq'; b.setAttribute('aria-label', txt); b.innerHTML = '<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M5.5 6 A16.5 16.5 0 0 0 24 24.5"/></svg>'; b.addEventListener('click', (e) => { e.stopPropagation(); const v = li.classList.toggle('vuelta'); if (v) volteadas.add(x.id); else { volteadas.delete(x.id); delete ppCard[x.id]; } }); return b; };
+      cara.appendChild(curl(true, 'Ver datos de dueños y compradores'));
+      const dorso = document.createElement('div'); dorso.className = 'pc-dorso'; pin.appendChild(dorso);
+      dorso.addEventListener('click', (e) => e.stopPropagation());
+      dorso.appendChild(datosDorso(x)); dorso.appendChild(curl(true, 'Volver a la ficha'));
       li.addEventListener('click', () => seleccionar(x.id, true));
       li.addEventListener('keydown', (e) => { if (e.key === 'Enter') seleccionar(x.id, true); });
       li.addEventListener('mouseenter', () => { propHover = x.id; marcarPills(); });
@@ -4963,7 +5016,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       <label>Parqueaderos<input type="number" id="p-parq" min="0" max="50" inputmode="numeric" placeholder="0"></label>
     </div>
     <div class="prop-wide prop-serv-box" hidden><span class="prop-l">Servicios básicos</span><div class="prop-serv" id="p-serv"></div></div>
-    <div class="prop-wide prop-duenio"><span class="prop-l">Dueños y compradores <small>(privado)</small></span><div id="p-personas"></div></div>
+    <div class="prop-wide prop-duenio" hidden><span class="prop-l">Dueños y compradores <small>(privado)</small></span><div id="p-personas"></div></div>
     <label class="prop-wide">Descripción<textarea id="p-desc" class="obs" rows="3" maxlength="1500" placeholder="Lo que la hace especial: patio, vista, cerca del centro…"></textarea></label>
     <label class="prop-wide">Dirección o barrio<input type="text" id="p-dir" maxlength="120" placeholder="Se llena solo al marcar la ubicación en el mapa"></label>
     <div class="prop-wide prop-fotos-box">
