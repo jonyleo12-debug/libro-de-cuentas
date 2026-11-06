@@ -1747,7 +1747,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Each property is a record in the business's "lugares" collection. With the owner's Google Maps key the map is Google's;
   // without one it falls back to Leaflet + OpenStreetMap. Photos go to Storage under users/{owner}/propiedades/.
   const PUYO = [-1.4924, -78.0024];
-  const TIPOS_PROP = ['Casa', 'Departamento', 'Terreno', 'Local comercial', 'Oficina', 'Otro'];
+  const TIPOS_PROP = ['Casa', 'Terreno', 'Local comercial', 'Departamento', 'Oficina', 'Otro'];
   let motor = null; // 'g' | 'l'
   let mapaL = null, mapaCapas = null, casasCapa = null, mapaG = null, marcasG = [], infoG = null, PillG = null;
   let tituloPendiente = null;
