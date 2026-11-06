@@ -911,6 +911,11 @@ body.invitado .ajustes-btn { display: none; }
 .prop-op { position: absolute; top: 6px; left: 6px; font: 600 11px var(--font-body); letter-spacing: .02em; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
 .prop-op.arr { background: var(--arriendo); }
 .prop-op.cer { background: #8a8a8a; }
+.prop-op.est-disp { background: #2e9d5b; } .prop-op.est-res { background: #e0a800; color: #fff; } .prop-op.est-vend { background: #d32f2f; }
+button.prop-op { border: 0; box-shadow: none; cursor: pointer; z-index: 2; margin: 0; line-height: 1.3; }
+button.prop-op:hover { filter: brightness(1.08); }
+.est-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.est-dot.est-disp { background: #2e9d5b; } .est-dot.est-res { background: #e0a800; } .est-dot.est-vend { background: #d32f2f; }
 .prop-info { display: grid; gap: 4px; min-width: 0; align-content: start; padding-right: 22px; }
 .prop-info b { font-size: 14.5px; line-height: 1.25; overflow-wrap: anywhere; }
 .prop-info small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1753,7 +1758,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const avisoMapa = (t) => { const a = $('mapa-aviso'); a.textContent = t || ''; a.hidden = !t; };
   const gmaps = (x) => `https://www.google.com/maps/search/?api=1&query=${x.lat},${x.lng}`;
   const tieneUbic = (x) => isFinite(x.lat) && isFinite(x.lng) && x.lat !== null && x.lng !== null;
-  const cerrada = (x) => x.estado === 'Vendida' || x.estado === 'Arrendada';
+  const cerrada = (x) => x.estado === 'Vendida';
   const usd0 = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   const precioTxt = (x, corto) => !x.precio ? (corto ? 'Ver' : 'Precio a consultar') : (corto && x.precio >= 10000 ? '$' + (Math.round(x.precio / 100) / 10).toString().replace('.', ',') + 'k' : usd0.format(x.precio)) + (x.op === 'Arriendo' ? (corto ? '/mes' : ' / mes') : '');
   const pasaFiltro = (x) => {
@@ -1884,13 +1889,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   window.addEventListener('scroll', ubicarMenuTipo, true);
   window.addEventListener('resize', ubicarMenuTipo);
   function menuTipo(btn, x) {
-    const abierto = menuT && menuT._x === x.id; cerrarMenuTipo(); if (abierto) return;
-    const m = document.createElement('ul'); m.className = 'isel-menu menu-tipo'; m.setAttribute('role', 'listbox'); m._x = x.id; m._btn = btn;
     const tipos = TIPOS_PROP.includes(x.tipo) || !x.tipo ? TIPOS_PROP : [...TIPOS_PROP, x.tipo];
-    tipos.forEach((t) => {
-      const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(t === (x.tipo || 'Casa')));
-      b.innerHTML = icoTipo(t); b.append(t);
-      b.addEventListener('click', (e) => { e.stopPropagation(); cerrarMenuTipo(); if (t !== x.tipo) { guardarCampo(x, { tipo: t }); pintarLista(); pintarPins(); } });
+    menuOpciones(btn, x, 'tipo', tipos.map((t) => [t, t, icoTipo(t)]), x.tipo || 'Casa');
+  }
+  // Status of a property for sale; stored values stay as before, labels as Jonathan asked.
+  const ESTADOS_P = [['Disponible', 'Disponible', 'disp'], ['Reservada', 'Reservado', 'res'], ['Vendida', 'Vendido', 'vend']];
+  const estadoDe = (x) => ESTADOS_P.find(([v]) => v === x.estado) || ESTADOS_P[0];
+  function menuOpciones(btn, x, campo, items, actual) {
+    const abierto = menuT && menuT._x === x.id + campo; cerrarMenuTipo(); if (abierto) return;
+    const m = document.createElement('ul'); m.className = 'isel-menu menu-tipo'; m.setAttribute('role', 'listbox'); m._x = x.id + campo; m._btn = btn;
+    items.forEach(([v, txt, html]) => {
+      const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(v === actual));
+      b.innerHTML = html; b.append(txt);
+      b.addEventListener('click', (e) => { e.stopPropagation(); cerrarMenuTipo(); if (v !== x[campo]) { guardarCampo(x, { [campo]: v }); pintarLista(); pintarPins(); } });
       li.appendChild(b); m.appendChild(li);
     });
     m.addEventListener('click', (e) => e.stopPropagation());
@@ -1913,7 +1924,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
     }
     else f.innerHTML = icoTipo(x.tipo || 'Casa');
-    const t = document.createElement('span'); t.className = 'prop-op ' + (x.op === 'Arriendo' ? 'arr' : 'ven') + (cerrada(x) ? ' cer' : ''); t.textContent = cerrada(x) ? x.estado : x.estado === 'Reservada' ? 'Reservada' : x.op; f.appendChild(t);
+    const [, et, ec] = estadoDe(x);
+    if (cls === 'prop-foto' && !invitado) {
+      const t = document.createElement('button'); t.type = 'button'; t.className = 'prop-op est-' + ec; t.textContent = et; t.title = 'Cambiar estado'; t.setAttribute('aria-haspopup', 'listbox');
+      t.addEventListener('click', (e) => { e.stopPropagation(); menuOpciones(t, x, 'estado', ESTADOS_P.map(([v, tx, c]) => [v, tx, `<i class="est-dot est-${c}"></i>`]), estadoDe(x)[0]); });
+      f.appendChild(t);
+    } else { const t = document.createElement('span'); t.className = 'prop-op est-' + ec; t.textContent = et; f.appendChild(t); }
     return f;
   }
   const icoPin = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 21s-7-6.4-7-11.5a7 7 0 0 1 14 0C19 14.6 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
@@ -4790,7 +4806,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <div class="prop-grid">
       <label>Tipo<select id="p-tipo"></select></label>
       <label>Precio (USD)<input type="number" id="p-precio" min="0" step="1" inputmode="numeric" placeholder="0"></label>
-      <label>Estado<select id="p-estado"><option>Disponible</option><option>Reservada</option><option>Vendida</option></select></label>
+      <label>Estado<select id="p-estado"><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select></label>
       <label>Área (m²)<input type="number" id="p-area" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Habitaciones<input type="number" id="p-hab" min="0" max="50" inputmode="numeric" placeholder="0"></label>
       <label>Baños<input type="number" id="p-banos" min="0" max="50" step="0.5" inputmode="decimal" placeholder="0"></label>
