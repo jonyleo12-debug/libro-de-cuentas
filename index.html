@@ -1251,7 +1251,6 @@ body.invitado .ajustes-btn { display: none; }
     </div>
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio o calle" aria-label="Buscar propiedades o lugares">
-      <div class="prop-seg" role="group" aria-label="Operación"><button type="button" data-op="" aria-pressed="true">Todas</button><button type="button" data-op="Venta" aria-pressed="false">Venta</button><button type="button" data-op="Arriendo" aria-pressed="false">Arriendo</button></div>
       <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
     </form>
     <div class="prop-filtros" id="prop-filtros">
@@ -2016,7 +2015,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function pintarProps() { pintarLista(); pintarPins(); }
   const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || 'Propiedad'), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), creado: String(v.creado || ''),
-    op: v.op === 'Arriendo' ? 'Arriendo' : 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
+    op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
@@ -2053,7 +2052,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function llenarForm() {
     $('prop-tit').textContent = draft.id ? 'Editar propiedad' : 'Nueva propiedad';
-    $('p-nombre').value = draft.nombre || ''; $('p-op').value = draft.op || 'Venta'; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible'; $('p-tipo')._pintar();
+    $('p-nombre').value = draft.nombre || ''; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible'; $('p-tipo')._pintar();
     $('p-precio').value = draft.precio || ''; $('p-hab').value = draft.hab || ''; $('p-banos').value = draft.banos || ''; $('p-area').value = draft.area || ''; $('p-parq').value = draft.parq || '';
     $('p-dir').value = draft.dir || ''; $('p-serv').querySelectorAll('input').forEach((c) => { c.checked = (draft.servicios || []).includes(c.value); }); $('p-desc').value = draft.desc || ''; $('p-dueno').value = draft.dueno || ''; $('p-contacto').value = draft.contacto || ''; $('p-comision').value = draft.comision || ''; if (!$('p-estado').value) $('p-estado').value = 'Disponible';
     $('p-borrar').hidden = !draft.id; $('p-borrar').classList.remove('armado'); $('p-borrar').textContent = 'Borrar propiedad';
@@ -2061,11 +2060,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function leerForm() {
     const n = (id) => { const v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : 0; };
-    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: $('p-op').value, tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio')), hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: '', dueno: $('p-dueno').value.trim().slice(0, 80), contacto: $('p-contacto').value.trim().slice(0, 80), comision: $('p-comision').value.trim().slice(0, 40), servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
+    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: 'Venta', tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio')), hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: '', dueno: $('p-dueno').value.trim().slice(0, 80), contacto: $('p-contacto').value.trim().slice(0, 80), comision: $('p-comision').value.trim().slice(0, 40), servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
   }
   function abrirProp(x) {
     if (invitado) return;
-    draft = x ? JSON.parse(JSON.stringify({ ...x, _m: undefined })) : { id: '', lat: null, lng: null, fotos: [], op: filtro.op || 'Venta', tipo: 'Casa', estado: 'Disponible' };
+    draft = x ? JSON.parse(JSON.stringify({ ...x, _m: undefined })) : { id: '', lat: null, lng: null, fotos: [], op: 'Venta', tipo: 'Casa', estado: 'Disponible' };
     draftNuevas = []; llenarForm(); if (!dlgP.open) dlgP.showModal(); setTimeout(() => $('p-nombre').focus(), 30);
   }
   function cerrarProp(cancelar) {
@@ -4789,7 +4788,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <div class="cats-cab"><h3 id="prop-tit">Nueva propiedad</h3><button type="button" class="ghost" id="prop-cancelar">Cancelar</button></div>
     <label class="prop-wide">Título<input type="text" id="p-nombre" maxlength="70" required placeholder="Ej.: Casa de 3 habitaciones en Barrio Obrero"></label>
     <div class="prop-grid">
-      <label>Operación<select id="p-op"><option>Venta</option><option>Arriendo</option></select></label>
       <label>Tipo<select id="p-tipo"></select></label>
       <label>Precio (USD)<input type="number" id="p-precio" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Estado<select id="p-estado"><option>Disponible</option><option>Reservada</option><option>Vendida</option></select></label>
