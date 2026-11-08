@@ -1868,6 +1868,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let motor = null; // 'g' | 'l'
   let mapaL = null, mapaCapas = null, casasCapa = null, mapaG = null, marcasG = [], infoG = null, PillG = null;
   let tituloPendiente = null, ubicandoId = null;
+  const borrables = new Map(); // item key -> how the Delete key removes it
+  let selBorrar = null;
   let lugares = [], marcando = false, lugaresUnsub = null, propSel = null, propHover = null;
   let filtro = { op: '', tipo: '', hab: 0, min: '', max: '', cerradas: true, q: '' };
   let gmapsKey = ''; try { gmapsKey = localStorage.getItem('libro-gmaps') || ''; } catch (e) {}
@@ -2183,7 +2185,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ed.addEventListener('click', (e) => { e.stopPropagation(); abrirProp(x); });
       const del = document.createElement('button'); del.type = 'button'; del.className = 'prop-ed prop-del'; del.title = 'Eliminar propiedad'; del.setAttribute('aria-label', 'Eliminar ' + nom);
       del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12M10 11v6M14 11v6"/></svg>';
-      del._bkey = 'prop:' + x.id; del._borrar = () => col('lugares').doc(x.id).delete();
+      del._bkey = 'prop:' + x.id; del._borrar = () => col('lugares').doc(x.id).delete(); borrables.set(del._bkey, del._borrar);
       del.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!del.classList.contains('armado')) { del.classList.add('armado'); del.title = 'Toca otra vez para eliminar'; avisoMapa(`Toca otra vez el ícono rojo para eliminar "${nom}".`); setTimeout(() => { if (del.isConnected) { del.classList.remove('armado'); del.title = 'Eliminar propiedad'; } }, 4000); return; }
@@ -2228,7 +2230,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pillEl(x) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'prop-pill' + (cerrada(x) ? ' cerrada' : '') + (x.op === 'Arriendo' ? ' arr' : ''); b.dataset.id = x.id;
     b.innerHTML = pinSvg(x); if (x.precio) { const t = document.createElement('span'); t.className = 'pill-t'; t.textContent = precioTxt(x, true); b.appendChild(t); } b.title = (x.tipo ? x.tipo + ': ' : '') + x.nombre;
-    b.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(x.id, false); });
+    b.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(x.id, false); selBorrar = 'prop:' + x.id; marcarSel(); });
     return b;
   }
   // Capture zones ("Captación"): areas drawn on the map like the land outlines (corners, drag, rotate).
@@ -2246,10 +2248,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const vs = zonas.filter((z) => z.poligono.length > 2 && !(dibujo && dibujo.zona && dibujo.id === z.id));
     if (motor === 'g' && mapaG) {
       zonasG.forEach((c) => c.setMap(null)); zonasG = [];
-      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = new google.maps.Polygon({ paths: z.poligono.map(([lat, lng]) => ({ lat, lng })), strokeColor: cz, strokeWeight: 2, strokeOpacity: .9, fillColor: cz, fillOpacity: .18, clickable: !dibujo && !marcando, zIndex: 0 }); c.setMap(mapaG); c.addListener('click', () => { if (!dibujo && !marcando) empezarDibujo(null, z); }); zonasG.push(c); });
+      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = new google.maps.Polygon({ paths: z.poligono.map(([lat, lng]) => ({ lat, lng })), strokeColor: cz, strokeWeight: 2, strokeOpacity: .9, fillColor: cz, fillOpacity: .18, clickable: !dibujo && !marcando, zIndex: 0 }); c.setMap(mapaG); c.addListener('click', (e) => { if (dibujo) { if (e.latLng) dibPunto(e.latLng.lat(), e.latLng.lng()); } else if (marcando) { if (e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); } else empezarDibujo(null, z); }); zonasG.push(c); });
     } else if (motor === 'l' && mapaL && casasCapa) {
       const L = window.L;
-      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = L.polygon(z.poligono, { color: cz, weight: 2, opacity: .9, fillColor: cz, fillOpacity: .18, dashArray: '6 5' }).addTo(casasCapa); c.bindTooltip('Zona de captación' + (z.nombre ? ': ' + z.nombre : '') + (z.usuario ? ' · ' + nombreUsuario(z.usuario) : '') + ' (toca para editar)'); c.on('click', (e) => { L.DomEvent.stopPropagation(e); if (!dibujo && !marcando) empezarDibujo(null, z); }); });
+      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = L.polygon(z.poligono, { color: cz, weight: 2, opacity: .9, fillColor: cz, fillOpacity: .18, dashArray: '6 5' }).addTo(casasCapa); c.bindTooltip('Zona de captación' + (z.nombre ? ': ' + z.nombre : '') + (z.usuario ? ' · ' + nombreUsuario(z.usuario) : '') + ' (toca para editar)'); c.on('click', (e) => { L.DomEvent.stopPropagation(e); if (dibujo) dibPunto(e.latlng.lat, e.latlng.lng); else if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); else empezarDibujo(null, z); }); });
     }
   }
   let captPin = false;
@@ -3816,7 +3818,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
   function delBtn(key, action, label = 'Borrar', confirmLabel = '¿Borrar?', porTecla) {
     const b = document.createElement('button');
-    b.type = 'button'; if (!/^(rest|abono|ajuste):/.test(key)) { b._borrar = porTecla || action; b._bkey = key; }
+    b.type = 'button'; if (!/^(rest|abono|ajuste):/.test(key)) { b._borrar = porTecla || action; b._bkey = key; borrables.set(key, b._borrar); }
     b.className = 'ghost' + (armed === key ? ' warn' : '');
     b.textContent = armed === key ? confirmLabel : label;
     b.addEventListener('click', async () => {
@@ -3947,7 +3949,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('logout').addEventListener('click', async () => { await signOut(auth); location.reload(); });
   // Delete / Backspace removes the item last clicked (a row, card or note), like in Word; Cmd+Z brings it back.
   // Items deleted this way keep their stored files so that undo can restore them whole.
-  let selBorrar = null;
   const SEL_ITEM = 'tr, li, .nota, .bib-it, .prop-card';
   const botonesBorrar = (el) => [...el.querySelectorAll('button')].filter((b) => b._borrar);
   function marcarSel() {
@@ -3964,13 +3965,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && selBorrar) { selBorrar = null; marcarSel(); return; }
-    if ((e.key !== 'Delete' && e.key !== 'Backspace') || e.metaKey || e.ctrlKey || e.altKey || !selBorrar) return;
+    if ((e.key !== 'Delete' && e.key !== 'Backspace') || e.metaKey || e.ctrlKey || e.altKey) return;
     const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     if (document.querySelector('dialog[open]')) return;
-    const b = botonesBorrar(document.body).find((x) => x._bkey === selBorrar); selBorrar = null; marcarSel();
-    if (!b) return;
+    if (dibujo && dibujo.zona && dibujo.id) { // an existing capture zone open for editing
+      e.preventDefault(); dibujo.pts = []; terminarDibujo(true); avisoDeshacer('Se eliminó la zona · ⌘Z para deshacer'); return;
+    }
+    if (!selBorrar) return;
+    const fn = borrables.get(selBorrar), k = selBorrar; selBorrar = null; marcarSel();
+    if (!fn) return;
     e.preventDefault();
-    Promise.resolve().then(() => b._borrar()).then(() => avisoDeshacer('Se eliminó · ⌘Z para deshacer'), () => setMsg('No se pudo borrar. Revisa tu conexión e intenta de nuevo.', true));
+    if (k.startsWith('prop:')) { propSel = null; if (infoG) infoG.close(); if (mapaL) mapaL.closePopup(); }
+    Promise.resolve().then(() => fn()).then(() => avisoDeshacer('Se eliminó · ⌘Z para deshacer'), () => setMsg('No se pudo borrar. Revisa tu conexión e intenta de nuevo.', true));
   });
   window.addEventListener('libro-write-error', () => setMsg('No se pudo guardar un cambio. Revisa tu conexión y vuelve a intentarlo.', true));
 
@@ -4656,7 +4662,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Revisado';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
       if (esMia || !invitado) { const db = document.createElement('button'); db.type = 'button'; db.className = 'ghost'; db.textContent = 'Borrar';
-        db._bkey = 'nota:' + n.id; db._borrar = () => libroRef.collection('notas').doc(n.id).delete();
+        db._bkey = 'nota:' + n.id; db._borrar = () => libroRef.collection('notas').doc(n.id).delete(); borrables.set(db._bkey, db._borrar);
         db.addEventListener('click', () => { n.archivos.forEach((a) => { if (a.ruta) deleteObject(sRef(storage, a.ruta)).catch(() => {}); }); libroRef.collection('notas').doc(n.id).delete(); setMsg('Nota borrada.'); }); acts.appendChild(db); }
       pie.append(f, acts);
       card.append(k);
