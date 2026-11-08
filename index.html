@@ -1420,7 +1420,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio o calle" aria-label="Buscar propiedades o lugares">
       <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
-      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select>
+      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select><select id="prop-f-estado" aria-label="Estado de la propiedad"><option value="">Estado: todos</option><option value="Disponible">Disponible</option><option value="Captacion">Captación</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select>
     </form>
     <div class="prop-filtros" id="prop-filtros">
       <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
@@ -1978,6 +1978,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (!filtro.cerradas && cerrada(x)) return false;
     if (filtro.op && x.op !== filtro.op) return false;
     if (filtro.tipo && x.tipo !== filtro.tipo) return false;
+    if (filtro.estado && (x.estado || 'Disponible') !== filtro.estado) return false;
     if (filtro.hab && (x.hab || 0) < filtro.hab) return false;
     if (filtro.min !== '' && (x.precio || 0) < Number(filtro.min)) return false;
     if (filtro.max !== '' && (x.precio || 0) > Number(filtro.max)) return false;
@@ -2011,7 +2012,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     return d;
   }
   // Native selects can't show icons, so the type selects get a small menu with an icon per option.
-  function iconSelect(sel) {
+  function iconSelect(sel, ico = icoTipo) {
     const w = document.createElement('span'); w.className = 'isel';
     const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'isel-btn'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', sel.getAttribute('aria-label') || 'Tipo');
     const menu = document.createElement('ul'); menu.className = 'isel-menu'; menu.setAttribute('role', 'listbox'); menu.hidden = true;
@@ -2019,11 +2020,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const cerrar = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
     const pintar = () => {
       const o = sel.options[sel.selectedIndex];
-      btn.innerHTML = icoTipo(o ? o.value : '') + '<span></span><svg class="isel-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      btn.innerHTML = ico(o ? o.value : '') + '<span></span><svg class="isel-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       btn.querySelector('span').textContent = o ? o.text : '';
       menu.replaceChildren(...[...sel.options].map((op) => {
         const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(op.value === sel.value));
-        b.innerHTML = icoTipo(op.value); b.append(op.text);
+        b.innerHTML = ico(op.value); b.append(op.text);
         b.addEventListener('click', () => { sel.value = op.value; sel.dispatchEvent(new Event('change')); pintar(); cerrar(); btn.focus(); });
         li.appendChild(b); return li;
       }));
@@ -2876,6 +2877,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Filters
   document.querySelectorAll('.prop-seg button').forEach((b) => b.addEventListener('click', () => { filtro.op = b.dataset.op; document.querySelectorAll('.prop-seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pintarProps(); }));
   $('prop-f-tipo').addEventListener('change', (e) => { filtro.tipo = e.target.value; pintarProps(); });
+  $('prop-f-estado').addEventListener('change', (e) => { filtro.estado = e.target.value; if (filtro.estado) filtro.cerradas = true; pintarProps(); });
   $('prop-f-min').addEventListener('input', (e) => { filtro.min = e.target.value; pintarProps(); });
   $('prop-f-max').addEventListener('input', (e) => { filtro.max = e.target.value; pintarProps(); });
   $('mapa-txt').addEventListener('input', (e) => { filtro.q = e.target.value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); pintarProps(); });
@@ -2883,7 +2885,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // ── Property form ──
   let draft = null, draftNuevas = [], subiendoFotos = 0, subiendoDocs = 0;
   const dlgP = $('dlg-prop');
-  $('p-tipo').replaceChildren(...TIPOS_PROP.map((t) => new Option(t, t))); iconSelect($('p-tipo')); iconSelect($('prop-f-tipo'));
+  $('p-tipo').replaceChildren(...TIPOS_PROP.map((t) => new Option(t, t))); iconSelect($('p-tipo')); iconSelect($('prop-f-tipo')); iconSelect($('prop-f-estado'), () => '');
   $('p-serv').replaceChildren(...SERVICIOS.map(([k, t, path]) => { const l = document.createElement('label'); l.className = 'serv-ck'; l.innerHTML = `<input type="checkbox" value="${k}">${icoServ(path)}`; l.append(t); return l; }));
   const pMsg = (t, err) => { const m = $('p-msg'); m.textContent = t || ''; m.className = 'msg' + (err ? ' err' : ''); };
   function pintarDraft() {
