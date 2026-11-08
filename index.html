@@ -911,9 +911,13 @@ body.invitado .ajustes-btn { display: none; }
 .pc-dorso h4 { margin: 0 0 6px; font: 600 12px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .pcd-grupo { display: grid; gap: 6px; margin-bottom: 10px; }
 .pcd-tit { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.pcd-per { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(0, .7fr) 18px; grid-template-areas: "mas nom nom nom" ". con com q"; gap: 4px 6px; align-items: center; }
+.pcd-per { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr) 18px; grid-template-areas: "mas nom nom nom" ". ced tel tel" ". cor cor cor" ". com com q"; gap: 4px 6px; align-items: center; }
 .pcd-per .pp-mas { grid-area: mas; width: 24px; height: 24px; font-size: 16px; }
-.pcd-per .pcd-nom { grid-area: nom; } .pcd-per .pcd-con { grid-area: con; } .pcd-per .pcd-com { grid-area: com; } .pcd-per .pp-quitar { grid-area: q; width: 18px; height: 18px; font-size: 16px; }
+.pcd-per .pcd-nom { grid-area: nom; } .pcd-per .pcd-ced { grid-area: ced; } .pcd-per .pcd-tel { grid-area: tel; } .pcd-per .pcd-cor { grid-area: cor; } .pcd-per .pcd-com { grid-area: com; } .pcd-per .pp-quitar { grid-area: q; width: 18px; height: 18px; font-size: 16px; }
+.pcd-per .pcd-l { display: flex; flex-direction: column; align-items: stretch; gap: 2px; min-width: 0; margin: 0; padding: 0; font-size: 10.5px; line-height: 1.2; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.pcd-per .pcd-l > span { font-size: 10.5px; color: var(--muted); padding-left: 6px; }
+.pcd-per .pcd-l > input { width: 100%; margin: 0; }
+.pcd-per .pp-mas { align-self: end; margin-bottom: 4px; }
 .pcd-per input { min-width: 0; width: 100%; box-sizing: border-box; font: 13px var(--font-body); color: var(--fg); padding: 6px 10px; border-radius: 10px; text-transform: none; letter-spacing: 0; }
 .prop-foto { width: 100%; align-self: start; aspect-ratio: 16 / 15 !important; }
 .prop-foto .prop-op { top: 5px; left: 5px; font-size: 10px; padding: 2px 7px; }
@@ -2125,30 +2129,30 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const volteadas = new Set(), ppCard = {};
   function datosDorso(x) {
     const d = document.createElement('div');
-    const h = document.createElement('h4'); h.textContent = 'Datos'; d.appendChild(h);
-    const st = ppCard[x.id] = ppCard[x.id] || { duenos: personasDe(x.duenos, []), compradores: personasDe(x.compradores, []) };
+    const h = document.createElement('h4'); h.textContent = 'Datos del dueño'; d.appendChild(h);
+    const st = ppCard[x.id] = ppCard[x.id] || { duenos: personasDe(x.duenos, []) };
     const guardar = () => {
-      const limpio = (xs) => xs.map((p) => ({ nombre: p.nombre.trim(), contacto: p.contacto.trim(), comision: p.comision.trim() })).filter((p) => p.nombre || p.contacto || p.comision).slice(0, 20);
-      const du = limpio(st.duenos), co = limpio(st.compradores), d0 = du[0] || {};
-      if (JSON.stringify(du) === JSON.stringify(personasDe(x.duenos, [])) && JSON.stringify(co) === JSON.stringify(personasDe(x.compradores, []))) return;
-      guardarCampo(x, { duenos: du, compradores: co, dueno: d0.nombre || '', contacto: d0.contacto || '', comision: d0.comision || '', nota: '' });
+      const du = limpiaPer(st.duenos), d0 = du[0] || {};
+      if (JSON.stringify(du) === JSON.stringify(limpiaPer(x.duenos))) return;
+      guardarCampo(x, { duenos: du, dueno: d0.nombre || '', contacto: d0.telefono || d0.correo || '', comision: d0.comision || '', nota: '' });
     };
-    GRUPOS_P.forEach(([k, tit, tits, ej]) => {
-      if (!st[k].length) st[k].push({ nombre: '', contacto: '', comision: '' });
-      const g = document.createElement('div'); g.className = 'pcd-grupo';
-      const t = document.createElement('span'); t.className = 'pcd-tit'; t.textContent = st[k].length > 1 ? tits : tit; g.appendChild(t);
-      st[k].forEach((per, i) => {
-        const f = document.createElement('div'); f.className = 'pcd-per';
-        const mas = document.createElement('button'); mas.type = 'button'; mas.className = 'pp-mas'; mas.textContent = '+'; mas.title = 'Agregar otro ' + tit.toLowerCase(); mas.setAttribute('aria-label', mas.title); mas.disabled = !!invitado;
-        mas.addEventListener('click', () => { st[k].splice(i + 1, 0, { nombre: '', contacto: '', comision: '' }); pintarLista(); requestAnimationFrame(() => { const el = document.querySelector(`#prop-lista [data-k="${x.id}:${k}:${i + 1}:nombre"]`); if (el) el.focus({ preventScroll: true }); }); });
-        const campo = (cl, cls, ph, max, im) => { const inp = document.createElement('input'); inp.type = 'text'; inp.className = cls; inp.maxLength = max; inp.placeholder = ph; inp.value = per[cl] || ''; inp.dataset.k = `${x.id}:${k}:${i}:${cl}`; if (im) inp.inputMode = im; inp.disabled = !!invitado; inp.setAttribute('aria-label', (cl === 'nombre' ? tit : cl === 'contacto' ? 'Contacto' : 'Comisión') + ' ' + (i + 1)); inp.addEventListener('input', () => { per[cl] = inp.value; }); inp.addEventListener('change', guardar); inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); }); return inp; };
-        const q = document.createElement('button'); q.type = 'button'; q.className = 'pp-quitar'; q.textContent = '×'; q.title = 'Quitar'; q.setAttribute('aria-label', 'Quitar ' + tit.toLowerCase() + ' ' + (i + 1)); q.hidden = st[k].length < 2 || !!invitado;
-        q.addEventListener('click', () => { st[k].splice(i, 1); guardar(); pintarLista(); });
-        f.append(mas, campo('nombre', 'pcd-nom', ej, 80), campo('contacto', 'pcd-con', 'Contacto', 80, 'tel'), campo('comision', 'pcd-com', 'Comisión', 40), q);
-        g.appendChild(f);
-      });
-      d.appendChild(g);
+    const k = 'duenos';
+    if (!st[k].length) st[k].push(PER_VACIA());
+    const g = document.createElement('div'); g.className = 'pcd-grupo';
+    st[k].forEach((per, i) => {
+      if (st[k].length > 1) { const t = document.createElement('span'); t.className = 'pcd-tit'; t.textContent = 'Dueño ' + (i + 1); g.appendChild(t); }
+      const f = document.createElement('div'); f.className = 'pcd-per';
+      const mas = document.createElement('button'); mas.type = 'button'; mas.className = 'pp-mas'; mas.textContent = '+'; mas.title = 'Agregar otro dueño'; mas.setAttribute('aria-label', mas.title); mas.disabled = !!invitado;
+      mas.addEventListener('click', () => { st[k].splice(i + 1, 0, PER_VACIA()); pintarLista(); requestAnimationFrame(() => { const el = document.querySelector(`#prop-lista [data-k="${x.id}:${k}:${i + 1}:nombre"]`); if (el) el.focus({ preventScroll: true }); }); });
+      const campo = (cl, cls, ph, max, tipo, im) => { const inp = document.createElement('input'); inp.type = tipo || 'text'; inp.className = cls; inp.maxLength = max; inp.placeholder = ph; inp.value = per[cl] || ''; inp.dataset.k = `${x.id}:${k}:${i}:${cl}`; if (im) inp.inputMode = im; inp.disabled = !!invitado; inp.setAttribute('aria-label', ph);
+        inp.addEventListener('click', (e) => e.stopPropagation()); inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); });
+        inp.addEventListener('input', () => { per[cl] = inp.value; }); inp.addEventListener('change', guardar); const l = document.createElement('label'); l.className = 'pcd-l ' + cls; const sp = document.createElement('span'); sp.textContent = ph; l.append(sp, inp); l.addEventListener('click', (e) => e.stopPropagation()); return l; };
+      const q = document.createElement('button'); q.type = 'button'; q.className = 'pp-quitar'; q.textContent = '×'; q.title = 'Quitar'; q.setAttribute('aria-label', 'Quitar dueño ' + (i + 1)); q.hidden = st[k].length < 2 || !!invitado;
+      q.addEventListener('click', () => { st[k].splice(i, 1); guardar(); pintarLista(); });
+      f.append(mas, campo('nombre', 'pcd-nom', 'Nombre', 80), campo('cedula', 'pcd-ced', 'Cédula', 20, 'text', 'numeric'), campo('telefono', 'pcd-tel', 'Teléfono', 40, 'tel', 'tel'), campo('correo', 'pcd-cor', 'Correo', 80, 'email', 'email'), campo('comision', 'pcd-com', 'Comisión', 40), q);
+      g.appendChild(f);
     });
+    d.appendChild(g);
     return d;
   }
   function fotoEl(x, cls) {
@@ -2288,7 +2292,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       acc.append(ed, del, ub, dib);
       cara.append(info, acc);
       const curl = (izq, txt) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'doblez izq'; b.setAttribute('aria-label', txt); b.innerHTML = '<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M5.5 6 A16.5 16.5 0 0 0 24 24.5"/></svg>'; b.addEventListener('click', (e) => { e.stopPropagation(); const v = li.classList.toggle('vuelta'); if (v) volteadas.add(x.id); else { volteadas.delete(x.id); delete ppCard[x.id]; } }); return b; };
-      cara.appendChild(curl(true, 'Ver datos de dueños y compradores'));
+      cara.appendChild(curl(true, 'Ver datos del dueño'));
       const dorso = document.createElement('div'); dorso.className = 'pc-dorso'; pin.appendChild(dorso);
       dorso.addEventListener('click', (e) => e.stopPropagation());
       dorso.appendChild(datosDorso(x)); dorso.appendChild(curl(true, 'Volver a la ficha'));
@@ -2602,7 +2606,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     dibujo.pts = []; dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibPintar(); });
   $('dib-cancel').addEventListener('click', () => terminarDibujo(false));
   $('dib-ok').addEventListener('click', () => terminarDibujo(true));
-  const personasDe = (xs, def) => (Array.isArray(xs) ? xs : def).filter((p) => p && typeof p === 'object').map((p) => ({ nombre: String(p.nombre || '').slice(0, 80), contacto: String(p.contacto || '').slice(0, 80), comision: String(p.comision || '').slice(0, 40) }));
+  // A person: name, ID number, phone, email and commission. Older entries had one "contacto" field: an email goes to correo, anything else to teléfono.
+  const personasDe = (xs, def) => (Array.isArray(xs) ? xs : def).filter((p) => p && typeof p === 'object').map((p) => { const c = String(p.contacto || ''); return { nombre: String(p.nombre || '').slice(0, 80), cedula: String(p.cedula || '').slice(0, 20), telefono: String(p.telefono != null ? p.telefono : (/@/.test(c) ? '' : c)).slice(0, 40), correo: String(p.correo != null ? p.correo : (/@/.test(c) ? c : '')).slice(0, 80), comision: String(p.comision || '').slice(0, 40) }; });
+  const limpiaPer = (xs) => personasDe(xs, []).map((p) => ({ nombre: p.nombre.trim(), cedula: p.cedula.trim(), telefono: p.telefono.trim(), correo: p.correo.trim(), comision: p.comision.trim() })).filter((p) => p.nombre || p.cedula || p.telefono || p.correo || p.comision).slice(0, 20);
+  const PER_VACIA = () => ({ nombre: '', cedula: '', telefono: '', correo: '', comision: '' });
   // Owners and buyers in the edit dialog: one row each, "+" adds another.
   const GRUPOS_P = [['duenos', 'Dueño', 'Dueños', 'Ej.: Sr. Luis Pérez'], ['compradores', 'Comprador', 'Compradores', 'Ej.: Sra. Ana Torres']];
   function pintarPersonas(foco) {
@@ -2907,9 +2914,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     pMsg(''); pintarDraft();
   }
   function leerForm() {
-    const limpiar = (xs) => personasDe(xs, []).map((p) => ({ nombre: p.nombre.trim(), contacto: p.contacto.trim(), comision: p.comision.trim() })).filter((p) => p.nombre || p.contacto || p.comision).slice(0, 20);
+    const limpiar = limpiaPer;
     draft.duenos = limpiar(draft.duenos); draft.compradores = limpiar(draft.compradores);
-    const d0 = draft.duenos[0] || {}; draft.dueno = d0.nombre || ''; draft.contacto = d0.contacto || ''; draft.comision = d0.comision || '';
+    const d0 = draft.duenos[0] || {}; draft.dueno = d0.nombre || ''; draft.contacto = d0.telefono || d0.correo || ''; draft.comision = d0.comision || '';
     const n = (id) => { const v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : 0; };
     Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: 'Venta', tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio') * 100) / 100, hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: '',  servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
   }
