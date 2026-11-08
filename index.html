@@ -1856,10 +1856,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     'Otro': 'M12 2.8l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.6l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z',
     '': 'M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z'
   };
+  const G_CAPT = 'M9.5 2H18a1.5 1.5 0 0 1 1.5 1.5V18a1.5 1.5 0 0 1-1.5 1.5h-6.1A4.6 4.6 0 0 0 8 11.7V3.5A1.5 1.5 0 0 1 9.5 2zm4.25 2.3-4 3.6.8.8.6-.5v3.6h2v-2.1h1.2v2.1h2V8.2l.6.5.8-.8zM14 12.8h4v1.1h-4zm.6 2.1h3.4V16h-3.4zm0 2.1h3.4v1.1h-3.4zM8.6 12.9a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 1 0 0-6.8zm0 1.1a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 1 1 0-4.6zM5.9 18.2l1.2 1.2-3.4 3.4a.85.85 0 0 1-1.2-1.2z';
+  const glifoDe = (x) => x.estado === 'Captacion' ? G_CAPT : glifo(x.tipo || 'Casa');
+  const icoProp = (x) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifoDe(x)}"/></svg>`;
   const glifo = (t) => GLIFOS[t] != null ? GLIFOS[t] : GLIFOS['Otro'];
   const icoTipo = (t) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifo(t)}"/></svg>`;
   const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.estado === 'Captacion' ? '#b08a4e' : 'var(--accent)';
-  const pinSvg = (x) => `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" style="fill:${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifo(x.tipo || 'Casa')}"/></svg>`;
+  const pinSvg = (x) => `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" style="fill:${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifoDe(x)}"/></svg>`;
   const SERVICIOS = [['luz', 'Luz', 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12z'], ['agua', 'Agua', 'M12 3s-6 6.9-6 11a6 6 0 0 0 12 0c0-4.1-6-11-6-11z'], ['alcantarillado', 'Alcantarillado', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M9 3.5v17M15 3.5v17']];
   const icoServ = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
   function servEl(x, conTexto) {
@@ -2026,7 +2029,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         f.addEventListener('touchend', (e) => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 30) ir(i + (dx < 0 ? 1 : -1)); });
       }
     }
-    else f.innerHTML = icoTipo(x.tipo || 'Casa');
+    else f.innerHTML = icoProp(x);
     const [, et, ec] = estadoDe(x);
     if (cls === 'prop-foto' && !invitado) {
       const t = document.createElement('button'); t.type = 'button'; t.className = 'prop-op est-' + ec; t.textContent = et; t.title = 'Cambiar estado'; t.setAttribute('aria-haspopup', 'listbox');
