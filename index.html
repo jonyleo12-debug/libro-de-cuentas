@@ -1420,7 +1420,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio o calle" aria-label="Buscar propiedades o lugares">
       <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
-      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select><select id="prop-f-estado" aria-label="Estado de la propiedad"><option value="">Estado: todos</option><option value="Disponible">Disponible</option><option value="Captacion">Captación</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select>
+      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select><select id="prop-f-estado" aria-label="Estado de la propiedad"><option value="">Estado: todos</option><option value="Captacion">Captación</option><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select>
     </form>
     <div class="prop-filtros" id="prop-filtros">
       <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
@@ -2110,7 +2110,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     menuOpciones(btn, x, 'tipo', tipos.map((t) => [t, t, icoTipo(t)]), x.tipo || 'Casa');
   }
   // Status of a property for sale; stored values stay as before, labels as Jonathan asked.
-  const ESTADOS_P = [['Disponible', 'Disponible', 'disp'], ['Captacion', 'Captación', 'capt'], ['Reservada', 'Reservado', 'res'], ['Vendida', 'Vendido', 'vend']];
+  const ESTADOS_P = [['Captacion', 'Captación', 'capt'], ['Disponible', 'Disponible', 'disp'], ['Reservada', 'Reservado', 'res'], ['Vendida', 'Vendido', 'vend']];
   const estadoDe = (x) => ESTADOS_P.find(([v]) => v === x.estado) || ESTADOS_P[0];
   function menuOpciones(btn, x, campo, items, actual) {
     const abierto = menuT && menuT._x === x.id + campo; cerrarMenuTipo(); if (abierto) return;
@@ -5745,7 +5745,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <div class="prop-grid" hidden>
       <label>Tipo<select id="p-tipo"></select></label>
       <label>Precio (USD)<input type="number" id="p-precio" min="0" step="1" inputmode="numeric" placeholder="0"></label>
-      <label>Estado<select id="p-estado"><option value="Disponible">Disponible</option><option value="Captacion">Captación</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select></label>
+      <label>Estado<select id="p-estado"><option value="Captacion">Captación</option><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select></label>
       <label>Área (m²)<input type="number" id="p-area" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Habitaciones<input type="number" id="p-hab" min="0" max="50" inputmode="numeric" placeholder="0"></label>
       <label>Baños<input type="number" id="p-banos" min="0" max="50" step="0.5" inputmode="decimal" placeholder="0"></label>
