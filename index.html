@@ -985,6 +985,7 @@ button.prop-op:hover { filter: brightness(1.08); }
 .sel-borrar { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 10px; }
 tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .aviso-deshacer.ver { opacity: 1; transform: translate(-50%, 0); }
+.dib-esq { cursor: nwse-resize !important; }
 .dib-mover { display: grid !important; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #fff; color: #222; font-size: 16px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,.35); cursor: move; }
 .dib-usr-l { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); }
 .dib-usr-l select { width: auto; min-width: 150px; padding: 5px 8px; font-size: 13px; }
@@ -2326,8 +2327,22 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function dibTexto() {
     const n = dibujo.pts.length, a = areaPoli(dibujo.pts);
-    $('dib-txt').textContent = n < 3 ? (n ? `Toca el mapa para marcar cada esquina (${n} de al menos 3).` : 'Mantén presionado y arrastra para dibujar un rectángulo, o toca cada esquina.') : `${Math.round(a).toLocaleString('es-EC')} m² aprox. · ` + (dibujo.fijo ? 'arrastra la zona para moverla o usa Girar.' : 'arrastra una esquina para ajustarla.');
+    $('dib-txt').textContent = n < 3 ? (n ? `Toca el mapa para marcar cada esquina (${n} de al menos 3).` : 'Mantén presionado y arrastra para dibujar un rectángulo, o toca cada esquina.') : `${Math.round(a).toLocaleString('es-EC')} m² aprox. · ` + (dibujo.fijo ? 'arrastra la zona para moverla, una esquina para cambiar su tamaño, o usa Girar.' : 'arrastra una esquina para ajustarla.');
     $('dib-ok').disabled = n > 0 && n < 3; $('dib-undo').disabled = !n; $('dib-undo').hidden = !!dibujo.fijo; $('dib-borrar').disabled = !n; $('dib-borrar').hidden = !!dibujo.fijo; $('dib-ok').hidden = !!dibujo.fijo; $('dib-cancel').hidden = !!dibujo.fijo;
+  }
+  // Resize from a corner: a rectangle keeps its shape (the opposite corner stays put); any other outline just moves that corner.
+  function estirar(pts, i, lat, lng) {
+    const n = pts.length, out = pts.map((q) => q.slice());
+    if (n !== 4) { out[i] = [lat, lng]; return out; }
+    const lat0 = pts[(i + 2) % 4][0], kx = Math.cos(lat0 * Math.PI / 180) * 111320, ky = 110540;
+    const o = pts[(i + 2) % 4], M = (q) => [(q[1] - o[1]) * kx, (q[0] - o[0]) * ky], G = (m) => [o[0] + m[1] / ky, o[1] + m[0] / kx];
+    const a = M(pts[(i + 1) % 4]), b = M(pts[(i + 3) % 4]), la = Math.hypot(...a), lb = Math.hypot(...b);
+    if (!la || !lb) { out[i] = [lat, lng]; return out; }
+    const u = [a[0] / la, a[1] / la], v = [b[0] / lb, b[1] / lb];
+    if (Math.abs(u[0] * v[0] + u[1] * v[1]) > 0.08) { out[i] = [lat, lng]; return out; } // not a rectangle
+    const p = M([lat, lng]), du = p[0] * u[0] + p[1] * u[1], dv = p[0] * v[0] + p[1] * v[1];
+    out[(i + 1) % 4] = G([u[0] * du, u[1] * du]); out[(i + 3) % 4] = G([v[0] * dv, v[1] * dv]); out[i] = G([u[0] * du + v[0] * dv, u[1] * du + v[1] * dv]);
+    return out;
   }
   function dibPintar() {
     if (!dibujo) return;
@@ -2340,6 +2355,18 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       pg.setMap(mapaG); dibujo.capa.push(pg);
       const leer = () => { dibujo.pts = pg.getPath().getArray().map((q) => [q.lat(), q.lng()]); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); if (dibujo.fijo) guardarZonaYa(); };
       const path = pg.getPath(); ['set_at', 'insert_at', 'remove_at'].forEach((ev) => path.addListener(ev, leer)); pg.addListener('dragend', leer);
+      if (dibujo.fijo && !vivo && pts.length > 2) {
+        const icono = { path: google.maps.SymbolPath.CIRCLE, scale: 6, fillColor: '#fff', fillOpacity: 1, strokeColor: c, strokeWeight: 2 };
+        const mks = pts.map(([lat, lng], i) => {
+          const m = new google.maps.Marker({ position: { lat, lng }, map: mapaG, draggable: true, icon: icono, zIndex: 20, title: 'Arrastra para agrandar o achicar', cursor: 'nwse-resize' });
+          let ini = null;
+          m.addListener('dragstart', () => { ini = dibujo.pts.map((q) => q.slice()); });
+          m.addListener('drag', (e) => { if (!ini || !e.latLng) return; const np = estirar(ini, i, e.latLng.lat(), e.latLng.lng()); dibujo.pts = np; pg.setPaths(np.map(([a, b]) => ({ lat: a, lng: b }))); mks.forEach((mm, j) => { if (j !== i) mm.setPosition({ lat: np[j][0], lng: np[j][1] }); }); });
+          m.addListener('dragend', () => { ini = null; dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibPintar(); guardarZonaYa(); });
+          dibujo.capa.push(m); return m;
+        });
+        pg.addListener('drag', () => { pg.getPath().getArray().forEach((q, j) => { if (mks[j]) mks[j].setPosition(q); }); });
+      }
       pg.addListener('click', (e) => { if (dibujo.fijo) return; if (e.vertex == null && e.latLng && pts.length < 3 && !dibujo.fijo) dibPunto(e.latLng.lat(), e.latLng.lng()); });
     } else if (motor === 'l' && mapaL) {
       const L = window.L;
@@ -2354,6 +2381,15 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         mk.on('drag', () => { const ll = mk.getLatLng(), dl = ll.lat - desde.lat, dg = ll.lng - desde.lng; dibujo.pts = ini.map(([a, b]) => [a + dl, b + dg]); poli.setLatLngs(dibujo.pts); });
         mk.on('dragend', () => { dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); guardarZonaYa(); });
         dibujo.capa.push(mk);
+        const esq = dibujo.pts.map((q, i) => {
+          const m = L.marker(q, { draggable: true, keyboard: false, title: 'Arrastra para agrandar o achicar', icon: L.divIcon({ className: 'dib-vert dib-esq', html: '', iconSize: [14, 14] }) }).addTo(mapaL);
+          let ini0 = null;
+          m.on('dragstart', () => { ini0 = dibujo.pts.map((x) => x.slice()); });
+          m.on('drag', () => { if (!ini0) return; const ll = m.getLatLng(), np = estirar(ini0, i, ll.lat, ll.lng); dibujo.pts = np; poli.setLatLngs(np); esq.forEach((mm, j) => { if (j !== i) mm.setLatLng(np[j]); }); mk.setLatLng(cen()); });
+          m.on('dragend', () => { ini0 = null; dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); guardarZonaYa(); });
+          dibujo.capa.push(m); return m;
+        });
+        mk.on('drag', () => esq.forEach((mm, j) => mm.setLatLng(dibujo.pts[j])));
       }
       if (!vivo && !dibujo.fijo) pts.forEach((q, i) => {
         const mk = L.marker(q, { draggable: true, keyboard: false, icon: L.divIcon({ className: 'dib-vert', html: '', iconSize: [14, 14] }) }).addTo(mapaL);
