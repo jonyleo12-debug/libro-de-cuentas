@@ -1113,6 +1113,12 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 .isel-menu button:hover, .isel-menu button:focus-visible { background: var(--accent-soft); outline: none; }
 .isel-menu button[aria-selected="true"] { font-weight: 600; }
 .prop-pin-l { background: none; border: 0; overflow: visible; }
+.punto-pin { background: none; border: 0; }
+.punto-pin span { position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50% 50% 50% 0; background: #e5483b; transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.punto-pin span::after { content: ''; position: absolute; left: 8px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: #fff; }
+.punto-busq { display: grid; gap: 4px; min-width: 190px; font-family: inherit; color: #1b1b1b; }
+.punto-busq small { color: #666; font-variant-numeric: tabular-nums; }
+.punto-busq .btn { margin-top: 6px; padding: 8px 12px; font-size: 13px; }
 .prop-pin-l .prop-pill { position: absolute; left: 0; top: 0; }
 .prop-mini { display: grid; grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); gap: 14px; box-sizing: border-box; font: 13px var(--font-body); color: #1b1b1d; align-items: stretch; }
 .prop-mini-foto { aspect-ratio: auto; min-height: 220px; border-radius: 16px; }
@@ -1421,7 +1427,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
       <span class="sub" style="display:inline" id="prop-n">Puyo · Pastaza</span>
     </div>
     <form class="mapa-busca" id="mapa-form" role="search">
-      <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio o calle" aria-label="Buscar propiedades o lugares">
+      <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio, calle o coordenadas" aria-label="Buscar propiedades o lugares">
       <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
       <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select><select id="prop-f-estado" aria-label="Estado de la propiedad"><option value="">Estado: todos</option><option value="Captacion">Captación</option><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select>
     </form>
@@ -2876,7 +2882,47 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('prop-f-estado').addEventListener('change', (e) => { filtro.estado = e.target.value; if (filtro.estado) filtro.cerradas = true; pintarProps(); });
   $('prop-f-min').addEventListener('input', (e) => { filtro.min = e.target.value; pintarProps(); });
   $('prop-f-max').addEventListener('input', (e) => { filtro.max = e.target.value; pintarProps(); });
-  $('mapa-txt').addEventListener('input', (e) => { filtro.q = e.target.value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); pintarProps(); });
+  // Pasted coordinates in the search box: "-1.4861, -78.0042", 1°29'10"S 78°0'15"W, or a Google Maps link. Shows that exact point with a button to add a property there.
+  function leerCoords(t) {
+    t = String(t || '').trim(); if (!t) return null;
+    const ok = (a, b) => { if (!isFinite(a) || !isFinite(b)) return null; if (Math.abs(a) > 90 && Math.abs(b) <= 90) [a, b] = [b, a]; return Math.abs(a) <= 90 && Math.abs(b) <= 180 ? { lat: a, lng: b } : null; };
+    let m = t.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/) || t.match(/[@=](-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/);
+    if (m) return ok(parseFloat(m[1]), parseFloat(m[2]));
+    const dms = [...t.replace(/[’′]/g, "'").replace(/[”″]|''/g, '"').matchAll(/(\d{1,3})\s*[°º]\s*(?:(\d{1,2}(?:[.,]\d+)?)\s*'\s*)?(?:(\d{1,2}(?:[.,]\d+)?)\s*"\s*)?([NSEWOnsewo])?/g)];
+    if (dms.length === 2) {
+      const v = (q) => { let x = Number(q[1]) + Number(String(q[2] || 0).replace(',', '.')) / 60 + Number(String(q[3] || 0).replace(',', '.')) / 3600; if (/[SWOswo]/.test(q[4] || '')) x = -x; return x; };
+      let a = v(dms[0]), b = v(dms[1]); if (/[EWOewo]/.test(dms[0][4] || '') && /[NSns]/.test(dms[1][4] || '')) [a, b] = [b, a]; return ok(a, b);
+    }
+    m = t.match(/^\(?\s*(-?\d{1,3}(?:\.\d+)?)\s*°?\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*°?\s*\)?$/);
+    if (m && (m[1].includes('.') || m[2].includes('.'))) return ok(parseFloat(m[1]), parseFloat(m[2]));
+    return null;
+  }
+  let puntoBusq = null, puntoTimer = 0;
+  function quitarPunto() { if (!puntoBusq) return; try { if (puntoBusq.g) { puntoBusq.g.setMap(null); puntoBusq.w.close(); } else puntoBusq.remove(); } catch (e) {} puntoBusq = null; }
+  async function mostrarPunto(c) {
+    await iniciarMapa(); quitarPunto();
+    const box = document.createElement('div'); box.className = 'punto-busq';
+    box.append(Object.assign(document.createElement('b'), { textContent: 'Punto buscado' }), Object.assign(document.createElement('small'), { textContent: c.lat.toFixed(6) + ', ' + c.lng.toFixed(6) }));
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn'; btn.textContent = '+ Añadir propiedad aquí';
+    btn.addEventListener('click', () => { quitarPunto(); $('mapa-txt').value = ''; filtro.q = ''; pintarProps(); crearProp(c.lat, c.lng); });
+    box.append(btn);
+    if (motor === 'g' && mapaG) {
+      const mk = new google.maps.Marker({ position: c, map: mapaG, zIndex: 30, title: 'Punto buscado' });
+      const w = new google.maps.InfoWindow({ content: box }); mk.addListener('click', () => w.open({ map: mapaG, anchor: mk }));
+      puntoBusq = { g: mk, w }; mapaG.panTo(c); mapaG.setZoom(18); w.open({ map: mapaG, anchor: mk });
+    } else if (mapaL) {
+      puntoBusq = L.marker([c.lat, c.lng], { keyboard: false, zIndexOffset: 1000, title: 'Punto buscado', icon: L.divIcon({ className: 'punto-pin', html: '<span></span>', iconSize: [26, 34], iconAnchor: [13, 34], popupAnchor: [0, -30] }) }).addTo(mapaL).bindPopup(box);
+      mapaL.setView([c.lat, c.lng], 18); puntoBusq.openPopup();
+    }
+    $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  $('mapa-txt').addEventListener('input', (e) => {
+    const c = leerCoords(e.target.value);
+    clearTimeout(puntoTimer);
+    if (c) { filtro.q = ''; pintarProps(); puntoTimer = setTimeout(() => mostrarPunto(c), 250); return; }
+    quitarPunto();
+    filtro.q = e.target.value.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); pintarProps();
+  });
 
   // ── Property form ──
   let draft = null, draftNuevas = [], subiendoFotos = 0, subiendoDocs = 0;
