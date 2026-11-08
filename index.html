@@ -2759,9 +2759,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const vt = Object.assign({}, x.venta || {}), ref = col('lugares').doc(x.id);
     const gv = (k, pinta) => (val) => { vt[k] = val; x.venta = vt; ref.update({ ['venta.' + k]: val }); if (pinta) flPintar(); };
     const c = el('div', 'fl-card');
-    const f1 = el('div', 'fl-fila');
-    const est = opciones(campo('select', 'fl-sel', { ariaLabel: 'Estado' }, null, (val) => { x.estado = val; ref.update({ estado: val }); flPintar(); }), [['Disponible', 'Disponible'], ['Captacion', 'Captación'], ['Reservada', 'Reservado'], ['Vendida', 'Vendido']], x.estado);
-    f1.append(etiqueta('Estado', est));
     const f2 = el('div', 'fl-fila');
     const precio = Number(vt.precio) || x.precio || 0, pct = vt.comPct == null ? 3 : Number(vt.comPct) || 0, com = Math.round(precio * pct) / 100;
     f2.append(etiqueta('Comprador', opciones(campo('select', 'fl-sel', { ariaLabel: 'Comprador' }, null, gv('comprador')), [['', 'Elige…'], ...interesados.map((q) => [q.id, q.nombre || 'Sin nombre'])], vt.comprador || '')),
@@ -2769,7 +2766,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       etiqueta('Comisión %', campo('input', 'fl-pct', { type: 'number', min: 0, max: 100, step: 0.5, ariaLabel: 'Comisión en porcentaje' }, pct, gv('comPct', true))),
       el('span', 'fl-com', '= ' + usd.format(com)));
     const f4 = el('div', 'fl-fila');
-    f4.append(etiqueta('Fecha', campo('input', '', { type: 'date', ariaLabel: 'Fecha de la venta' }, vt.fecha || '', gv('fecha'))));
     if (vt.movId) f4.append(el('span', 'fl-ok', `Comisión de ${usd.format(Number(vt.comCobrada) || com)} registrada en tus ingresos ✓`));
     else {
       const b = el('button', 'btn', 'Registrar comisión en ingresos'); b.type = 'button'; b.disabled = !(com > 0);
@@ -2783,6 +2779,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       f4.append(b);
     }
+    const f1 = el('div', 'fl-fila'); f1.append(etiqueta('Fecha', campo('input', '', { type: 'date', ariaLabel: 'Fecha de la venta' }, vt.fecha || '', gv('fecha'))));
     c.append(f1, f2, f4); return c;
   }
   // Paperwork to sell, from the survey (planimetría) to the notarized deed; each item has a cost and a "visto" check.
