@@ -2796,7 +2796,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     draft.duenos = limpiar(draft.duenos); draft.compradores = limpiar(draft.compradores);
     const d0 = draft.duenos[0] || {}; draft.dueno = d0.nombre || ''; draft.contacto = d0.contacto || ''; draft.comision = d0.comision || '';
     const n = (id) => { const v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : 0; };
-    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: 'Venta', tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio')), hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: '',  servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
+    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: 'Venta', tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio') * 100) / 100, hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: '',  servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
   }
   function abrirProp(x) {
     if (invitado) return;
@@ -5621,7 +5621,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   </div>
 </dialog>
 <dialog class="dlg-usr dlg-prop" id="dlg-prop" aria-labelledby="prop-tit">
-  <form id="prop-form" method="dialog">
+  <form id="prop-form" method="dialog" novalidate>
     <div class="cats-cab"><h3 id="prop-tit">Nueva propiedad</h3><button type="button" class="ghost" id="prop-cancelar">Cancelar</button></div>
     <label class="prop-wide" hidden>Título<input type="text" id="p-nombre" maxlength="70" placeholder="Ej.: Casa de 3 habitaciones en Barrio Obrero"></label>
     <div class="prop-grid" hidden>
