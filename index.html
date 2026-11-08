@@ -2181,13 +2181,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Ready-to-send WhatsApp text for a property: title, price, rooms, area, services, address and a map link.
   function textoWhatsApp(x) {
     const L = [];
-    L.push('🏡 *' + (x.nombre || x.tipo || 'Propiedad') + '*');
+    L.push('*' + (x.nombre || x.tipo || 'Propiedad') + '*');
     L.push((x.tipo || 'Propiedad') + ' en venta' + (x.precio ? ' · *' + usd.format(x.precio).replace(/,00$/, '') + '*' : ''));
     const d = [x.hab ? `${x.hab} hab.` : '', x.banos ? `${x.banos} baño${x.banos === 1 ? '' : 's'}` : '', x.parq ? `${x.parq} parq.` : '', x.area ? `${x.area} m²` : ''].filter(Boolean);
     if (d.length) L.push(d.join(' · '));
     const sv = SERVICIOS.filter(([k]) => (x.servicios || []).includes(k)).map(([, t]) => t);
     if (sv.length) L.push('Servicios: ' + sv.join(', '));
-    if (x.dir) L.push('📍 ' + x.dir);
+    if (x.dir) L.push('Dirección: ' + x.dir);
     if (x.desc) L.push('', x.desc);
     if (tieneUbic(x)) L.push('', 'Ubicación: https://maps.google.com/?q=' + Number(x.lat).toFixed(6) + ',' + Number(x.lng).toFixed(6));
     return L.join('\n');
