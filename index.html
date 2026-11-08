@@ -960,6 +960,21 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
 .prop-ubi.activo, .prop-dib.activo { color: #fff; background: var(--accent); }
 .prop-dib.tiene { color: var(--accent); }
+.mapa-zona input[type=text] { flex: 1 1 180px; min-width: 0; font: 13.5px var(--font-body); padding: 6px 12px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+.zona-c { border-color: #b08a4e !important; }
+.capt-box { display: inline-flex; align-items: center; gap: 4px; background: #e6e7ea; border-radius: 999px; padding: 3px; color: #4a4d53; }
+.capt-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: #8b8f97; color: #fff; font: 600 14.5px var(--font-body); padding: 7px 14px; border-radius: 999px; cursor: pointer; box-shadow: none; }
+.capt-btn:hover { background: #767a82; }
+.capt-car { width: 15px; height: 15px; transition: transform .3s; }
+.capt-box.abierto .capt-car { transform: rotate(180deg); }
+.capt-ops { display: inline-flex; align-items: center; gap: 4px; max-width: 0; overflow: hidden; opacity: 0; transition: max-width .4s ease, opacity .3s ease; white-space: nowrap; }
+.capt-box.abierto .capt-ops { max-width: 420px; opacity: 1; }
+.capt-op { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--panel); color: #4a4d53; font: 500 13.5px var(--font-body); padding: 6px 12px; border-radius: 999px; cursor: pointer; box-shadow: none; }
+.capt-op svg { width: 18px; height: 18px; flex: none; }
+.capt-op:hover { color: var(--ink); }
+.capt-op.activo, .capt-ver[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.capt-ver svg { color: var(--ink, #1c1c1e); } .capt-ver[aria-pressed="true"] svg { color: #fff; }
+#capt-radio svg { color: #b08a4e; } #capt-radio.activo svg { color: #fff; }
 .mapa-dib { position: absolute; left: 10px; right: 10px; bottom: 26px; z-index: 600; display: grid; gap: 8px; padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 8px 24px -8px rgba(0,0,0,.35); font-size: 13px; }
 .mapa-dib[hidden] { display: none; }
 .dib-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -1312,10 +1327,11 @@ button.prop-op:hover { filter: brightness(1.08); }
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio o calle" aria-label="Buscar propiedades o lugares">
       <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
+      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select>
     </form>
     <div class="prop-filtros" id="prop-filtros">
       <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
-      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select>
+      <div class="capt-box" id="capt-box"><button type="button" class="capt-btn" id="capt-btn" aria-expanded="false" aria-controls="capt-ops">Captación<svg class="capt-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="capt-ops" id="capt-ops"><button type="button" class="capt-op" id="capt-radio" title="Marcar en el mapa la zona donde vas a captar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.4"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><path d="M12 12h8.5" stroke="currentColor" stroke-width="1.8"/></svg><span>Radio</span></button><button type="button" class="capt-op capt-ver" id="capt-ver" aria-pressed="false" title="Ver solo las propiedades en captación"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8 2h10a1.5 1.5 0 0 1 1.5 1.5v14A1.5 1.5 0 0 1 18 19h-5.3a5.6 5.6 0 0 0-6.2-7.6V3.5A1.5 1.5 0 0 1 8 2zm5 2.6-4.2 3.6.7.8.8-.7v3.5h1.9V9.7h1.6v2.1h1.9V8.3l.8.7.7-.8zM13.6 13.3h3.6v1.1h-3.6zm0 2.2h3.6v1.1h-3.6z"/><circle cx="8.6" cy="16.3" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M6.2 18.7 3.2 21.7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg><span>En captación</span></button></span></div>
     </div>
     <form class="mapa-gkey" id="mapa-gkey-form" hidden>
       <span>Para ver <b>Google Maps</b>, pega aquí tu clave de Google Maps:</span>
@@ -1325,7 +1341,7 @@ button.prop-op:hover { filter: brightness(1.08); }
     <p class="mapa-aviso" id="mapa-aviso" role="status" hidden></p>
     <div class="prop-cuerpo">
       <ul class="prop-lista" id="prop-lista" aria-label="Propiedades"></ul>
-      <div class="mapa-box"><div id="mapa" class="mapa-lf" aria-label="Mapa de Puyo, Pastaza"></div><div class="mapa-dib" id="mapa-dib" hidden><div class="dib-fila"><b id="dib-tit">Dibujar terreno</b><span id="dib-txt">Toca el mapa para marcar cada esquina del terreno.</span></div><div class="dib-fila"><label class="dib-giro">Girar<input type="range" id="dib-giro" min="-180" max="180" step="1" value="0"><span id="dib-grados">0°</span></label><button type="button" class="ghost" id="dib-undo">Deshacer</button><button type="button" class="ghost" id="dib-borrar">Borrar</button><button type="button" class="ghost" id="dib-cancel">Cancelar</button><button type="button" class="btn" id="dib-ok">Guardar</button></div></div><div class="mapa-ctrl" id="mapa-ctrl"><select id="mapa-estilo" aria-label="Estilo del mapa"></select><button type="button" class="ghost" id="mapa-gkey-quitar" title="Quitar la clave de Google Maps" hidden>Quitar clave</button></div></div>
+      <div class="mapa-box"><div id="mapa" class="mapa-lf" aria-label="Mapa de Puyo, Pastaza"></div><div class="mapa-dib mapa-zona" id="mapa-zona" hidden><div class="dib-fila"><b>Zona de captación</b><input type="text" id="zona-nom" maxlength="60" placeholder="Nombre (opcional), ej.: Barrio Obrero" aria-label="Nombre de la zona"><span id="zona-txt">Toca el mapa para poner el centro.</span></div><div class="dib-fila"><label class="dib-giro">Radio<input type="range" id="zona-radio" min="50" max="5000" step="50" value="500"><span id="zona-m">500 m</span></label><button type="button" class="ghost" id="zona-borrar" hidden>Borrar zona</button><button type="button" class="ghost" id="zona-cancel">Cancelar</button><button type="button" class="btn" id="zona-ok">Guardar</button></div></div><div class="mapa-dib" id="mapa-dib" hidden><div class="dib-fila"><b id="dib-tit">Dibujar terreno</b><span id="dib-txt">Toca el mapa para marcar cada esquina del terreno.</span></div><div class="dib-fila"><label class="dib-giro">Girar<input type="range" id="dib-giro" min="-180" max="180" step="1" value="0"><span id="dib-grados">0°</span></label><button type="button" class="ghost" id="dib-undo">Deshacer</button><button type="button" class="ghost" id="dib-borrar">Borrar</button><button type="button" class="ghost" id="dib-cancel">Cancelar</button><button type="button" class="btn" id="dib-ok">Guardar</button></div></div><div class="mapa-ctrl" id="mapa-ctrl"><select id="mapa-estilo" aria-label="Estilo del mapa"></select><button type="button" class="ghost" id="mapa-gkey-quitar" title="Quitar la clave de Google Maps" hidden>Quitar clave</button></div></div>
     </div>
   </section>
 
@@ -1818,6 +1834,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const usd0 = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   const precioTxt = (x, corto) => !x.precio ? (corto ? 'Ver' : 'Precio a consultar') : (corto && x.precio >= 10000 ? '$' + (Math.round(x.precio / 100) / 10).toString().replace('.', ',') + 'k' : usd0.format(x.precio)) + (x.op === 'Arriendo' ? (corto ? '/mes' : ' / mes') : '');
   const pasaFiltro = (x) => {
+    if (filtro.capt && x.estado !== 'Captacion') return false;
     if (!filtro.cerradas && cerrada(x)) return false;
     if (filtro.op && x.op !== filtro.op) return false;
     if (filtro.tipo && x.tipo !== filtro.tipo) return false;
@@ -2157,6 +2174,83 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     b.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(x.id, false); });
     return b;
   }
+  // Capture zones ("Captación"): circles on the map with a radius in meters.
+  let zonas = [], zonaEd = null, zonasG = [];
+  const COLOR_ZONA = '#b08a4e';
+  const zonaTxt = (z) => `${z.nombre ? z.nombre + ' · ' : ''}radio ${z.radio >= 1000 ? (z.radio / 1000).toLocaleString('es-EC') + ' km' : z.radio + ' m'}`;
+  function pintarZonas() {
+    const vs = zonas.filter((z) => !(zonaEd && zonaEd.id === z.id));
+    if (motor === 'g' && mapaG) {
+      zonasG.forEach((c) => c.setMap(null)); zonasG = [];
+      vs.forEach((z) => { const c = new google.maps.Circle({ center: { lat: z.lat, lng: z.lng }, radius: z.radio, strokeColor: COLOR_ZONA, strokeWeight: 2, strokeOpacity: .9, fillColor: COLOR_ZONA, fillOpacity: .14, clickable: true, zIndex: 0 }); c.setMap(mapaG); c.addListener('click', () => { if (!dibujo && !marcando) editarZona(z); }); zonasG.push(c); });
+    } else if (motor === 'l' && mapaL && casasCapa) {
+      const L = window.L;
+      vs.forEach((z) => { const c = L.circle([z.lat, z.lng], { radius: z.radio, color: COLOR_ZONA, weight: 2, opacity: .9, fillColor: COLOR_ZONA, fillOpacity: .14, dashArray: '6 5' }).addTo(casasCapa); c.bindTooltip('Zona de captación · ' + zonaTxt(z) + ' (toca para editar)'); c.on('click', (e) => { L.DomEvent.stopPropagation(e); if (!dibujo && !marcando) editarZona(z); }); });
+    }
+  }
+  function zonaPintarEd() {
+    const z = zonaEd; if (!z) return;
+    try { z.capa.forEach((o) => (o.setMap ? o.setMap(null) : o.remove())); } catch (e) {} z.capa = [];
+    $('zona-m').textContent = z.radio >= 1000 ? (z.radio / 1000).toLocaleString('es-EC') + ' km' : z.radio + ' m';
+    $('zona-txt').textContent = z.lat == null ? 'Toca el mapa para poner el centro.' : 'Toca otro lugar para mover el centro.';
+    $('zona-ok').disabled = z.lat == null;
+    if (z.lat == null) return;
+    const dentro = lugares.filter((x) => tieneUbic(x) && distM(x.lat, x.lng, z.lat, z.lng) <= z.radio).length;
+    $('zona-txt').textContent += ` ${dentro} propiedad${dentro === 1 ? '' : 'es'} dentro.`;
+    if (motor === 'g' && mapaG) {
+      const c = new google.maps.Circle({ center: { lat: z.lat, lng: z.lng }, radius: z.radio, strokeColor: COLOR_ZONA, strokeWeight: 2, fillColor: COLOR_ZONA, fillOpacity: .22, editable: true, draggable: true, zIndex: 6 });
+      c.setMap(mapaG); z.capa.push(c);
+      const leer = () => { const ce = c.getCenter(); if (ce) { z.lat = ce.lat(); z.lng = ce.lng(); } z.radio = Math.max(50, Math.min(5000, Math.round((c.getRadius() || z.radio) / 10) * 10)); $('zona-radio').value = String(z.radio); $('zona-m').textContent = z.radio >= 1000 ? (z.radio / 1000).toLocaleString('es-EC') + ' km' : z.radio + ' m'; };
+      c.addListener('radius_changed', leer); c.addListener('center_changed', leer);
+    } else if (motor === 'l' && mapaL) {
+      const L = window.L;
+      const c = L.circle([z.lat, z.lng], { radius: z.radio, color: COLOR_ZONA, weight: 2, fillColor: COLOR_ZONA, fillOpacity: .22, interactive: false }).addTo(mapaL);
+      const mk = L.marker([z.lat, z.lng], { draggable: true, keyboard: false, icon: L.divIcon({ className: 'dib-vert zona-c', html: '', iconSize: [14, 14] }) }).addTo(mapaL);
+      mk.on('drag', () => { const ll = mk.getLatLng(); z.lat = ll.lat; z.lng = ll.lng; c.setLatLng(ll); });
+      mk.on('dragend', zonaPintarEd);
+      z.capa.push(c, mk);
+    }
+  }
+  const distM = (a1, b1, a2, b2) => { const k = Math.cos(a1 * Math.PI / 180) * 111320; return Math.hypot((b2 - b1) * k, (a2 - a1) * 110540); };
+  function zonaCentro(lat, lng) { if (!zonaEd) return; zonaEd.lat = lat; zonaEd.lng = lng; zonaPintarEd(); }
+  async function editarZona(z) {
+    if (invitado) return;
+    if (dibujo) terminarDibujo(false);
+    if (zonaEd) cerrarZona(false);
+    setMarcando(false); ubicandoId = null;
+    await iniciarMapa();
+    zonaEd = { id: z ? z.id : '', lat: z ? z.lat : null, lng: z ? z.lng : null, radio: z ? z.radio : 500, nombre: z ? z.nombre : '', capa: [] };
+    $('zona-nom').value = zonaEd.nombre; $('zona-radio').value = String(zonaEd.radio); $('zona-borrar').hidden = !z;
+    $('mapa-zona').hidden = false; $('mapa').classList.add('marcando'); if (mapaG) mapaG.setOptions({ draggableCursor: 'crosshair' });
+    if (infoG) infoG.close(); if (mapaL) mapaL.closePopup();
+    $('capt-radio').classList.add('activo');
+    pintarPins(); zonaPintarEd();
+    $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  function cerrarZona(guardar) {
+    const z = zonaEd; if (!z) return; zonaEd = null;
+    try { z.capa.forEach((o) => (o.setMap ? o.setMap(null) : o.remove())); } catch (e) {}
+    $('mapa-zona').hidden = true; $('mapa').classList.remove('marcando'); if (mapaG) mapaG.setOptions({ draggableCursor: null }); $('capt-radio').classList.remove('activo');
+    if (guardar && z.lat != null) {
+      const datos = { lat: Math.round(z.lat * 1e7) / 1e7, lng: Math.round(z.lng * 1e7) / 1e7, radio: z.radio, nombre: $('zona-nom').value.trim().slice(0, 60) };
+      (z.id ? col('zonas').doc(z.id).update(datos) : col('zonas').add({ ...datos, creado: new Date().toISOString() })).catch(() => setMsg('No se pudo guardar la zona. Revisa tu internet.', true));
+      if (z.id) { const o = zonas.find((q) => q.id === z.id); if (o) Object.assign(o, datos); }
+      avisoMapa('Zona de captación guardada.'); setTimeout(() => avisoMapa(''), 2500);
+    }
+    pintarPins();
+  }
+  $('zona-radio').addEventListener('input', () => { if (!zonaEd) return; zonaEd.radio = Number($('zona-radio').value) || 500; zonaPintarEd(); });
+  $('zona-cancel').addEventListener('click', () => cerrarZona(false));
+  $('zona-ok').addEventListener('click', () => cerrarZona(true));
+  $('zona-borrar').addEventListener('click', () => {
+    const b = $('zona-borrar'); if (!zonaEd || !zonaEd.id) return;
+    if (!b.classList.contains('armado')) { b.classList.add('armado'); b.textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { b.classList.remove('armado'); b.textContent = 'Borrar zona'; }, 4000); return; }
+    const id = zonaEd.id; b.classList.remove('armado'); b.textContent = 'Borrar zona'; zonas = zonas.filter((q) => q.id !== id); cerrarZona(false); col('zonas').doc(id).delete();
+  });
+  // "Captación" button: grows to the right and shows its options.
+  $('capt-btn').addEventListener('click', () => { const v = $('capt-box').classList.toggle('abierto'); $('capt-btn').setAttribute('aria-expanded', String(v)); });
+  $('capt-radio').addEventListener('click', () => { if (zonaEd) cerrarZona(false); else editarZona(null); });
+  $('capt-ver').addEventListener('click', () => { filtro.capt = !filtro.capt; $('capt-ver').setAttribute('aria-pressed', String(filtro.capt)); pintarProps(); });
   // Land outlines: the app color, half transparent (gray when sold).
   let polysG = [];
   const colorAcc = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2a52a8';
@@ -2173,7 +2267,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function pintarPins() {
     const vs = visibles().filter(tieneUbic);
-    try { if (motor === 'l' && casasCapa) casasCapa.clearLayers(); pintarPoligonos(); } catch (e) {}
+    try { if (motor === 'l' && casasCapa) casasCapa.clearLayers(); pintarZonas(); pintarPoligonos(); } catch (e) {}
     if (motor === 'g' && mapaG) {
       marcasG.forEach((m) => m.setMap(null)); marcasG = [];
       if (!PillG) {
@@ -2240,6 +2334,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   async function empezarDibujo(x) {
     if (invitado) return;
     if (dibujo) terminarDibujo(false);
+    if (zonaEd) cerrarZona(false);
     setMarcando(false); ubicandoId = null;
     await iniciarMapa();
     dibujo = { id: x.id, pts: x.poligono.map((q) => q.slice()), base: null, capa: [] };
@@ -2313,6 +2408,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       try { raw['lugares'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
       lugares = snap.docs.map(leerProp).sort((a, b) => b.creado.localeCompare(a.creado));
       pintarProps();
+    }, () => {}); } catch (e) {}
+    try { col('zonas').onSnapshot((snap) => {
+      zonas = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, lat: Number(v.lat), lng: Number(v.lng), radio: Math.max(50, Number(v.radio) || 500), nombre: String(v.nombre || '') }; }).filter((z) => isFinite(z.lat) && isFinite(z.lng));
+      pintarPins();
     }, () => {}); } catch (e) {}
   }
   // Filters
@@ -2518,7 +2617,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (infoG) infoG.close(); if (mapaL) mapaL.closePopup();
   });
   function nuevaEn(lat, lng) {
-    if (dibujo) return;
+    if (dibujo || zonaEd) return;
     if (invitado || !isFinite(lat) || !isFinite(lng)) return;
     if (dlgP.open) return;
     setMarcando(false); crearProp(lat, lng);
@@ -2543,7 +2642,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           motor = 'g';
           mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
           infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -40), maxWidth: 600, headerDisabled: true });
-          mapaG.addListener('click', (e) => { if (dibujo && e.latLng) { dibPunto(e.latLng.lat(), e.latLng.lng()); return; } if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
+          mapaG.addListener('click', (e) => { if (zonaEd && e.latLng) { zonaCentro(e.latLng.lat(), e.latLng.lng()); return; } if (dibujo && e.latLng) { dibPunto(e.latLng.lat(), e.latLng.lng()); return; } if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
           mapaG.addListener('contextmenu', (e) => { if (e.latLng) nuevaEn(e.latLng.lat(), e.latLng.lng()); });
           pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins(); return;
         } catch (e) { motor = null; avisoMapa('No se pudo cargar Google Maps. Uso el mapa gratuito.'); }
@@ -2558,7 +2657,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       mapaCapas.calles.addTo(mapaL);
       casasCapa = L.layerGroup().addTo(mapaL);
       mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
-      mapaL.on('click', (e) => { if (dibujo) { dibPunto(e.latlng.lat, e.latlng.lng); return; } if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
+      mapaL.on('click', (e) => { if (zonaEd) { zonaCentro(e.latlng.lat, e.latlng.lng); return; } if (dibujo) { dibPunto(e.latlng.lat, e.latlng.lng); return; } if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
       mapaL.on('contextmenu', (e) => { nuevaEn(e.latlng.lat, e.latlng.lng); });
       pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins();
     })();
