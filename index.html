@@ -982,6 +982,8 @@ button.prop-op:hover { filter: brightness(1.08); }
 .dib-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .dib-fila b { font-size: 13.5px; } .dib-fila span { color: var(--muted); }
 .aviso-deshacer { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px); background: #1d1f23; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 9999; }
+.sel-borrar { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 10px; }
+tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .aviso-deshacer.ver { opacity: 1; transform: translate(-50%, 0); }
 .dib-usr-l { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); }
 .dib-usr-l select { width: auto; min-width: 150px; padding: 5px 8px; font-size: 13px; }
@@ -2181,6 +2183,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ed.addEventListener('click', (e) => { e.stopPropagation(); abrirProp(x); });
       const del = document.createElement('button'); del.type = 'button'; del.className = 'prop-ed prop-del'; del.title = 'Eliminar propiedad'; del.setAttribute('aria-label', 'Eliminar ' + nom);
       del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12M10 11v6M14 11v6"/></svg>';
+      del._bkey = 'prop:' + x.id; del._borrar = () => col('lugares').doc(x.id).delete();
       del.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!del.classList.contains('armado')) { del.classList.add('armado'); del.title = 'Toca otra vez para eliminar'; avisoMapa(`Toca otra vez el ícono rojo para eliminar "${nom}".`); setTimeout(() => { if (del.isConnected) { del.classList.remove('armado'); del.title = 'Eliminar propiedad'; } }, 4000); return; }
@@ -3470,7 +3473,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
             const del = delBtn('arch:' + c.id + ':' + a.ruta, async () => {
               try { await deleteObject(sRef(storage, a.ruta)); } catch (e) { if (e && e.code !== 'storage/object-not-found') { setMsg('No se pudo borrar el archivo. Intenta de nuevo.', true); return; } }
               col('casos').doc(c.id).update({ archivos: arrayRemove(a) }); setMsg(`Se borró ${a.nombre}.`);
-            }, 'Borrar', '¿Borrar?');
+            }, 'Borrar', '¿Borrar?', () => col('casos').doc(c.id).update({ archivos: arrayRemove(a) }));
             li.append(ic, nm, del); ul.appendChild(li);
           });
           cArc.appendChild(ul);
@@ -3811,9 +3814,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(render, 150); });
 
-  function delBtn(key, action, label = 'Borrar', confirmLabel = '¿Borrar?') {
+  function delBtn(key, action, label = 'Borrar', confirmLabel = '¿Borrar?', porTecla) {
     const b = document.createElement('button');
-    b.type = 'button';
+    b.type = 'button'; if (!/^(rest|abono|ajuste):/.test(key)) { b._borrar = porTecla || action; b._bkey = key; }
     b.className = 'ghost' + (armed === key ? ' warn' : '');
     b.textContent = armed === key ? confirmLabel : label;
     b.addEventListener('click', async () => {
@@ -3942,6 +3945,33 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     finally { $('a-btn').disabled = false; }
   });
   $('logout').addEventListener('click', async () => { await signOut(auth); location.reload(); });
+  // Delete / Backspace removes the item last clicked (a row, card or note), like in Word; Cmd+Z brings it back.
+  // Items deleted this way keep their stored files so that undo can restore them whole.
+  let selBorrar = null;
+  const SEL_ITEM = 'tr, li, .nota, .bib-it, .prop-card';
+  const botonesBorrar = (el) => [...el.querySelectorAll('button')].filter((b) => b._borrar);
+  function marcarSel() {
+    document.querySelectorAll('.sel-borrar').forEach((e) => { if (!selBorrar || e.dataset.bkey !== selBorrar) { e.classList.remove('sel-borrar'); delete e.dataset.bkey; } });
+    if (!selBorrar) return;
+    const b = botonesBorrar(document.body).find((x) => x._bkey === selBorrar); if (!b) return;
+    const el = b.closest(SEL_ITEM);
+    if (el) { el.classList.add('sel-borrar'); el.dataset.bkey = selBorrar; }
+  }
+  let selRaf = 0; new MutationObserver(() => { if (selBorrar && !selRaf) selRaf = requestAnimationFrame(() => { selRaf = 0; marcarSel(); }); }).observe(document.body, { childList: true, subtree: true });
+  document.addEventListener('pointerdown', (e) => {
+    const el = e.target instanceof Element ? e.target.closest(SEL_ITEM) : null, bs = el ? botonesBorrar(el) : [];
+    selBorrar = bs.length === 1 ? bs[0]._bkey : null; marcarSel();
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && selBorrar) { selBorrar = null; marcarSel(); return; }
+    if ((e.key !== 'Delete' && e.key !== 'Backspace') || e.metaKey || e.ctrlKey || e.altKey || !selBorrar) return;
+    const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (document.querySelector('dialog[open]')) return;
+    const b = botonesBorrar(document.body).find((x) => x._bkey === selBorrar); selBorrar = null; marcarSel();
+    if (!b) return;
+    e.preventDefault();
+    Promise.resolve().then(() => b._borrar()).then(() => avisoDeshacer('Se eliminó · ⌘Z para deshacer'), () => setMsg('No se pudo borrar. Revisa tu conexión e intenta de nuevo.', true));
+  });
   window.addEventListener('libro-write-error', () => setMsg('No se pudo guardar un cambio. Revisa tu conexión y vuelve a intentarlo.', true));
 
   let started = false;
@@ -4512,7 +4542,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (!invitado || d.por === yoUid) it.appendChild(delBtn('bib:' + d.id, async () => {
         try { await deleteObject(sRef(storage, d.ruta)); } catch (e) { if (e && e.code !== 'storage/object-not-found') { setMsg('No se pudo borrar el documento. Intenta de nuevo.', true); return; } }
         await baseNegocio('biblioteca').collection('biblioteca').doc(d.id).delete(); setMsg(`Se borró ${d.nombre}.`);
-      }, 'Borrar', '¿Borrar?'));
+      }, 'Borrar', '¿Borrar?', () => baseNegocio('biblioteca').collection('biblioteca').doc(d.id).delete()));
       return it;
     });
     bibSubiendo.forEach((u) => { const p = document.createElement('p'); p.className = 'bib-vacio'; p.id = 'bu-' + u.key; p.textContent = `Subiendo ${u.nombre}… ${u.pct}%`; items.push(p); });
@@ -4626,6 +4656,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (puedeMarcar) { const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'ghost'; hb.textContent = n.hecha ? 'Reabrir' : 'Revisado';
         hb.addEventListener('click', () => libroRef.collection('notas').doc(n.id).update({ hecha: !n.hecha, hechaEn: new Date().toISOString() })); acts.appendChild(hb); }
       if (esMia || !invitado) { const db = document.createElement('button'); db.type = 'button'; db.className = 'ghost'; db.textContent = 'Borrar';
+        db._bkey = 'nota:' + n.id; db._borrar = () => libroRef.collection('notas').doc(n.id).delete();
         db.addEventListener('click', () => { n.archivos.forEach((a) => { if (a.ruta) deleteObject(sRef(storage, a.ruta)).catch(() => {}); }); libroRef.collection('notas').doc(n.id).delete(); setMsg('Nota borrada.'); }); acts.appendChild(db); }
       pie.append(f, acts);
       card.append(k);
