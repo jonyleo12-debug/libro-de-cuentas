@@ -901,7 +901,7 @@ body.invitado .ajustes-btn { display: none; }
 .prop-card { position: relative; perspective: 1400px; cursor: pointer; outline: none; }
 .pc-in { display: grid; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
 .prop-card.vuelta .pc-in { transform: rotateY(180deg); }
-.pc-cara, .pc-dorso { grid-area: 1 / 1; position: relative; display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; padding: 10px 10px 18px; overflow: hidden; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; transition: border-color .15s, box-shadow .15s; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-width: 0; }
+.pc-cara, .pc-dorso { grid-area: 1 / 1; position: relative; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding: 10px 10px 18px; overflow: hidden; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; transition: border-color .15s, box-shadow .15s; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-width: 0; }
 .pc-dorso { transform: rotateY(180deg); display: block; cursor: default; padding: 12px 12px 26px; }
 .prop-card:hover .pc-cara, .prop-card:focus-visible .pc-cara, .prop-card:hover .pc-dorso { border-color: var(--accent); }
 .prop-card.sel .pc-cara, .prop-card.sel .pc-dorso { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
@@ -966,6 +966,13 @@ button.prop-op:hover { filter: brightness(1.08); }
 .zona-c { border-color: #b08a4e !important; }
 .flujo { display: inline-flex; align-items: center; gap: 4px; background: #e6e7ea; border-radius: 999px; padding: 3px; }
 .fl-op { padding: 7px 13px; }
+.prop-izq { display: grid; gap: 8px; align-self: start; min-width: 0; }
+.pc-fl { display: grid; gap: 4px; }
+.pc-fl-b { display: flex; align-items: center; gap: 6px; border: 0; background: var(--panel); color: #4a4d53; font: 500 11.5px var(--font-body); letter-spacing: -.01em; padding: 6px 4px 6px 7px; border-radius: 10px; gap: 3px; background: #eceef1 !important; cursor: pointer; box-shadow: none; text-align: left; white-space: nowrap; min-width: 0; overflow: hidden; }
+.pc-fl-b svg { width: 15px; height: 15px; flex: none; }
+.pc-fl-b .fl-n { margin-left: auto; flex: none; min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; padding: 0 4px; }
+.pc-fl-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pc-fl-b:hover { color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--accent) !important; }
 .fl-n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font: 600 11px/18px var(--font-body); text-align: center; }
 .fl-n:empty { display: none; }
 .dlg-flujo { width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
@@ -1391,7 +1398,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     </form>
     <div class="prop-filtros" id="prop-filtros">
       <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
-      <div class="capt-box" id="capt-box"><button type="button" class="capt-btn" id="capt-btn" aria-expanded="false" aria-controls="capt-ops">Captación<svg class="capt-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="capt-ops" id="capt-ops"><button type="button" class="capt-op" id="capt-radio" title="Dibujar en el mapa la zona donde vas a captar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.4"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><path d="M12 12h8.5" stroke="currentColor" stroke-width="1.8"/></svg><span>Zona</span></button><button type="button" class="capt-op capt-ver" id="capt-ver" aria-pressed="false" title="Marcar en el mapa el lugar exacto de una propiedad en captación"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8 2h10a1.5 1.5 0 0 1 1.5 1.5v14A1.5 1.5 0 0 1 18 19h-5.3a5.6 5.6 0 0 0-6.2-7.6V3.5A1.5 1.5 0 0 1 8 2zm5 2.6-4.2 3.6.7.8.8-.7v3.5h1.9V9.7h1.6v2.1h1.9V8.3l.8.7.7-.8zM13.6 13.3h3.6v1.1h-3.6zm0 2.2h3.6v1.1h-3.6z"/><circle cx="8.6" cy="16.3" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M6.2 18.7 3.2 21.7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg><span>Marcar propiedad</span></button></span></div><div class="flujo" id="flujo" role="group" aria-label="Pasos de la venta"><button type="button" class="capt-op fl-op" id="fl-int" title="Compradores y lo que buscan"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 14.2c2.6-.3 4.5 1.3 5 4.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Interesados<span class="fl-n" id="fl-int-n"></span></button><button type="button" class="capt-op fl-op" id="fl-vis" title="Visitas a las propiedades"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14.5l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Visitas<span class="fl-n" id="fl-vis-n"></span></button><button type="button" class="capt-op fl-op" id="fl-cie" title="Reservas, ventas y comisiones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h9l5 5v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 4.5v5h5M8 17c1.2-1.6 2-2.4 2.6-1.4.5.9 1.1.9 2-.2.8-.9 1.4-.6 2.4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Cierre<span class="fl-n" id="fl-cie-n"></span></button></div>
+      <div class="capt-box" id="capt-box"><button type="button" class="capt-btn" id="capt-btn" aria-expanded="false" aria-controls="capt-ops">Captación<svg class="capt-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="capt-ops" id="capt-ops"><button type="button" class="capt-op" id="capt-radio" title="Dibujar en el mapa la zona donde vas a captar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.4"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><path d="M12 12h8.5" stroke="currentColor" stroke-width="1.8"/></svg><span>Zona</span></button><button type="button" class="capt-op capt-ver" id="capt-ver" aria-pressed="false" title="Marcar en el mapa el lugar exacto de una propiedad en captación"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8 2h10a1.5 1.5 0 0 1 1.5 1.5v14A1.5 1.5 0 0 1 18 19h-5.3a5.6 5.6 0 0 0-6.2-7.6V3.5A1.5 1.5 0 0 1 8 2zm5 2.6-4.2 3.6.7.8.8-.7v3.5h1.9V9.7h1.6v2.1h1.9V8.3l.8.7.7-.8zM13.6 13.3h3.6v1.1h-3.6zm0 2.2h3.6v1.1h-3.6z"/><circle cx="8.6" cy="16.3" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M6.2 18.7 3.2 21.7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg><span>Marcar propiedad</span></button></span></div>
     </div>
     <form class="mapa-gkey" id="mapa-gkey-form" hidden>
       <span>Para ver <b>Google Maps</b>, pega aquí tu clave de Google Maps:</span>
@@ -1921,6 +1928,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let tituloPendiente = null, ubicandoId = null;
   const borrables = new Map(); // item key -> how the Delete key removes it
   let selBorrar = null;
+  let interesados = [], visitas = [], flModo = null, flProp = null;
   let lugares = [], marcando = false, lugaresUnsub = null, propSel = null, propHover = null;
   let filtro = { op: '', tipo: '', hab: 0, min: '', max: '', cerradas: true, q: '' };
   let gmapsKey = ''; try { gmapsKey = localStorage.getItem('libro-gmaps') || ''; } catch (e) {}
@@ -2182,7 +2190,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const pin = document.createElement('div'); pin.className = 'pc-in'; li.appendChild(pin);
       const cara = document.createElement('div'); cara.className = 'pc-cara'; pin.appendChild(cara);
       if (volteadas.has(x.id)) li.classList.add('vuelta');
-      const fe = fotoEl(x, 'prop-foto'); cara.appendChild(fe);
+      const fe = fotoEl(x, 'prop-foto'); const izq = document.createElement('div'); izq.className = 'prop-izq'; izq.appendChild(fe); cara.appendChild(izq);
+      if (!invitado) try { izq.appendChild(pasosCard(x)); } catch (e) {}
       if (!invitado) { // upload photos straight from the card
         const up = document.createElement('label'); up.className = 'prop-foto-up' + (fotosSubiendo[x.id] ? ' cargando' : ''); up.title = 'Subir fotos';
         up.innerHTML = fotosSubiendo[x.id] ? '<span class="pfu-spin" aria-hidden="true"></span>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.5-2h5.6l1.5 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>';
@@ -2612,12 +2621,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       zonas = snap.docs.map((d) => zonaDe(d.id, d.data() || {})).filter((z) => z.poligono.length > 2);
       pintarPins(); flRefrescar();
     }, () => {}); } catch (e) {}
-    try { col('interesados').onSnapshot((snap) => { interesados = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })).sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || ''))); flRefrescar(); }, () => {}); } catch (e) {}
-    try { col('visitas').onSnapshot((snap) => { visitas = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })); flRefrescar(); }, () => {}); } catch (e) {}
+    try { col('interesados').onSnapshot((snap) => { interesados = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })).sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || ''))); flRefrescar(); pintarLista(); }, () => {}); } catch (e) {}
+    try { col('visitas').onSnapshot((snap) => { visitas = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })); flRefrescar(); pintarLista(); }, () => {}); } catch (e) {}
   }
 
   // Sale workflow after capture: buyers (Interesados), property visits (Visitas) and closing (Cierre: reservation, sale, paperwork, commission into the books).
-  let interesados = [], visitas = [], flModo = null;
   const ICO_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/></svg>';
   const dlgF = $('dlg-flujo');
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
@@ -2641,11 +2649,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     return e;
   };
   const etiqueta = (txt, ...hijos) => { const l = el('label'); l.append(txt, ...hijos); return l; };
+  const FL_ICO = { int: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 14.2c2.6-.3 4.5 1.3 5 4.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>', vis: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14.5l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>', cie: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h9l5 5v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 4.5v5h5M8 17c1.2-1.6 2-2.4 2.6-1.4.5.9 1.1.9 2-.2.8-.9 1.4-.6 2.4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' };
+  // Per-property buttons under the photo: buyers it suits, its visits and its closing.
+  function pasosCard(x) {
+    const box = document.createElement('div'); box.className = 'pc-fl';
+    const hoy = hoyYmd(), nInt = interesados.filter((q) => coincidencias(q).some((y) => y.id === x.id)).length;
+    const nVis = visitas.filter((v) => v.prop === x.id && !v.hecha && String(v.fecha || '') >= hoy).length;
+    const vt = x.venta || {}, nTr = ['autorizacion', 'promesa', 'notaria', 'registro'].filter((k) => vt[k]).length;
+    [['int', 'Interesados', nInt ? String(nInt) : ''], ['vis', 'Visitas', nVis ? String(nVis) : ''], ['cie', 'Cierre', x.estado === 'Vendida' ? '✓' : (x.estado === 'Reservada' || nTr) ? nTr + '/4' : '']].forEach(([m, t, n]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pc-fl-b'; b.title = t; const lb = document.createElement('span'); lb.className = 'pc-fl-t'; lb.textContent = t; b.appendChild(lb);
+      const c = document.createElement('span'); c.className = 'fl-n'; c.textContent = n; b.appendChild(c);
+      b.addEventListener('click', (e) => { e.stopPropagation(); flAbrir(m, x.id); }); box.appendChild(b);
+    });
+    return box;
+  }
   function flContar() {
     const hoy = hoyYmd();
-    $('fl-int-n').textContent = interesados.length ? String(interesados.length) : '';
-    const pend = visitas.filter((v) => !v.hecha && String(v.fecha || '') >= hoy).length; $('fl-vis-n').textContent = pend ? String(pend) : '';
-    const res = lugares.filter((x) => x.estado === 'Reservada').length; $('fl-cie-n').textContent = res ? String(res) : '';
+    void hoy;
   }
   function flRefrescar() {
     try { flContar(); } catch (e) {}
@@ -2694,7 +2714,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const gv = (k, pinta) => (val) => { vt[k] = val; x.venta = vt; ref.update({ ['venta.' + k]: val }); if (pinta) flPintar(); };
     const c = el('div', 'fl-card');
     const f1 = el('div', 'fl-fila');
-    const est = opciones(campo('select', 'fl-sel', { ariaLabel: 'Estado' }, null, (val) => { x.estado = val; ref.update({ estado: val }); flPintar(); }), [['Reservada', 'Reservado'], ['Vendida', 'Vendido'], ['Disponible', 'Volver a disponible']], x.estado);
+    const est = opciones(campo('select', 'fl-sel', { ariaLabel: 'Estado' }, null, (val) => { x.estado = val; ref.update({ estado: val }); flPintar(); }), [['Disponible', 'Disponible'], ['Captacion', 'Captación'], ['Reservada', 'Reservado'], ['Vendida', 'Vendido']], x.estado);
     const tit = el('button', 'fl-chip fl-tit', nomProp(x)); tit.type = 'button'; tit.title = 'Ver en el mapa'; tit.addEventListener('click', () => { dlgF.close(); seleccionar(x.id, false); });
     f1.append(tit, est);
     const f2 = el('div', 'fl-fila');
@@ -2731,13 +2751,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   };
   function flPintar() {
     const m = flModo, lista = $('fl-lista'); if (!m) return;
-    $('fl-tit').textContent = FL[m].tit; $('fl-sub').textContent = FL[m].sub;
+    const xp = flProp ? lugares.find((y) => y.id === flProp) : null;
+    $('fl-tit').textContent = FL[m].tit + (xp ? ' · ' + (xp.nombre || 'Sin título') : '');
+    $('fl-sub').textContent = !xp ? FL[m].sub : m === 'int' ? 'Primero los interesados a los que les sirve esta propiedad.' : m === 'vis' ? 'Visitas a esta propiedad, de la más próxima a la más lejana.' : 'Comprador, precio, trámites y comisión de esta propiedad.';
     const extra = $('fl-extra'); extra.replaceChildren(); $('fl-nuevo').hidden = m === 'cie';
     let cards = [];
-    if (m === 'int') cards = interesados.map(cardInteresado);
+    if (m === 'int') { const sirve = (q) => !!xp && coincidencias(q).some((y) => y.id === xp.id); cards = interesados.slice().sort((a, b) => sirve(b) - sirve(a)).map((q) => { const c = cardInteresado(q); if (sirve(q)) { const t = el('span', 'fl-ok', '✓ Le sirve esta propiedad'); c.firstChild.insertBefore(t, c.firstChild.lastChild); } return c; }); }
     else if (m === 'vis') {
       const hoy = hoyYmd(), clave = (v) => (v.hecha || String(v.fecha || '') < hoy ? '1' : '0') + (v.hecha || String(v.fecha || '') < hoy ? String(9e15 - Date.parse((v.fecha || '1970-01-01') + 'T' + (v.hora || '00:00'))) : (v.fecha || '') + (v.hora || ''));
-      cards = visitas.slice().sort((a, b) => clave(a).localeCompare(clave(b))).map(cardVisita);
+      cards = visitas.filter((v) => !xp || v.prop === xp.id).sort((a, b) => clave(a).localeCompare(clave(b))).map(cardVisita);
+    } else if (xp) { cards = [cardCierre(xp)];
     } else {
       const sel = el('select'); sel.setAttribute('aria-label', 'Reservar una propiedad');
       opciones(sel, [['', '+ Reservar una propiedad…'], ...lugares.filter((x) => x.estado !== 'Reservada' && x.estado !== 'Vendida').map((x) => [x.id, nomProp(x)])], '');
@@ -2748,16 +2771,15 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     lista.replaceChildren(...(cards.length ? cards : [el('p', 'fl-vacio', m === 'int' ? 'Aún no tienes interesados. Toca “+ Nuevo” para añadir el primero.' : m === 'vis' ? 'No hay visitas. Toca “+ Nuevo” para agendar una.' : 'Ninguna propiedad está reservada o vendida todavía.')]));
     flContar();
   }
-  function flAbrir(m) { flModo = m; flPintar(); if (!dlgF.open) dlgF.showModal(); }
-  $('fl-int').addEventListener('click', () => flAbrir('int'));
-  $('fl-vis').addEventListener('click', () => flAbrir('vis'));
-  $('fl-cie').addEventListener('click', () => flAbrir('cie'));
+  function flAbrir(m, id) { flModo = m; flProp = id || null; flPintar(); if (!dlgF.open) dlgF.showModal(); }
+  dlgF.addEventListener('close', () => { pintarLista(); });
   $('fl-cerrar').addEventListener('click', () => dlgF.close());
   dlgF.addEventListener('focusout', () => setTimeout(() => { if (dlgF.open && !(document.activeElement && dlgF.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName))) flPintar(); }, 0));
   $('fl-nuevo').addEventListener('click', () => {
     const creado = new Date().toISOString();
-    if (flModo === 'int') { const r = col('interesados').doc(); const q = { nombre: '', contacto: '', tipo: '', presupuesto: 0, zona: '', nota: '', creado }; r.set(q); interesados.unshift({ id: r.id, ...q }); }
-    else if (flModo === 'vis') { const r = col('visitas').doc(); const v = { fecha: hoyYmd(), hora: '10:00', prop: '', interesado: '', nota: '', hecha: false, creado }; r.set(v); visitas.push({ id: r.id, ...v }); }
+    const xp = flProp ? lugares.find((y) => y.id === flProp) : null;
+    if (flModo === 'int') { const r = col('interesados').doc(); const q = { nombre: '', contacto: '', tipo: xp ? xp.tipo : '', presupuesto: xp && xp.precio ? xp.precio : 0, zona: '', nota: '', creado }; r.set(q); interesados.unshift({ id: r.id, ...q }); }
+    else if (flModo === 'vis') { const r = col('visitas').doc(); const v = { fecha: hoyYmd(), hora: '10:00', prop: xp ? xp.id : '', interesado: '', nota: '', hecha: false, creado }; r.set(v); visitas.push({ id: r.id, ...v }); }
     flPintar(); const f = $('fl-lista').querySelector('input'); if (f) f.focus();
   });
   // Filters
