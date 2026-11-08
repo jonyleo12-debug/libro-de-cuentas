@@ -1031,7 +1031,8 @@ button.prop-op:hover { filter: brightness(1.08); }
 .fl-est.si { background: #d5ecd9; color: #1d6b34; }
 .fl-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px !important; color: var(--ink) !important; cursor: pointer; }
 .fl-check input { width: 16px; height: 16px; accent-color: var(--accent); }
-.fl-com { font-weight: 600; color: var(--ink); font-size: 13.5px; }
+.dlg-flujo .fl-desc{display:grid;gap:8px;padding:10px 0 2px;border-top:1px solid var(--line,rgba(0,0,0,.08))}.dlg-flujo .fl-desc-t{font-size:12.5px;font-weight:600;color:var(--muted,#666)}.dlg-flujo .fl-desc-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 14px}.dlg-flujo .fl-desc-i{display:flex;text-transform:none;letter-spacing:0;color:var(--ink);align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:3px 0}.dlg-flujo .fl-desc-i span{flex:1;min-width:0}.fl-desc-i b{font-weight:600;font-variant-numeric:tabular-nums;opacity:.8}.fl-desc-r{font-size:13.5px;font-weight:700}
+  .fl-com { font-weight: 600; color: var(--ink); font-size: 13.5px; }
 .fl-ok { color: #1d6b34; font-weight: 600; font-size: 13px; }
 @media (max-width: 700px) { .flujo { flex-wrap: wrap; border-radius: 18px; } }
 .capt-box { display: inline-flex; align-items: center; gap: 4px; background: #e6e7ea; border-radius: 999px; padding: 3px; color: #4a4d53; }
@@ -2659,7 +2660,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const ICO_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/></svg>';
   const dlgF = $('dlg-flujo');
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
-  const opciones = (sel, ops, v) => { sel.replaceChildren(...ops.map(([k, t]) => new Option(t, k))); sel.value = v == null ? '' : String(v); if (sel.value !== String(v == null ? '' : v) && v) { sel.appendChild(new Option('(ya no existe)', v)); sel.value = v; } return sel; };
+  const opciones = (sel, ops, v) => { sel.replaceChildren(...ops.map(([k, t]) => new Option(t, k))); sel.value = v == null ? '' : String(v); if (sel.value !== String(v == null ? '' : v)) sel.value = ''; return sel; };
   const nomProp = (x) => x ? (x.nombre || 'Sin título') + (x.dir ? ' · ' + x.dir : '') : '';
   const nomInt = (id) => { const i = interesados.find((q) => q.id === id); return i ? (i.nombre || 'Sin nombre') : ''; };
   function enPoli(lat, lng, pts) { let d = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [yi, xi] = pts[i], [yj, xj] = pts[j]; if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi) d = !d; } return d; }
@@ -2760,11 +2761,26 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const gv = (k, pinta) => (val) => { vt[k] = val; x.venta = vt; ref.update({ ['venta.' + k]: val }); if (pinta) flPintar(); };
     const c = el('div', 'fl-card');
     const f2 = el('div', 'fl-fila');
-    const precio = Number(vt.precio) || x.precio || 0, pct = vt.comPct == null ? 3 : Number(vt.comPct) || 0, com = Math.round(precio * pct) / 100;
+    const precio = Number(vt.precio) || x.precio || 0, pct = vt.comPct == null ? 3 : Number(vt.comPct) || 0, bruta = Math.round(precio * pct) / 100;
+    const reqs = reqsDe(x), desc = Math.round(reqs.filter((r) => r.paga === 'Inmobiliaria').reduce((a, r) => a + (Number(r.precio) || 0), 0) * 100) / 100, com = Math.round((bruta - desc) * 100) / 100;
+    // Grid: requisitos the agency pays; ticking one sets its "quién paga" to Inmobiliaria and takes its cost off the commission.
+    const fd = el('div', 'fl-desc'); fd.append(el('div', 'fl-desc-t', 'Requisitos que paga la inmobiliaria (se descuentan de la comisión)'));
+    const grid = el('div', 'fl-desc-g');
+    reqs.forEach((r) => {
+      const l = el('label', 'fl-desc-i'); const i = el('input'); i.type = 'checkbox'; i.checked = r.paga === 'Inmobiliaria';
+      i.addEventListener('change', () => {
+        if (!x.requisitos || typeof x.requisitos !== 'object') x.requisitos = {};
+        const prev = Object.assign({}, x.requisitos[r.k] || {}), cambio = i.checked ? { paga: 'Inmobiliaria', pagaAnt: r.paga === 'Inmobiliaria' ? '' : (r.paga || '') } : { paga: prev.pagaAnt || '', pagaAnt: '' };
+        x.requisitos[r.k] = Object.assign(prev, cambio); ref.update({ ['requisitos.' + r.k + '.paga']: cambio.paga, ['requisitos.' + r.k + '.pagaAnt']: cambio.pagaAnt }); flPintar();
+      });
+      l.append(i, el('span', '', r.nombre), el('b', '', Number(r.precio) ? usd.format(Number(r.precio)) : '$0')); grid.append(l);
+    });
+    fd.append(grid);
+    if (desc > 0) fd.append(el('div', 'fl-desc-r', `Comisión ${usd.format(bruta)} − requisitos ${usd.format(desc)} = ${usd.format(com)}`));
     f2.append(etiqueta('Comprador', opciones(campo('select', 'fl-sel', { ariaLabel: 'Comprador' }, null, gv('comprador')), [['', 'Elige…'], ...interesados.map((q) => [q.id, q.nombre || 'Sin nombre'])], vt.comprador || '')),
       etiqueta('Precio final $', campo('input', 'fl-num', { type: 'number', min: 0, step: 500, ariaLabel: 'Precio final' }, precio || '', gv('precio', true))),
       etiqueta('Comisión %', campo('input', 'fl-pct', { type: 'number', min: 0, max: 100, step: 0.5, ariaLabel: 'Comisión en porcentaje' }, pct, gv('comPct', true))),
-      el('span', 'fl-com', '= ' + usd.format(com)));
+      el('span', 'fl-com', '= ' + usd.format(bruta)));
     const f4 = el('div', 'fl-fila');
     if (vt.movId) f4.append(el('span', 'fl-ok', `Comisión de ${usd.format(Number(vt.comCobrada) || com)} registrada en tus ingresos ✓`));
     else {
@@ -2780,7 +2796,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       f4.append(b);
     }
     const f1 = el('div', 'fl-fila'); f1.append(etiqueta('Fecha', campo('input', '', { type: 'date', ariaLabel: 'Fecha de la venta' }, vt.fecha || '', gv('fecha'))));
-    c.append(f1, f2, f4); return c;
+    c.append(f1, f2, fd, f4); return c;
   }
   // Paperwork to sell, from the survey (planimetría) to the notarized deed; each item has a cost and a "visto" check.
   const REQUISITOS = [
@@ -2810,7 +2826,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const pr = el('label', 'fl-req-p'); pr.append('$'); const pi = el('input'); pi.type = 'number'; pi.min = '0'; pi.step = '0.01'; pi.placeholder = '0'; pi.value = r.precio ? r.precio : ''; pi.setAttribute('aria-label', 'Precio de ' + r.nombre);
       pi.addEventListener('change', () => { set(r.k, 'precio', pi.value === '' ? 0 : Math.round(Number(pi.value) * 100) / 100); pintarTot(); }); pr.append(pi);
       const pg = el('select', 'fl-paga'); pg.setAttribute('aria-label', 'Quién paga ' + r.nombre); pg.title = 'Quién paga';
-      [['', '¿Quién paga?'], ['Vendedor', 'Vendedor'], ['Comprador', 'Comprador'], ['Ambos', 'Ambos']].forEach(([v, t]) => pg.appendChild(new Option(t, v))); pg.value = r.paga || '';
+      [['', '¿Quién paga?'], ['Vendedor', 'Vendedor'], ['Comprador', 'Comprador'], ['Ambos', 'Ven/Comp'], ['Inmobiliaria', 'Inmobiliaria']].forEach(([v, t]) => pg.appendChild(new Option(t, v))); pg.value = r.paga || '';
       pg.addEventListener('change', () => { set(r.k, 'paga', pg.value); pintarTot(); });
       f.append(l, pg, pr);
       if (r.propio) f.append(botonBorrar(() => { delete x.requisitos[r.k]; ref.update({ ['requisitos.' + r.k]: deleteField() }); flPintar(); }, 'requisito'));
@@ -2821,8 +2837,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     otro.addEventListener('submit', (e) => { e.preventDefault(); const n = oi.value.trim(); if (!n) return; const k = 'c' + Date.now().toString(36); const v = { nombre: n.slice(0, 80), precio: 0, visto: false, creado: new Date().toISOString() }; x.requisitos[k] = v; ref.update({ ['requisitos.' + k]: v }); flPintar(); });
     otro.append(oi, ob); c.append(otro);
     const tot = el('div', 'fl-req-tot');
-    function pintarTot() { const ls = reqsDe(x), n = ls.filter((r) => r.visto).length, t = ls.reduce((a, r) => a + (Number(r.precio) || 0), 0); let ve = 0, co = 0; ls.forEach((r) => { const v = Number(r.precio) || 0; if (r.paga === 'Vendedor') ve += v; else if (r.paga === 'Comprador') co += v; else if (r.paga === 'Ambos') { ve += v / 2; co += v / 2; } }); const sa = t - ve - co; const fila = (k, v, cls) => { const d = el('div', 'fl-tot-f' + (cls ? ' ' + cls : '')); d.append(el('span', '', k), el('b', '', usd.format(v))); return d; };
-      tot.replaceChildren(el('div', 'fl-tot-cab', `Total · vistos ${n} de ${ls.length}`), fila('Paga el vendedor', ve), fila('Paga el comprador', co), ...(sa > 0.004 ? [fila('Sin asignar', sa, 'sin')] : []), fila('Total', t, 'gran')); }
+    function pintarTot() { const ls = reqsDe(x), n = ls.filter((r) => r.visto).length, t = ls.reduce((a, r) => a + (Number(r.precio) || 0), 0); let ve = 0, co = 0, inm = 0; ls.forEach((r) => { const v = Number(r.precio) || 0; if (r.paga === 'Vendedor') ve += v; else if (r.paga === 'Comprador') co += v; else if (r.paga === 'Ambos') { ve += v / 2; co += v / 2; } else if (r.paga === 'Inmobiliaria') inm += v; }); const sa = t - ve - co - inm; const fila = (k, v, cls) => { const d = el('div', 'fl-tot-f' + (cls ? ' ' + cls : '')); d.append(el('span', '', k), el('b', '', usd.format(v))); return d; };
+      tot.replaceChildren(el('div', 'fl-tot-cab', `Total · vistos ${n} de ${ls.length}`), fila('Paga el vendedor', ve), fila('Paga el comprador', co), ...(inm > 0.004 ? [fila('Paga la inmobiliaria (se descuenta de la comisión)', inm)] : []), ...(sa > 0.004 ? [fila('Sin asignar', sa, 'sin')] : []), fila('Total', t, 'gran')); }
     pintarTot(); c.append(tot);
     return c;
   }
