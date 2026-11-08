@@ -1147,6 +1147,18 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 .prop-fotos .f-portada { left: 4px; }
 .dlg-prop label.prop-subir { display: inline-flex; justify-self: start; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--accent); border: 1px dashed var(--accent); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
 .prop-subir input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.prop-docs-box { display: grid; gap: 8px; }
+.prop-docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.prop-docs:empty { display: none; }
+.prop-docs li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 5%, var(--panel)); }
+.prop-docs li.subiendo { color: var(--muted); font-size: 12.5px; justify-content: center; }
+.prop-docs .arch-ic { width: 36px; height: 36px; font-size: 9.5px; flex: none; text-decoration: none; }
+.doc-nom { display: grid; min-width: 0; flex: 1; text-transform: none; letter-spacing: 0; }
+.doc-nom a { color: var(--ink); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.doc-nom a:hover { text-decoration: underline; }
+.doc-nom small { color: var(--muted); font-size: 11.5px; }
+.d-quitar { width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; padding: 0; box-shadow: none; flex: none; }
+.d-quitar:hover { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
 .prop-ubic { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .prop-ubic .prop-l { width: 100%; }
 .prop-serv-box { display: grid; gap: 8px; }
@@ -2579,7 +2591,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
-    dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
+    dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
     try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
@@ -2747,14 +2759,21 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('mapa-txt').addEventListener('input', (e) => { filtro.q = e.target.value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); pintarProps(); });
 
   // ── Property form ──
-  let draft = null, draftNuevas = [], subiendoFotos = 0;
+  let draft = null, draftNuevas = [], subiendoFotos = 0, subiendoDocs = 0;
   const dlgP = $('dlg-prop');
   $('p-tipo').replaceChildren(...TIPOS_PROP.map((t) => new Option(t, t))); iconSelect($('p-tipo')); iconSelect($('prop-f-tipo'));
   $('p-serv').replaceChildren(...SERVICIOS.map(([k, t, path]) => { const l = document.createElement('label'); l.className = 'serv-ck'; l.innerHTML = `<input type="checkbox" value="${k}">${icoServ(path)}`; l.append(t); return l; }));
   const pMsg = (t, err) => { const m = $('p-msg'); m.textContent = t || ''; m.className = 'msg' + (err ? ' err' : ''); };
   function pintarDraft() {
-    $('p-ubic-txt').textContent = tieneUbic(draft) ? `Marcada en el mapa (${draft.lat.toFixed(5)}, ${draft.lng.toFixed(5)})` : 'Sin ubicación';
-    $('p-ubic').textContent = tieneUbic(draft) ? '📍 Cambiar ubicación' : '📍 Elegir en el mapa';
+    $('p-docs').replaceChildren(...(draft.docs || []).map((d, i) => {
+      const li = document.createElement('li'); const t = tipoArchivo(d.nombre, d.tipo);
+      const ic = document.createElement('a'); ic.className = 'arch-ic t-' + t; ic.href = d.url; ic.target = '_blank'; ic.rel = 'noopener'; ic.tabIndex = -1; ic.textContent = { pdf: 'PDF', doc: 'WORD', xls: 'EXCEL', img: 'FOTO', aud: 'AUDIO' }[t] || 'ARCH';
+      const nm = document.createElement('span'); nm.className = 'doc-nom'; const a = document.createElement('a'); a.href = d.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = d.nombre; a.title = d.nombre;
+      const sm = document.createElement('small'); sm.textContent = tamTexto(d.tam); nm.append(a, sm);
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'd-quitar'; x.textContent = '✕'; x.title = 'Quitar documento'; x.setAttribute('aria-label', 'Quitar ' + d.nombre);
+      x.addEventListener('click', () => { draft.docs.splice(i, 1); pintarDraft(); });
+      li.append(ic, nm, x); return li;
+    }), ...Array.from({ length: subiendoDocs }, () => { const li = document.createElement('li'); li.className = 'subiendo'; li.textContent = 'Subiendo…'; return li; }));
     $('p-fotos').replaceChildren(...draft.fotos.map((f, i) => {
       const li = document.createElement('li'); const img = document.createElement('img'); img.src = f.url; img.alt = ''; li.appendChild(img);
       if (i === 0) { const t = document.createElement('span'); t.className = 'portada'; t.textContent = 'Portada'; li.appendChild(t); }
@@ -2800,9 +2819,26 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('prop-nueva').addEventListener('click', () => crearProp());
   $('prop-cancelar').addEventListener('click', () => cerrarProp(true));
   dlgP.addEventListener('cancel', (e) => { e.preventDefault(); cerrarProp(true); });
-  $('p-ubic').addEventListener('click', async () => {
-    ubicandoId = null; leerForm(); dlgP.close(); await iniciarMapa();
-    setMarcando(true); $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  // Property documents (deeds, liens certificate, tax receipts, plans) stay private, next to the photos in Storage.
+  $('p-docfile').addEventListener('change', async (e) => {
+    const fs = [...e.target.files]; e.target.value = ''; if (!draft) return;
+    const d = draft; if (!Array.isArray(d.docs)) d.docs = [];
+    for (const f of fs) {
+      if (f.size > 50 * 1024 * 1024) { pMsg(`${f.name} pesa más de 50 MB.`, true); continue; }
+      const tipo = f.type || TIPOS_EXT[extDe(f.name)] || '';
+      if (!/^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet)|application\/vnd\.ms-excel|text\/csv|image\/)/.test(tipo)) { pMsg(`${f.name}: solo PDF, Word, Excel o fotos.`, true); continue; }
+      subiendoDocs++; pintarDraft();
+      const limpio = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '_').slice(-80) || 'documento';
+      const ruta = `users/${invitado ? invitado.owner : yoUid}/propiedades/doc-${Date.now()}-${limpio}`;
+      await new Promise((ok) => {
+        const t = uploadBytesResumable(sRef(storage, ruta), f, { contentType: tipo });
+        t.on('state_changed', () => {}, (er) => { pMsg(er && er.code === 'storage/unauthorized' ? 'Falta actualizar las reglas de Storage en Firebase para subir documentos.' : `No se pudo subir ${f.name}.`, true); ok(); }, async () => {
+          try { const url = await getDownloadURL(t.snapshot.ref); const doc1 = { nombre: f.name.slice(0, 120), url, ruta, tipo, tam: f.size, subido: new Date().toISOString() }; d.docs.push(doc1); draftNuevas.push(doc1); } catch (er) { pMsg(`No se pudo subir ${f.name}.`, true); }
+          ok();
+        });
+      });
+      subiendoDocs--; if (draft === d) pintarDraft();
+    }
   });
   // Photos are shrunk in the browser before upload so they load fast on the phone.
   function achicar(f) {
@@ -2854,19 +2890,21 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   });
   $('prop-form').addEventListener('submit', (e) => {
     e.preventDefault(); if (!draft) return;
-    if (subiendoFotos) { pMsg('Espera a que terminen de subir las fotos.', true); return; }
+    if (subiendoFotos || subiendoDocs) { pMsg('Espera a que terminen de subir los archivos.', true); return; }
     leerForm();
     const { id, _m, _dirAuto, ...datos } = draft;
     // Photos removed from an existing property are deleted from Storage too.
-    const antes = id ? (lugares.find((x) => x.id === id) || { fotos: [] }).fotos : [];
-    antes.filter((f) => !datos.fotos.some((g) => g.ruta === f.ruta)).forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
+    const xa = id ? (lugares.find((x) => x.id === id) || { fotos: [], docs: [] }) : { fotos: [], docs: [] };
+    datos.docs = Array.isArray(datos.docs) ? datos.docs : [];
+    const antes = xa.fotos.concat(xa.docs || []), ahora = datos.fotos.concat(datos.docs);
+    antes.filter((f) => !ahora.some((g) => g.ruta === f.ruta)).forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
     if (id) col('lugares').doc(id).update(datos); else col('lugares').add({ ...datos, creado: new Date().toISOString() });
     draftNuevas = []; cerrarProp(false); avisoMapa(`Se guardó "${datos.nombre || 'la propiedad'}".`); setTimeout(() => avisoMapa(''), 2500);
   });
   $('p-borrar').addEventListener('click', () => {
     const b = $('p-borrar'); if (!draft || !draft.id) return;
     if (!b.classList.contains('armado')) { b.classList.add('armado'); b.textContent = '¿Seguro? Toca otra vez'; return; }
-    const x = lugares.find((p) => p.id === draft.id); (x ? x.fotos : draft.fotos).concat(draftNuevas).forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
+    const x = lugares.find((p) => p.id === draft.id); (x ? x.fotos.concat(x.docs || []) : draft.fotos.concat(draft.docs || [])).concat(draftNuevas).forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
     col('lugares').doc(draft.id).delete(); draftNuevas = []; cerrarProp(false);
   });
 
@@ -5604,10 +5642,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       <ul class="prop-fotos" id="p-fotos"></ul>
       <label class="ghost prop-subir">+ Agregar fotos<input type="file" id="p-file" accept="image/*" multiple></label>
     </div>
-    <div class="prop-wide prop-ubic">
-      <span class="prop-l">Ubicación</span>
-      <span id="p-ubic-txt" class="sub" style="margin:0">Sin ubicación</span>
-      <button type="button" class="ghost" id="p-ubic">📍 Elegir en el mapa</button>
+    <div class="prop-wide prop-docs-box">
+      <span class="prop-l">Documentos <small>(escrituras, gravámenes, predial, planos… privados)</small></span>
+      <ul class="prop-docs" id="p-docs"></ul>
+      <label class="ghost prop-subir">+ Agregar documentos<input type="file" id="p-docfile" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,image/*" multiple></label>
     </div>
     <p class="msg" id="p-msg" role="status"></p>
     <div class="det-acts"><button type="button" class="ghost prop-borrar" id="p-borrar" hidden>Borrar propiedad</button><button type="submit" class="btn" id="p-ok">Guardar</button></div>
