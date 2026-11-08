@@ -977,10 +977,17 @@ button.prop-op:hover { filter: brightness(1.08); }
 .dlg-flujo .fl-req-p { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); text-transform: none; letter-spacing: 0; }
 .fl-req-p input { width: 96px !important; text-align: right; }
 .fl-req-f .fl-del { margin-left: 0; }
-.fl-req-otro { padding-top: 6px; flex-wrap: nowrap !important; }
+.dlg-flujo .fl-paga { width: 128px; flex: none; font-size: 12.5px; padding: 5px 8px; }
+.dlg-flujo form.fl-req-otro { display: flex; align-items: center; gap: 8px; padding-top: 6px; flex-wrap: nowrap; }
 .fl-req-otro input { flex: 1 !important; }
 .fl-req-otro .fl-chip { flex: none; }
-.fl-req-tot { justify-content: space-between; padding-top: 6px; }
+.fl-req-tot { display: grid; gap: 4px; margin-top: 8px; padding: 12px 14px; border-radius: 14px; background: var(--panel); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent); }
+.fl-tot-cab { font: 600 12px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.fl-tot-f { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--ink); }
+.fl-tot-f b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.fl-tot-f.sin { color: var(--muted); }
+.fl-tot-f.gran { margin-top: 4px; padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); font-size: 16px; }
+.fl-tot-f.gran b { font-size: 18px; color: var(--accent); }
 .prop-izq { display: grid; gap: 8px; align-self: start; min-width: 0; }
 .pc-fl { display: grid; gap: 4px; }
 .pc-fl-b { display: flex; align-items: center; gap: 6px; border: 0; background: var(--panel); color: #4a4d53; font: 500 11.5px var(--font-body); letter-spacing: -.01em; padding: 6px 4px 6px 7px; border-radius: 10px; gap: 3px; background: #eceef1 !important; cursor: pointer; box-shadow: none; text-align: left; white-space: nowrap; min-width: 0; overflow: hidden; }
@@ -2777,20 +2784,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   // Paperwork to sell, from the survey (planimetría) to the notarized deed; each item has a cost and a "visto" check.
   const REQUISITOS = [
-    ['planimetria', 'Planimetría (levantamiento del terreno)'],
-    ['escritura', 'Escritura anterior (título de propiedad)'],
-    ['cedulas', 'Cédulas y certificados de votación (vendedor y comprador)'],
-    ['gravamenes', 'Certificado de gravámenes (Registro de la Propiedad)'],
+    ['escritura', 'Escrituras (título de propiedad)'],
+    ['gravamenes', 'Certificado de gravamen actualizado'],
     ['catastro', 'Certificado de avalúo y catastro'],
-    ['predial', 'Impuesto predial del año pagado'],
     ['no_adeudar', 'Certificado de no adeudar al Municipio'],
-    ['linea', 'Línea de fábrica / uso de suelo'],
-    ['plusvalia', 'Pago de plusvalía y utilidad (vendedor)'],
-    ['alcabala', 'Pago de alcabala (comprador)'],
+    ['emapast', 'Certificado de no adeudar a EMAPAST'],
+    ['planimetria', 'Planimetría (levantamiento del terreno)'],
+    ['cedulas', 'Cédulas y papeletas de votación'],
     ['minuta', 'Minuta firmada por abogado'],
+    ['plusvalia', 'Pago de plusvalía y utilidad', 'Vendedor'],
+    ['alcabala', 'Pago de alcabalas', 'Comprador'],
     ['notaria', 'Escritura notariada (firma en notaría)'],
   ];
-  const reqsDe = (x) => { const r = x.requisitos && typeof x.requisitos === 'object' ? x.requisitos : {}; return [...REQUISITOS.map(([k, n]) => ({ k, nombre: n, ...(r[k] || {}) })), ...Object.entries(r).filter(([k, v]) => !REQUISITOS.some((q) => q[0] === k) && v && v.nombre).map(([k, v]) => ({ k, ...v, propio: true })).sort((a, b) => String(a.creado || '').localeCompare(String(b.creado || '')))]; };
+  const reqsDe = (x) => { const r = x.requisitos && typeof x.requisitos === 'object' ? x.requisitos : {}; return [...REQUISITOS.map(([k, n, pg]) => ({ k, nombre: n, paga: pg || '', ...(r[k] || {}) })), ...Object.entries(r).filter(([k, v]) => !REQUISITOS.some((q) => q[0] === k) && v && v.nombre).map(([k, v]) => ({ k, ...v, propio: true })).sort((a, b) => String(a.creado || '').localeCompare(String(b.creado || '')))]; };
   function cardRequisitos(x) {
     const ref = col('lugares').doc(x.id); if (!x.requisitos || typeof x.requisitos !== 'object') x.requisitos = {};
     const set = (k, campo2, val) => { x.requisitos[k] = Object.assign({}, x.requisitos[k] || {}, { [campo2]: val }); ref.update({ ['requisitos.' + k + '.' + campo2]: val }); };
@@ -2803,7 +2809,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       l.append(i, el('span', 'fl-req-n', r.nombre));
       const pr = el('label', 'fl-req-p'); pr.append('$'); const pi = el('input'); pi.type = 'number'; pi.min = '0'; pi.step = '0.01'; pi.placeholder = '0'; pi.value = r.precio ? r.precio : ''; pi.setAttribute('aria-label', 'Precio de ' + r.nombre);
       pi.addEventListener('change', () => { set(r.k, 'precio', pi.value === '' ? 0 : Math.round(Number(pi.value) * 100) / 100); pintarTot(); }); pr.append(pi);
-      f.append(l, pr);
+      const pg = el('select', 'fl-paga'); pg.setAttribute('aria-label', 'Quién paga ' + r.nombre); pg.title = 'Quién paga';
+      [['', '¿Quién paga?'], ['Vendedor', 'Vendedor'], ['Comprador', 'Comprador'], ['Ambos', 'Ambos']].forEach(([v, t]) => pg.appendChild(new Option(t, v))); pg.value = r.paga || '';
+      pg.addEventListener('change', () => { set(r.k, 'paga', pg.value); pintarTot(); });
+      f.append(l, pg, pr);
       if (r.propio) f.append(botonBorrar(() => { delete x.requisitos[r.k]; ref.update({ ['requisitos.' + r.k]: deleteField() }); flPintar(); }, 'requisito'));
       c.append(f);
     });
@@ -2811,8 +2820,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const ob = el('button', 'fl-chip', '+ Añadir'); ob.type = 'submit';
     otro.addEventListener('submit', (e) => { e.preventDefault(); const n = oi.value.trim(); if (!n) return; const k = 'c' + Date.now().toString(36); const v = { nombre: n.slice(0, 80), precio: 0, visto: false, creado: new Date().toISOString() }; x.requisitos[k] = v; ref.update({ ['requisitos.' + k]: v }); flPintar(); });
     otro.append(oi, ob); c.append(otro);
-    const tot = el('div', 'fl-fila fl-req-tot');
-    function pintarTot() { const ls = reqsDe(x), n = ls.filter((r) => r.visto).length, t = ls.reduce((a, r) => a + (Number(r.precio) || 0), 0); tot.replaceChildren(el('span', 'fl-tag', `Vistos ${n} de ${ls.length}`), el('span', 'fl-com', 'Total ' + usd.format(t))); }
+    const tot = el('div', 'fl-req-tot');
+    function pintarTot() { const ls = reqsDe(x), n = ls.filter((r) => r.visto).length, t = ls.reduce((a, r) => a + (Number(r.precio) || 0), 0); let ve = 0, co = 0; ls.forEach((r) => { const v = Number(r.precio) || 0; if (r.paga === 'Vendedor') ve += v; else if (r.paga === 'Comprador') co += v; else if (r.paga === 'Ambos') { ve += v / 2; co += v / 2; } }); const sa = t - ve - co; const fila = (k, v, cls) => { const d = el('div', 'fl-tot-f' + (cls ? ' ' + cls : '')); d.append(el('span', '', k), el('b', '', usd.format(v))); return d; };
+      tot.replaceChildren(el('div', 'fl-tot-cab', `Total · vistos ${n} de ${ls.length}`), fila('Paga el vendedor', ve), fila('Paga el comprador', co), ...(sa > 0.004 ? [fila('Sin asignar', sa, 'sin')] : []), fila('Total', t, 'gran')); }
     pintarTot(); c.append(tot);
     return c;
   }
