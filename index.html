@@ -2376,7 +2376,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function dibTexto() {
     const n = dibujo.pts.length, a = areaPoli(dibujo.pts);
-    $('dib-txt').textContent = n < 3 ? (n ? `Toca el mapa para marcar cada esquina (${n} de al menos 3).` : 'Mantén presionado y arrastra para dibujar un rectángulo, o toca cada esquina.') : `${Math.round(a).toLocaleString('es-EC')} m² aprox. · ` + (dibujo.fijo ? 'arrastra la zona para moverla, una esquina para cambiar su tamaño, o usa Girar.' : 'arrastra una esquina para ajustarla.');
+    $('dib-txt').textContent = n < 3 ? (n ? `Toca el mapa para marcar cada esquina (${n} de al menos 3).` : 'Mantén presionado y arrastra para dibujar un rectángulo, o toca cada esquina.') : `${Math.round(a).toLocaleString('es-EC')} m² aprox. · ` + (dibujo.fijo ? `arrastra ${dibujo.zona ? 'la zona' : 'el terreno'} para ${dibujo.zona ? 'moverla' : 'moverlo'}, una esquina para cambiar su tamaño, o usa Girar.` : 'arrastra una esquina para ajustarla.');
     $('dib-ok').disabled = n > 0 && n < 3; $('dib-undo').disabled = !n; $('dib-undo').hidden = !!dibujo.fijo; $('dib-borrar').disabled = !n; $('dib-borrar').hidden = !!dibujo.fijo; $('dib-ok').hidden = !!dibujo.fijo; $('dib-cancel').hidden = !!dibujo.fijo;
   }
   // Resize from a corner: a rectangle keeps its shape (the opposite corner stays put); any other outline just moves that corner.
@@ -2467,7 +2467,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function dibFin() {
     if (!arrastre) return;
     const fue = arrastre.activo; arrastre = null;
-    if (fue) { sinClickHasta = Date.now() + 400; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; if (rafDib) { cancelAnimationFrame(rafDib); rafDib = 0; } dibPintar(); if (dibujo && dibujo.zona && !dibujo.id) guardarZonaYa(true); }
+    if (fue) { sinClickHasta = Date.now() + 400; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; if (rafDib) { cancelAnimationFrame(rafDib); rafDib = 0; } dibPintar(); if (dibujo && !dibujo.fijo && (!dibujo.zona || !dibujo.id)) guardarZonaYa(true); }
   }
   document.addEventListener('mouseup', () => { if (arrastre) setTimeout(dibFin, 0); });
   function dibPunto(lat, lng) { if (!dibujo || dibujo.fijo) return; if (Date.now() < sinClickHasta) return; dibujo.pts.push([lat, lng]); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibPintar(); }
@@ -2478,7 +2478,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     setMarcando(false); ubicandoId = null;
     await iniciarMapa();
     if (zona) x = zona;
-    dibujo = { id: x.id, zona: !!zona, fijo: !!(zona && zona.id && zona.poligono.length > 2), pts: x.poligono.map((q) => q.slice()), base: null, capa: [] };
+    dibujo = { id: x.id, zona: !!zona, fijo: zona ? !!(zona.id && zona.poligono.length > 2) : x.poligono.length > 2, pts: x.poligono.map((q) => q.slice()), base: null, capa: [] };
     $('dib-tit').textContent = zona ? 'Zona de captación' : 'Terreno: ' + (x.nombre || 'Sin título'); $('dib-giro').value = '0'; $('dib-grados').textContent = '0°';
     $('dib-nom').hidden = !zona; $('dib-nom').value = zona ? zona.nombre : ''; $('dib-usr-f').hidden = !zona; pintarUsuariosZona(zona ? zona.usuario : ''); $('capt-radio').classList.toggle('activo', !!zona);
     $('dib-borrar').textContent = zona && zona.id ? 'Borrar zona' : 'Borrar';
@@ -2499,8 +2499,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     clearTimeout(zonaT); zonaT = 0;
     const run = () => {
       zonaT = 0;
-      if (!dibujo || !dibujo.zona || dibujo.pts.length < 3) return;
+      if (!dibujo || dibujo.pts.length < 3) return;
       const pts = dibujo.pts.map((q) => q.slice());
+      if (!dibujo.zona) { // land outline of a property
+        const x = lugares.find((pp) => pp.id === dibujo.id); if (!x) return;
+        const dt = { poligono: pts.map(([lat, lng]) => ({ lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 })) };
+        if (!tieneUbic(x)) { dt.lat = pts.reduce((a, q) => a + q[0], 0) / pts.length; dt.lng = pts.reduce((a, q) => a + q[1], 0) / pts.length; }
+        if (!x.area) dt.area = Math.round(areaPoli(pts));
+        guardarCampo(x, dt); x.poligono = pts;
+        if (!dibujo.fijo) { dibujo.fijo = true; avisoMapa(`Terreno guardado (${Math.round(areaPoli(pts)).toLocaleString('es-EC')} m² aprox.).`); setTimeout(() => avisoMapa(''), 2500); dibPintar(); }
+        return;
+      }
       const datos = { poligono: pts.map(([lat, lng]) => ({ lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 })), nombre: $('dib-nom').value.trim().slice(0, 60), usuario: $('dib-usr').value };
       if (!dibujo.id) {
         const r = col('zonas').doc(); datos.creado = new Date().toISOString();
@@ -2517,7 +2526,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   function terminarDibujo(guardar) {
     if (!dibujo) return;
-    if (dibujo.zona && zonaT) guardarZonaYa(true);
+    if (zonaT) guardarZonaYa(true);
     const d = dibujo; dibujo = null; arrastre = null; mapaArrastrable(true);
     try { d.capa.forEach((o) => (o.setMap ? o.setMap(null) : o.remove())); } catch (e) {}
     $('mapa-dib').hidden = true; $('mapa').classList.remove('marcando', 'dibujando'); if (mapaG) mapaG.setOptions({ draggableCursor: null }); $('capt-radio').classList.remove('activo');
@@ -2536,7 +2545,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       pintarPins(); return;
     }
     const x = lugares.find((p) => p.id === d.id);
-    if (guardar && x) {
+    if (guardar && x && !(d.fijo && d.pts.length > 2)) {
       const pts = d.pts.length > 2 ? d.pts : [];
       const datos = { poligono: pts.map(([lat, lng]) => ({ lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 })) };
       if (pts.length && !tieneUbic(x)) { datos.lat = pts.reduce((a, q) => a + q[0], 0) / pts.length; datos.lng = pts.reduce((a, q) => a + q[1], 0) / pts.length; }
@@ -2916,7 +2925,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (ubicandoId) { // placing an existing property from its card
       const x = lugares.find((p) => p.id === ubicandoId); ubicandoId = null; pintarLista();
       if (!x) return;
-      const datos = { lat, lng }; guardarCampo(x, datos); pintarPins(); avisoMapa('Ubicación guardada.'); setTimeout(() => avisoMapa(''), 2500);
+      const datos = { lat, lng };
+      if (tieneUbic(x) && x.poligono.length > 2) { const dl = lat - x.lat, dg = lng - x.lng; const np = x.poligono.map(([a, b]) => [a + dl, b + dg]); datos.poligono = np.map(([a, b]) => ({ lat: Math.round(a * 1e7) / 1e7, lng: Math.round(b * 1e7) / 1e7 })); x.poligono = np; }
+      guardarCampo(x, datos); if (datos.poligono) x.poligono = x.poligono.map((q) => Array.isArray(q) ? q : [q.lat, q.lng]); pintarPins(); avisoMapa('Ubicación guardada.'); setTimeout(() => avisoMapa(''), 2500);
       if (!x.dir) direccionDe(lat, lng).then((t) => { if (t) guardarCampo(x, { dir: t.slice(0, 120) }); });
       return;
     }
@@ -4266,8 +4277,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if ((e.key !== 'Delete' && e.key !== 'Backspace') || e.metaKey || e.ctrlKey || e.altKey) return;
     const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     if (document.querySelector('dialog[open]')) return;
-    if (dibujo && dibujo.zona && dibujo.id) { // an existing capture zone open for editing
-      e.preventDefault(); dibujo.pts = []; terminarDibujo(true); avisoDeshacer('Se eliminó la zona · ⌘Z para deshacer'); return;
+    if (dibujo && dibujo.fijo) { // a saved zone or land outline open for editing
+      e.preventDefault(); const z = dibujo.zona; dibujo.pts = []; terminarDibujo(true); avisoDeshacer((z ? 'Se eliminó la zona' : 'Se quitó el dibujo del terreno') + ' · ⌘Z para deshacer'); return;
     }
     if (!selBorrar) return;
     const fn = borrables.get(selBorrar), k = selBorrar; selBorrar = null; marcarSel();
