@@ -962,6 +962,8 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-acc { position: absolute; top: 6px; right: 6px; display: flex; flex-direction: column; gap: 2px; }
 .prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
 .prop-acc .prop-ed svg { width: 17px; height: 17px; }
+.prop-acc .prop-edit svg { width: 22px; height: 22px; }
+.prop-acc .prop-edit:hover { background: none; filter: brightness(1.08); }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
 .prop-ubi.activo, .prop-dib.activo { color: #fff; background: var(--accent); }
 .prop-dib.tiene { color: var(--accent); }
@@ -2269,7 +2271,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       pie.append(u, pr); info.appendChild(pie);
       const acc = document.createElement('div'); acc.className = 'prop-acc';
       const nom = x.nombre || 'la propiedad';
-      const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'prop-ed'; ed.textContent = '✎'; ed.title = 'Editar'; ed.setAttribute('aria-label', 'Editar ' + nom);
+      const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'prop-ed prop-edit'; ed.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#4a89dc"/><path fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" d="M14.8 6.6 17.4 9.2a1 1 0 0 1 0 1.4L9.3 18.7l-2.5.3a.6.6 0 0 1-.7-.7l.3-2.5 8.1-8.1a1 1 0 0 1 1.4 0zM13.4 8l2.6 2.6"/></svg>'; ed.title = 'Editar propiedad'; ed.setAttribute('aria-label', 'Editar ' + nom);
       ed.addEventListener('click', (e) => { e.stopPropagation(); abrirProp(x); });
       const del = document.createElement('button'); del.type = 'button'; del.className = 'prop-ed prop-del'; del.title = 'Eliminar propiedad'; del.setAttribute('aria-label', 'Eliminar ' + nom);
       del.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12M10 11v6M14 11v6"/></svg>';
@@ -2291,7 +2293,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const dib = document.createElement('button'); dib.type = 'button'; dib.className = 'prop-ed prop-dib' + (dibujo && dibujo.id === x.id ? ' activo' : '') + (x.poligono.length > 2 ? ' tiene' : ''); dib.title = x.poligono.length > 2 ? 'Editar el dibujo del terreno' : 'Dibujar el terreno en el mapa'; dib.setAttribute('aria-label', dib.title);
       dib.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M4 7.5 9.5 4l9.5 3.5-2 11.5L6 20z"/><circle cx="4" cy="7.5" r="1.6" fill="currentColor"/><circle cx="9.5" cy="4" r="1.6" fill="currentColor"/><circle cx="19" cy="7.5" r="1.6" fill="currentColor"/><circle cx="17" cy="19" r="1.6" fill="currentColor"/><circle cx="6" cy="20" r="1.6" fill="currentColor"/></svg>';
       dib.addEventListener('click', (e) => { e.stopPropagation(); if (dibujo && dibujo.id === x.id) terminarDibujo(false); else empezarDibujo(x); });
-      acc.append(ed, del, ub, dib);
+      acc.append(ed, ub, dib, del);
       cara.append(info, acc);
       const curl = (izq, txt) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'doblez izq'; b.setAttribute('aria-label', txt); b.innerHTML = '<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M5.5 6 A16.5 16.5 0 0 0 24 24.5"/></svg>'; b.addEventListener('click', (e) => { e.stopPropagation(); const v = li.classList.toggle('vuelta'); if (v) volteadas.add(x.id); else { volteadas.delete(x.id); delete ppCard[x.id]; } }); return b; };
       cara.appendChild(curl(true, 'Ver datos del dueño'));
