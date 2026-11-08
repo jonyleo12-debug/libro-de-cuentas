@@ -2685,8 +2685,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const box = document.createElement('div'); box.className = 'pc-fl';
     const hoy = hoyYmd(), nInt = interesados.filter((q) => coincidencias(q).some((y) => y.id === x.id)).length;
     const rq = x.requisitos && typeof x.requisitos === 'object' ? x.requisitos : {}, nReq = REQUISITOS.filter(([k]) => rq[k] && rq[k].visto).length; void hoy;
-    const vt = x.venta || {}, nTr = ['autorizacion', 'promesa', 'notaria', 'registro'].filter((k) => vt[k]).length;
-    [['int', 'Interesados', nInt ? String(nInt) : ''], ['req', 'Requisitos', nReq ? nReq + '/' + REQUISITOS.length : ''], ['cie', 'Cierre', x.estado === 'Vendida' ? '✓' : (x.estado === 'Reservada' || nTr) ? nTr + '/4' : '']].forEach(([m, t, n]) => {
+    void 0;
+    [['int', 'Interesados', nInt ? String(nInt) : ''], ['req', 'Requisitos', nReq ? nReq + '/' + REQUISITOS.length : ''], ['cie', 'Cierre', x.estado === 'Vendida' ? '✓' : '']].forEach(([m, t, n]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'pc-fl-b'; b.title = t; const lb = document.createElement('span'); lb.className = 'pc-fl-t'; lb.textContent = t; b.appendChild(lb);
       const c = document.createElement('span'); c.className = 'fl-n'; c.textContent = n; b.appendChild(c);
       b.addEventListener('click', (e) => { e.stopPropagation(); flAbrir(m, x.id); }); box.appendChild(b);
@@ -2761,18 +2761,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const c = el('div', 'fl-card');
     const f1 = el('div', 'fl-fila');
     const est = opciones(campo('select', 'fl-sel', { ariaLabel: 'Estado' }, null, (val) => { x.estado = val; ref.update({ estado: val }); flPintar(); }), [['Disponible', 'Disponible'], ['Captacion', 'Captación'], ['Reservada', 'Reservado'], ['Vendida', 'Vendido']], x.estado);
-    const tit = el('button', 'fl-chip fl-tit', nomProp(x)); tit.type = 'button'; tit.title = 'Ver en el mapa'; tit.addEventListener('click', () => { dlgF.close(); seleccionar(x.id, false); });
-    f1.append(tit, est);
+    f1.append(etiqueta('Estado', est));
     const f2 = el('div', 'fl-fila');
     const precio = Number(vt.precio) || x.precio || 0, pct = vt.comPct == null ? 3 : Number(vt.comPct) || 0, com = Math.round(precio * pct) / 100;
     f2.append(etiqueta('Comprador', opciones(campo('select', 'fl-sel', { ariaLabel: 'Comprador' }, null, gv('comprador')), [['', 'Elige…'], ...interesados.map((q) => [q.id, q.nombre || 'Sin nombre'])], vt.comprador || '')),
       etiqueta('Precio final $', campo('input', 'fl-num', { type: 'number', min: 0, step: 500, ariaLabel: 'Precio final' }, precio || '', gv('precio', true))),
       etiqueta('Comisión %', campo('input', 'fl-pct', { type: 'number', min: 0, max: 100, step: 0.5, ariaLabel: 'Comisión en porcentaje' }, pct, gv('comPct', true))),
       el('span', 'fl-com', '= ' + usd.format(com)));
-    const f3 = el('div', 'fl-fila');
-    [['autorizacion', 'Autorización de venta'], ['promesa', 'Promesa de compraventa'], ['notaria', 'Escritura en notaría'], ['registro', 'Inscrita en el Registro']].forEach(([k, t]) => {
-      const l = el('label', 'fl-check'); const i = el('input'); i.type = 'checkbox'; i.checked = !!vt[k]; i.addEventListener('change', () => gv(k)(i.checked)); l.append(i, t); f3.append(l);
-    });
     const f4 = el('div', 'fl-fila');
     f4.append(etiqueta('Fecha', campo('input', '', { type: 'date', ariaLabel: 'Fecha de la venta' }, vt.fecha || '', gv('fecha'))));
     if (vt.movId) f4.append(el('span', 'fl-ok', `Comisión de ${usd.format(Number(vt.comCobrada) || com)} registrada en tus ingresos ✓`));
@@ -2788,7 +2783,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       });
       f4.append(b);
     }
-    c.append(f1, f2, f3, f4); return c;
+    c.append(f1, f2, f4); return c;
   }
   // Paperwork to sell, from the survey (planimetría) to the notarized deed; each item has a cost and a "visto" check.
   const REQUISITOS = [
@@ -2844,7 +2839,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const m = flModo, lista = $('fl-lista'); if (!m) return;
     const xp = flProp ? lugares.find((y) => y.id === flProp) : null;
     $('fl-tit').textContent = FL[m].tit + (xp ? ' · ' + (xp.nombre || 'Sin título') : '');
-    $('fl-sub').textContent = !xp ? FL[m].sub : m === 'int' ? 'Primero los interesados a los que les sirve esta propiedad.' : m === 'vis' ? 'Visitas a esta propiedad, de la más próxima a la más lejana.' : m === 'req' ? FL.req.sub : 'Comprador, precio, trámites y comisión de esta propiedad.';
+    $('fl-sub').textContent = !xp ? FL[m].sub : m === 'int' ? 'Primero los interesados a los que les sirve esta propiedad.' : m === 'vis' ? 'Visitas a esta propiedad, de la más próxima a la más lejana.' : m === 'req' ? FL.req.sub : 'Comprador, precio y comisión de esta propiedad.';
     const extra = $('fl-extra'); extra.replaceChildren(); $('fl-nuevo').hidden = m === 'cie' || m === 'req';
     let cards = [];
     if (m === 'int') { const sirve = (q) => !!xp && coincidencias(q).some((y) => y.id === xp.id); cards = interesados.slice().sort((a, b) => sirve(b) - sirve(a)).map((q) => { const c = cardInteresado(q); if (sirve(q)) { const t = el('span', 'fl-ok', '✓ Le sirve esta propiedad'); c.firstChild.insertBefore(t, c.firstChild.lastChild); } return c; }); }
