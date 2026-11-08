@@ -2327,7 +2327,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function dibTexto() {
     const n = dibujo.pts.length, a = areaPoli(dibujo.pts);
     $('dib-txt').textContent = n < 3 ? (n ? `Toca el mapa para marcar cada esquina (${n} de al menos 3).` : 'Mantén presionado y arrastra para dibujar un rectángulo, o toca cada esquina.') : `${Math.round(a).toLocaleString('es-EC')} m² aprox. · ` + (dibujo.fijo ? 'arrastra la zona para moverla o usa Girar.' : 'arrastra una esquina para ajustarla.');
-    $('dib-ok').disabled = n > 0 && n < 3; $('dib-undo').disabled = !n; $('dib-undo').hidden = !!dibujo.fijo; $('dib-borrar').disabled = !n;
+    $('dib-ok').disabled = n > 0 && n < 3; $('dib-undo').disabled = !n; $('dib-undo').hidden = !!dibujo.fijo; $('dib-borrar').disabled = !n; $('dib-borrar').hidden = !!dibujo.fijo;
   }
   function dibPintar() {
     if (!dibujo) return;
