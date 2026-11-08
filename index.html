@@ -966,6 +966,21 @@ button.prop-op:hover { filter: brightness(1.08); }
 .zona-c { border-color: #b08a4e !important; }
 .flujo { display: inline-flex; align-items: center; gap: 4px; background: #e6e7ea; border-radius: 999px; padding: 3px; }
 .fl-op { padding: 7px 13px; }
+.fl-agenda { display: grid; gap: 6px; padding-top: 8px; border-top: 1px dashed color-mix(in srgb, var(--ink) 14%, transparent); }
+.fl-ag-t { font-size: 13px; color: var(--ink); margin-right: auto; }
+.fl-vis.hecha { opacity: .55; }
+.fl-vis.vencida input[type=date] { color: #c62828; }
+.fl-req { gap: 2px; }
+.fl-req-f { display: flex; align-items: center; gap: 10px; padding: 5px 4px; border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent); }
+.dlg-flujo .fl-req-f .fl-check { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--ink); }
+.fl-req-f.visto .fl-req-n { color: var(--muted); }
+.dlg-flujo .fl-req-p { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.fl-req-p input { width: 96px !important; text-align: right; }
+.fl-req-f .fl-del { margin-left: 0; }
+.fl-req-otro { padding-top: 6px; flex-wrap: nowrap !important; }
+.fl-req-otro input { flex: 1 !important; }
+.fl-req-otro .fl-chip { flex: none; }
+.fl-req-tot { justify-content: space-between; padding-top: 6px; }
 .prop-izq { display: grid; gap: 8px; align-self: start; min-width: 0; }
 .pc-fl { display: grid; gap: 4px; }
 .pc-fl-b { display: flex; align-items: center; gap: 6px; border: 0; background: var(--panel); color: #4a4d53; font: 500 11.5px var(--font-body); letter-spacing: -.01em; padding: 6px 4px 6px 7px; border-radius: 10px; gap: 3px; background: #eceef1 !important; cursor: pointer; box-shadow: none; text-align: left; white-space: nowrap; min-width: 0; overflow: hidden; }
@@ -2609,7 +2624,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
-    dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
+    dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
     try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
@@ -2636,7 +2651,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const vendible = (x) => x.estado !== 'Vendida';
   function coincidencias(q) {
     const z = q.zona ? zonas.find((zz) => zz.id === q.zona) : null, max = Number(q.presupuesto) || 0;
-    return lugares.filter((x) => vendible(x) && (!q.tipo || x.tipo === q.tipo) && (!max || !x.precio || x.precio <= max) && (!z || (tieneUbic(x) && enPoli(x.lat, x.lng, z.poligono))));
+    return lugares.filter((x) => vendible(x) && (!max || !x.precio || x.precio <= max) && (!z || (tieneUbic(x) && enPoli(x.lat, x.lng, z.poligono))));
   }
   function botonBorrar(fn, que) {
     const b = el('button', 'fl-del'); b.type = 'button'; b.innerHTML = ICO_TRASH; b.title = 'Eliminar ' + que; b.setAttribute('aria-label', b.title);
@@ -2654,9 +2669,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pasosCard(x) {
     const box = document.createElement('div'); box.className = 'pc-fl';
     const hoy = hoyYmd(), nInt = interesados.filter((q) => coincidencias(q).some((y) => y.id === x.id)).length;
-    const nVis = visitas.filter((v) => v.prop === x.id && !v.hecha && String(v.fecha || '') >= hoy).length;
+    const rq = x.requisitos && typeof x.requisitos === 'object' ? x.requisitos : {}, nReq = REQUISITOS.filter(([k]) => rq[k] && rq[k].visto).length; void hoy;
     const vt = x.venta || {}, nTr = ['autorizacion', 'promesa', 'notaria', 'registro'].filter((k) => vt[k]).length;
-    [['int', 'Interesados', nInt ? String(nInt) : ''], ['vis', 'Visitas', nVis ? String(nVis) : ''], ['cie', 'Cierre', x.estado === 'Vendida' ? '✓' : (x.estado === 'Reservada' || nTr) ? nTr + '/4' : '']].forEach(([m, t, n]) => {
+    [['int', 'Interesados', nInt ? String(nInt) : ''], ['req', 'Requisitos', nReq ? nReq + '/' + REQUISITOS.length : ''], ['cie', 'Cierre', x.estado === 'Vendida' ? '✓' : (x.estado === 'Reservada' || nTr) ? nTr + '/4' : '']].forEach(([m, t, n]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'pc-fl-b'; b.title = t; const lb = document.createElement('span'); lb.className = 'pc-fl-t'; lb.textContent = t; b.appendChild(lb);
       const c = document.createElement('span'); c.className = 'fl-n'; c.textContent = n; b.appendChild(c);
       b.addEventListener('click', (e) => { e.stopPropagation(); flAbrir(m, x.id); }); box.appendChild(b);
@@ -2682,15 +2697,31 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       campo('input', 'fl-txt', { type: 'tel', maxLength: 40, placeholder: 'Teléfono o correo', ariaLabel: 'Contacto' }, q.contacto, g('contacto')),
       botonBorrar(() => ref.delete(), 'interesado'));
     const f2 = el('div', 'fl-fila');
-    const tipo = opciones(campo('select', 'fl-sel', { ariaLabel: 'Tipo que busca' }, null, g('tipo')), [['', 'Cualquier tipo'], ...TIPOS_PROP.map((t) => [t, t])], q.tipo || '');
     const zona = opciones(campo('select', 'fl-sel', { ariaLabel: 'Zona' }, null, g('zona')), [['', 'Cualquier zona'], ...zonas.map((z, i) => [z.id, z.nombre || 'Zona ' + (i + 1)])], q.zona || '');
-    f2.append(etiqueta('Busca', tipo), etiqueta('Hasta $', campo('input', 'fl-num', { type: 'number', min: 0, step: 1000, placeholder: 'Presupuesto', ariaLabel: 'Presupuesto máximo' }, q.presupuesto || '', g('presupuesto'))), etiqueta('En', zona));
+    f2.append(etiqueta('Presupuesto $', campo('input', 'fl-num', { type: 'number', min: 0, step: 1000, placeholder: '0', ariaLabel: 'Presupuesto' }, q.presupuesto || '', g('presupuesto'))), etiqueta('En', zona));
     const f3 = el('div', 'fl-fila');
     f3.append(campo('input', 'fl-txt', { type: 'text', maxLength: 200, placeholder: 'Nota (ej.: necesita 3 habitaciones, paga con crédito)', ariaLabel: 'Nota' }, q.nota, g('nota')));
     const f4 = el('div', 'fl-fila'), cs = coincidencias(q);
     f4.append(el('span', 'fl-tag', cs.length ? `Le pueden servir (${cs.length}):` : 'Todavía no hay propiedades que le sirvan.'));
     cs.slice(0, 8).forEach((x) => { const b = el('button', 'fl-chip', (x.nombre || 'Sin título') + (x.precio ? ' · ' + precioTxt(x, true) : '')); b.type = 'button'; b.title = 'Ver en el mapa'; b.addEventListener('click', () => { dlgF.close(); seleccionar(x.id, false); }); f4.append(b); });
-    c.append(f1, f2, f3, f4); return c;
+    // Visits agenda of this buyer
+    const ag = el('div', 'fl-agenda');
+    const cab = el('div', 'fl-fila'); cab.append(el('b', 'fl-ag-t', 'Agenda de visitas'));
+    const nv = el('button', 'fl-chip', '+ Agendar visita'); nv.type = 'button';
+    nv.addEventListener('click', () => { const r = col('visitas').doc(); const v = { fecha: hoyYmd(), hora: '10:00', prop: flProp || (cs[0] ? cs[0].id : ''), interesado: q.id, nota: '', hecha: false, creado: new Date().toISOString() }; r.set(v); visitas.push({ id: r.id, ...v }); flPintar(); });
+    cab.append(nv); ag.append(cab);
+    const hoy = hoyYmd(), mias = visitas.filter((v) => v.interesado === q.id).sort((a, b) => String((a.fecha || '') + (a.hora || '')).localeCompare(String((b.fecha || '') + (b.hora || ''))));
+    mias.forEach((v) => {
+      const vr = col('visitas').doc(v.id), gv = (k) => (val) => { v[k] = val; vr.update({ [k]: val }); };
+      const fila = el('div', 'fl-fila fl-vis' + (v.hecha ? ' hecha' : '') + (!v.hecha && String(v.fecha || '') < hoy ? ' vencida' : ''));
+      const est = el('button', 'fl-est' + (v.hecha ? ' si' : ''), v.hecha ? 'Hecha ✓' : 'Pendiente'); est.type = 'button'; est.title = 'Cambiar estado';
+      est.addEventListener('click', () => { v.hecha = !v.hecha; vr.update({ hecha: v.hecha }); flPintar(); });
+      fila.append(campo('input', '', { type: 'date', ariaLabel: 'Fecha de la visita' }, v.fecha, (x) => { gv('fecha')(x); }), campo('input', '', { type: 'time', ariaLabel: 'Hora' }, v.hora, gv('hora')),
+        opciones(campo('select', 'fl-sel', { ariaLabel: 'Propiedad a visitar' }, null, gv('prop')), [['', 'Propiedad…'], ...lugares.filter((x) => vendible(x) || x.id === v.prop).map((x) => [x.id, x.nombre || 'Sin título'])], v.prop || ''),
+        est, botonBorrar(() => { vr.delete(); visitas = visitas.filter((w) => w.id !== v.id); flPintar(); }, 'visita'));
+      ag.append(fila);
+    });
+    c.append(f1, f2, f3, f4, ag); return c;
   }
   // Visitas
   function cardVisita(v) {
@@ -2744,7 +2775,49 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
     c.append(f1, f2, f3, f4); return c;
   }
+  // Paperwork to sell, from the survey (planimetría) to the notarized deed; each item has a cost and a "visto" check.
+  const REQUISITOS = [
+    ['planimetria', 'Planimetría (levantamiento del terreno)'],
+    ['escritura', 'Escritura anterior (título de propiedad)'],
+    ['cedulas', 'Cédulas y certificados de votación (vendedor y comprador)'],
+    ['gravamenes', 'Certificado de gravámenes (Registro de la Propiedad)'],
+    ['catastro', 'Certificado de avalúo y catastro'],
+    ['predial', 'Impuesto predial del año pagado'],
+    ['no_adeudar', 'Certificado de no adeudar al Municipio'],
+    ['linea', 'Línea de fábrica / uso de suelo'],
+    ['plusvalia', 'Pago de plusvalía y utilidad (vendedor)'],
+    ['alcabala', 'Pago de alcabala (comprador)'],
+    ['minuta', 'Minuta firmada por abogado'],
+    ['notaria', 'Escritura notariada (firma en notaría)'],
+  ];
+  const reqsDe = (x) => { const r = x.requisitos && typeof x.requisitos === 'object' ? x.requisitos : {}; return [...REQUISITOS.map(([k, n]) => ({ k, nombre: n, ...(r[k] || {}) })), ...Object.entries(r).filter(([k, v]) => !REQUISITOS.some((q) => q[0] === k) && v && v.nombre).map(([k, v]) => ({ k, ...v, propio: true })).sort((a, b) => String(a.creado || '').localeCompare(String(b.creado || '')))]; };
+  function cardRequisitos(x) {
+    const ref = col('lugares').doc(x.id); if (!x.requisitos || typeof x.requisitos !== 'object') x.requisitos = {};
+    const set = (k, campo2, val) => { x.requisitos[k] = Object.assign({}, x.requisitos[k] || {}, { [campo2]: val }); ref.update({ ['requisitos.' + k + '.' + campo2]: val }); };
+    const c = el('div', 'fl-card fl-req');
+    const lista = reqsDe(x);
+    lista.forEach((r) => {
+      const f = el('div', 'fl-req-f' + (r.visto ? ' visto' : ''));
+      const l = el('label', 'fl-check'); const i = el('input'); i.type = 'checkbox'; i.checked = !!r.visto; i.title = 'Visto';
+      i.addEventListener('change', () => { set(r.k, 'visto', i.checked); f.classList.toggle('visto', i.checked); pintarTot(); });
+      l.append(i, el('span', 'fl-req-n', r.nombre));
+      const pr = el('label', 'fl-req-p'); pr.append('$'); const pi = el('input'); pi.type = 'number'; pi.min = '0'; pi.step = '0.01'; pi.placeholder = '0'; pi.value = r.precio ? r.precio : ''; pi.setAttribute('aria-label', 'Precio de ' + r.nombre);
+      pi.addEventListener('change', () => { set(r.k, 'precio', pi.value === '' ? 0 : Math.round(Number(pi.value) * 100) / 100); pintarTot(); }); pr.append(pi);
+      f.append(l, pr);
+      if (r.propio) f.append(botonBorrar(() => { delete x.requisitos[r.k]; ref.update({ ['requisitos.' + r.k]: deleteField() }); flPintar(); }, 'requisito'));
+      c.append(f);
+    });
+    const otro = el('form', 'fl-fila fl-req-otro'); const oi = el('input', 'fl-txt'); oi.type = 'text'; oi.maxLength = 80; oi.placeholder = 'Otro requisito'; oi.setAttribute('aria-label', 'Otro requisito');
+    const ob = el('button', 'fl-chip', '+ Añadir'); ob.type = 'submit';
+    otro.addEventListener('submit', (e) => { e.preventDefault(); const n = oi.value.trim(); if (!n) return; const k = 'c' + Date.now().toString(36); const v = { nombre: n.slice(0, 80), precio: 0, visto: false, creado: new Date().toISOString() }; x.requisitos[k] = v; ref.update({ ['requisitos.' + k]: v }); flPintar(); });
+    otro.append(oi, ob); c.append(otro);
+    const tot = el('div', 'fl-fila fl-req-tot');
+    function pintarTot() { const ls = reqsDe(x), n = ls.filter((r) => r.visto).length, t = ls.reduce((a, r) => a + (Number(r.precio) || 0), 0); tot.replaceChildren(el('span', 'fl-tag', `Vistos ${n} de ${ls.length}`), el('span', 'fl-com', 'Total ' + usd.format(t))); }
+    pintarTot(); c.append(tot);
+    return c;
+  }
   const FL = {
+    req: { tit: 'Requisitos', sub: 'Todo lo que se necesita hasta la escritura notariada. Marca cada uno como visto y anota cuánto cuesta.' },
     int: { tit: 'Interesados', sub: 'Personas que buscan comprar. La app te muestra qué propiedades les pueden servir.' },
     vis: { tit: 'Visitas', sub: 'Visitas agendadas a tus propiedades, de la más próxima a la más lejana.' },
     cie: { tit: 'Cierre', sub: 'Propiedades reservadas o vendidas: comprador, precio, trámites y comisión.' },
@@ -2753,13 +2826,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const m = flModo, lista = $('fl-lista'); if (!m) return;
     const xp = flProp ? lugares.find((y) => y.id === flProp) : null;
     $('fl-tit').textContent = FL[m].tit + (xp ? ' · ' + (xp.nombre || 'Sin título') : '');
-    $('fl-sub').textContent = !xp ? FL[m].sub : m === 'int' ? 'Primero los interesados a los que les sirve esta propiedad.' : m === 'vis' ? 'Visitas a esta propiedad, de la más próxima a la más lejana.' : 'Comprador, precio, trámites y comisión de esta propiedad.';
-    const extra = $('fl-extra'); extra.replaceChildren(); $('fl-nuevo').hidden = m === 'cie';
+    $('fl-sub').textContent = !xp ? FL[m].sub : m === 'int' ? 'Primero los interesados a los que les sirve esta propiedad.' : m === 'vis' ? 'Visitas a esta propiedad, de la más próxima a la más lejana.' : m === 'req' ? FL.req.sub : 'Comprador, precio, trámites y comisión de esta propiedad.';
+    const extra = $('fl-extra'); extra.replaceChildren(); $('fl-nuevo').hidden = m === 'cie' || m === 'req';
     let cards = [];
     if (m === 'int') { const sirve = (q) => !!xp && coincidencias(q).some((y) => y.id === xp.id); cards = interesados.slice().sort((a, b) => sirve(b) - sirve(a)).map((q) => { const c = cardInteresado(q); if (sirve(q)) { const t = el('span', 'fl-ok', '✓ Le sirve esta propiedad'); c.firstChild.insertBefore(t, c.firstChild.lastChild); } return c; }); }
     else if (m === 'vis') {
       const hoy = hoyYmd(), clave = (v) => (v.hecha || String(v.fecha || '') < hoy ? '1' : '0') + (v.hecha || String(v.fecha || '') < hoy ? String(9e15 - Date.parse((v.fecha || '1970-01-01') + 'T' + (v.hora || '00:00'))) : (v.fecha || '') + (v.hora || ''));
       cards = visitas.filter((v) => !xp || v.prop === xp.id).sort((a, b) => clave(a).localeCompare(clave(b))).map(cardVisita);
+    } else if (m === 'req') { cards = xp ? [cardRequisitos(xp)] : [];
     } else if (xp) { cards = [cardCierre(xp)];
     } else {
       const sel = el('select'); sel.setAttribute('aria-label', 'Reservar una propiedad');
@@ -2778,7 +2852,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   $('fl-nuevo').addEventListener('click', () => {
     const creado = new Date().toISOString();
     const xp = flProp ? lugares.find((y) => y.id === flProp) : null;
-    if (flModo === 'int') { const r = col('interesados').doc(); const q = { nombre: '', contacto: '', tipo: xp ? xp.tipo : '', presupuesto: xp && xp.precio ? xp.precio : 0, zona: '', nota: '', creado }; r.set(q); interesados.unshift({ id: r.id, ...q }); }
+    if (flModo === 'int') { const r = col('interesados').doc(); const q = { nombre: '', contacto: '', tipo: '', presupuesto: xp && xp.precio ? xp.precio : 0, zona: '', nota: '', creado }; r.set(q); interesados.unshift({ id: r.id, ...q }); }
     else if (flModo === 'vis') { const r = col('visitas').doc(); const v = { fecha: hoyYmd(), hora: '10:00', prop: xp ? xp.id : '', interesado: '', nota: '', hecha: false, creado }; r.set(v); visitas.push({ id: r.id, ...v }); }
     flPintar(); const f = $('fl-lista').querySelector('input'); if (f) f.focus();
   });
