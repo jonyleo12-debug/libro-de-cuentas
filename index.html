@@ -911,6 +911,24 @@ body.invitado .ajustes-btn { display: none; }
 .prop-card.cerrada .pc-cara { opacity: .6; }
 .prop-card:not(.vuelta) .pc-dorso, .prop-card.vuelta .pc-cara { pointer-events: none; }
 .doblez.izq { right: auto; left: 0; border-radius: 0 0 0 16px; width: 26px; height: 26px; }
+.pcd-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; }
+.pcd-cab h4 { margin: 0 !important; }
+.pcd-cal { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; color: var(--muted); padding: 3px 6px; border-radius: 8px; cursor: pointer; font: 600 11px var(--font-body); box-shadow: none; }
+.pcd-cal svg { width: 19px; height: 19px; flex: none; }
+.pcd-cal:hover { background: var(--accent-soft); color: var(--accent); }
+.pcd-cal.tiene { color: var(--accent); }
+.pcd-cal.alerta { color: #d93a2f; }
+.pcd-corr { display: grid; gap: 6px; margin: 0 0 10px; padding: 8px 10px; border-radius: 12px; background: var(--accent-soft); }
+.pcd-corr-t { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pcd-corr-f { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr); gap: 6px; }
+.pcd-corr .pcd-l { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 10.5px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.pcd-corr .pcd-l > span { padding-left: 6px; }
+.pcd-corr input { min-width: 0; width: 100%; box-sizing: border-box; font: 13px var(--font-body); color: var(--fg); padding: 6px 8px; border-radius: 10px; margin: 0; }
+.pcd-corr-v { font-size: 12.5px; font-weight: 600; color: var(--fg); }
+.pcd-corr-v.alerta { color: #d93a2f; }
+@keyframes corrLatido { 0%, 100% { box-shadow: 0 0 0 2px #e5483b; } 50% { box-shadow: 0 0 0 2px #e5483b, 0 0 0 8px rgba(229, 72, 59, .28); } }
+.prop-card.corr-alerta .pc-cara, .prop-card.corr-alerta .pc-dorso { border-color: #e5483b; animation: corrLatido 1.3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .prop-card.corr-alerta .pc-cara, .prop-card.corr-alerta .pc-dorso { animation: none; box-shadow: 0 0 0 2px #e5483b; } }
 .pc-dorso h4 { margin: 0 0 6px; font: 600 12px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .pcd-grupo { display: grid; gap: 6px; margin-bottom: 10px; }
 .pcd-tit { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -2145,9 +2163,40 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   // Back of a card: owners and buyers, edited in place.
   const volteadas = new Set(), ppCard = {};
+  // Brokerage contract (contrato de corretaje): start date + months signed. A week before it ends the card's border turns red and pulses.
+  function venceCorretaje(x) {
+    const c = x.corretaje || {}; if (!/^\d{4}-\d{2}-\d{2}$/.test(c.fecha || '') || !(c.meses > 0)) return null;
+    const [a, m, d] = c.fecha.split('-').map(Number); const v = new Date(a, m - 1 + c.meses, d); if (v.getDate() !== d) v.setDate(0);
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0); return { fecha: v, dias: Math.round((v - hoy) / 864e5) };
+  }
+  const corrAlerta = (x) => { const v = venceCorretaje(x); return !!v && v.dias <= 7; };
+  const corrAbierto = new Set();
+  const ICO_CAL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15" r="1.6" fill="currentColor"/></svg>';
   function datosDorso(x) {
     const d = document.createElement('div');
-    const h = document.createElement('h4'); h.textContent = 'Datos del dueño'; d.appendChild(h);
+    const cab = document.createElement('div'); cab.className = 'pcd-cab';
+    const h = document.createElement('h4'); h.textContent = 'Datos del dueño'; cab.appendChild(h);
+    const v = venceCorretaje(x), fmt = (f) => f.toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' });
+    const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'pcd-cal' + (v ? (v.dias <= 7 ? ' alerta' : ' tiene') : '');
+    cb.title = 'Contrato de corretaje'; cb.setAttribute('aria-label', 'Contrato de corretaje'); cb.setAttribute('aria-expanded', String(corrAbierto.has(x.id)));
+    cb.innerHTML = ICO_CAL + (v ? `<span>${v.dias < 0 ? 'Vencido' : v.dias === 0 ? 'Vence hoy' : v.dias <= 7 ? `Vence en ${v.dias} día${v.dias === 1 ? '' : 's'}` : 'Vence ' + fmt(v.fecha)}</span>` : '');
+    cb.addEventListener('click', (e) => { e.stopPropagation(); if (corrAbierto.has(x.id)) corrAbierto.delete(x.id); else corrAbierto.add(x.id); pintarLista(); });
+    cab.appendChild(cb); d.appendChild(cab);
+    if (corrAbierto.has(x.id)) {
+      const pn = document.createElement('div'); pn.className = 'pcd-corr';
+      pn.appendChild(Object.assign(document.createElement('div'), { className: 'pcd-corr-t', textContent: 'Contrato de corretaje' }));
+      const fila = document.createElement('div'); fila.className = 'pcd-corr-f';
+      const cc = Object.assign({ fecha: '', meses: 0 }, x.corretaje);
+      const lab = (t, inp) => { const l = document.createElement('label'); l.className = 'pcd-l'; const sp = document.createElement('span'); sp.textContent = t; l.append(sp, inp); return l; };
+      const fi = document.createElement('input'); fi.type = 'date'; fi.value = cc.fecha; fi.setAttribute('aria-label', 'Fecha del contrato de corretaje');
+      const mi = document.createElement('input'); mi.type = 'number'; mi.min = '1'; mi.max = '120'; mi.step = '1'; mi.placeholder = 'Meses'; mi.value = cc.meses || ''; mi.setAttribute('aria-label', 'Meses del contrato');
+      [fi, mi].forEach((inp) => { inp.addEventListener('click', (e) => e.stopPropagation()); inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') inp.blur(); }); });
+      const save = () => { const n = { fecha: fi.value || '', meses: Math.max(0, Math.min(120, Math.round(Number(mi.value) || 0))) }; if (n.fecha === cc.fecha && n.meses === cc.meses) return; x.corretaje = n; guardarCampo(x, { corretaje: n }); pintarLista(); };
+      fi.addEventListener('change', save); mi.addEventListener('change', save);
+      fila.append(lab('Fecha del contrato', fi), lab('Meses', mi)); pn.appendChild(fila);
+      pn.appendChild(Object.assign(document.createElement('div'), { className: 'pcd-corr-v' + (v && v.dias <= 7 ? ' alerta' : ''), textContent: v ? `Vence el ${fmt(v.fecha)}${v.dias < 0 ? ' (ya venció)' : v.dias <= 7 ? ` · faltan ${v.dias} día${v.dias === 1 ? '' : 's'}` : ''}` : 'Pon la fecha y los meses para ver cuándo vence.' }));
+      d.appendChild(pn);
+    }
     const st = ppCard[x.id] = ppCard[x.id] || { duenos: personasDe(x.duenos, []) };
     const guardar = () => {
       const du = limpiaPer(st.duenos), d0 = du[0] || {};
@@ -2272,7 +2321,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const act = document.activeElement, kAct = act && act.closest && act.closest('#prop-lista') ? act.dataset.k : null, selAct = kAct && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
     requestAnimationFrame(() => { if (!kAct) return; const el = document.querySelector(`#prop-lista [data-k="${kAct}"]`); if (el && document.activeElement !== el) { el.focus({ preventScroll: true }); if (selAct) try { el.setSelectionRange(...selAct); } catch (e) {} } });
     $('prop-lista').replaceChildren(...vs.map((x) => {
-      const li = document.createElement('li'); li.className = 'prop-card' + (propSel === x.id ? ' sel' : '') + (cerrada(x) ? ' cerrada' : ''); li.dataset.id = x.id; li.tabIndex = 0;
+      const li = document.createElement('li'); li.className = 'prop-card' + (propSel === x.id ? ' sel' : '') + (cerrada(x) ? ' cerrada' : '') + (corrAlerta(x) && !cerrada(x) ? ' corr-alerta' : ''); li.dataset.id = x.id; li.tabIndex = 0;
       const pin = document.createElement('div'); pin.className = 'pc-in'; li.appendChild(pin);
       const cara = document.createElement('div'); cara.className = 'pc-cara'; pin.appendChild(cara);
       if (volteadas.has(x.id)) li.classList.add('vuelta');
@@ -2689,7 +2738,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       box.appendChild(g);
     });
   }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), corretaje: v.corretaje && typeof v.corretaje === 'object' ? { fecha: String(v.corretaje.fecha || ''), meses: Number(v.corretaje.meses) || 0 } : { fecha: '', meses: 0 }, creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
