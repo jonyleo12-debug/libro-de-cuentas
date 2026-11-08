@@ -899,6 +899,9 @@ body.invitado .ajustes-btn { display: none; }
 .prop-cuerpo .mapa-box { aspect-ratio: auto; height: clamp(448px, calc((100vh - 140px) * .8), 688px); position: sticky; top: 12px; }
 .prop-lista { list-style: none; margin: 0; padding: 2px 6px 2px 2px; overflow-x: hidden; display: grid; gap: 12px; max-height: clamp(448px, calc((100vh - 140px) * .8), 688px); overflow-y: auto; align-content: start; }
 .prop-card { position: relative; perspective: 1400px; cursor: pointer; outline: none; }
+.prop-lista.ordenando { user-select: none; -webkit-user-select: none; touch-action: none; }
+.prop-card.arrastrando { z-index: 5; cursor: grabbing; transform: scale(1.03); filter: drop-shadow(0 12px 22px rgba(0,0,0,.22)); transition: transform .12s; }
+.prop-lista.ordenando .prop-card:not(.arrastrando) { transition: none; }
 .pc-in { display: grid; transition: transform .6s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; }
 .prop-card.vuelta .pc-in { transform: rotateY(180deg); }
 .pc-cara, .pc-dorso { grid-area: 1 / 1; position: relative; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding: 10px 10px 18px; overflow: hidden; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; transition: border-color .15s, box-shadow .15s; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-width: 0; }
@@ -1964,6 +1967,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const borrables = new Map(); // item key -> how the Delete key removes it
   let selBorrar = null;
   let interesados = [], visitas = [], flModo = null, flProp = null;
+  let arrCard = null, listaPendiente = false, sinClickLista = 0;
   let lugares = [], marcando = false, lugaresUnsub = null, propSel = null, propHover = null;
   let filtro = { op: '', tipo: '', hab: 0, min: '', max: '', cerradas: true, q: '' };
   let gmapsKey = ''; try { gmapsKey = localStorage.getItem('libro-gmaps') || ''; } catch (e) {}
@@ -2210,7 +2214,49 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     acts.append(g, ed); c.appendChild(acts); d.appendChild(c);
     return d;
   }
+  // Order of the cards: the one Jonathan set by dragging (orden); cards never placed go first, newest first.
+  const ordenProps = (a, b) => (a.orden == null && b.orden == null ? b.creado.localeCompare(a.creado) : a.orden == null ? -1 : b.orden == null ? 1 : a.orden - b.orden || b.creado.localeCompare(a.creado));
+  // Press and hold a card, then drag it up or down to change its place in the list.
+  (function arrastrarTarjetas() {
+    const ul = $('prop-lista'); if (!ul) return;
+    let ini = null;
+    const cancelar = () => { if (ini) { clearTimeout(ini.t); ini = null; } };
+    ul.addEventListener('pointerdown', (e) => {
+      if (invitado || e.button !== 0 || arrCard) return;
+      const li = e.target.closest('.prop-card'); if (!li || e.target.closest('input, select, textarea, [contenteditable="true"], .pc-dorso')) return;
+      cancelar();
+      ini = { li, x: e.clientX, y: e.clientY, id: e.pointerId, t: setTimeout(() => {
+        if (!ini) return; const l = ini.li; ini = null;
+        arrCard = { li: l, id: e.pointerId, y: e.clientY }; l.classList.add('arrastrando'); ul.classList.add('ordenando');
+        try { navigator.vibrate && navigator.vibrate(15); } catch (er) {}
+      }, 380) };
+    });
+    document.addEventListener('pointermove', (e) => {
+      if (ini && Math.hypot(e.clientX - ini.x, e.clientY - ini.y) > 8) cancelar();
+      if (!arrCard || e.pointerId !== arrCard.id) return;
+      e.preventDefault(); arrCard.y = e.clientY;
+      const r = ul.getBoundingClientRect();
+      if (e.clientY < r.top + 40) ul.scrollTop -= 12; else if (e.clientY > r.bottom - 40) ul.scrollTop += 12;
+      const otros = [...ul.querySelectorAll('.prop-card:not(.arrastrando)')];
+      const antes = otros.find((o) => { const b = o.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
+      if (antes) { if (arrCard.li.nextElementSibling !== antes) ul.insertBefore(arrCard.li, antes); } else if (ul.lastElementChild !== arrCard.li) ul.appendChild(arrCard.li);
+    });
+    document.addEventListener('touchmove', (e) => { if (arrCard) e.preventDefault(); }, { passive: false });
+    ul.addEventListener('contextmenu', (e) => { if (arrCard || ini) e.preventDefault(); });
+    const soltar = () => {
+      cancelar(); if (!arrCard) return;
+      const { li } = arrCard; li.classList.remove('arrastrando'); ul.classList.remove('ordenando'); arrCard = null; sinClickLista = Date.now() + 400;
+      const vis = [...ul.querySelectorAll('.prop-card')].map((n) => n.dataset.id);
+      const todos = [...lugares].sort(ordenProps), setVis = new Set(vis); let k = 0;
+      const nuevo = todos.map((x) => (setVis.has(x.id) ? vis[k++] : x.id));
+      nuevo.forEach((id, i) => { const x = lugares.find((q) => q.id === id); if (x && x.orden !== i) { x.orden = i; col('lugares').doc(id).update({ orden: i }).catch(() => {}); } });
+      lugares.sort(ordenProps); pintarLista(); if (listaPendiente) { listaPendiente = false; pintarProps(); }
+    };
+    document.addEventListener('pointerup', soltar); document.addEventListener('pointercancel', soltar);
+    ul.addEventListener('click', (e) => { if (Date.now() < sinClickLista) { e.stopPropagation(); e.preventDefault(); } }, true);
+  })();
   function pintarLista() {
+    if (arrCard) { listaPendiente = true; return; }
     const vs = visibles();
     $('prop-n').textContent = lugares.length ? `${vs.length} de ${lugares.length} propiedad${lugares.length === 1 ? '' : 'es'} · Puyo, Pastaza` : 'Puyo · Pastaza';
     const tsel = $('prop-f-tipo'); const usados = [...new Set([...TIPOS_PROP, ...lugares.map((x) => x.tipo).filter(Boolean)])];
@@ -2640,14 +2686,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       box.appendChild(g);
     });
   }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
     try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
       try { raw['lugares'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
-      lugares = snap.docs.map(leerProp).sort((a, b) => b.creado.localeCompare(a.creado));
+      lugares = snap.docs.map(leerProp).sort(ordenProps);
       pintarProps(); flRefrescar();
     }, () => {}); } catch (e) {}
     try { col('zonas').onSnapshot((snap) => { try { raw['zonas'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
