@@ -981,12 +981,9 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-ed { position: absolute; top: 8px; right: 8px; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
 .prop-ed:hover { color: var(--accent); background: var(--accent-soft); }
 .prop-acc { position: absolute; top: 0; right: 0; bottom: 0; width: 40px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; box-sizing: border-box; z-index: 1;
-  border-radius: 0 15px 15px 0; /* liquid glass strip inside the card border (the border keeps its color) */
-  background: radial-gradient(120% 40% at 30% 0%, rgba(255,255,255,.95), transparent 70%), linear-gradient(170deg, rgba(232,238,250,.85), rgba(214,224,244,.55) 50%, rgba(236,241,252,.8));
-  -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
-  box-shadow: inset 1px 0 0 rgba(255,255,255,.95), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(255,255,255,.5), -1px 0 0 rgba(20,30,60,.07), -6px 0 14px -8px rgba(20,30,60,.18); }
-:root[data-theme="dark"] .prop-acc { background: linear-gradient(165deg, rgba(255,255,255,.12), rgba(255,255,255,.04) 45%, rgba(255,255,255,.08)); box-shadow: inset 1px 0 0 rgba(255,255,255,.14), -1px 0 0 rgba(0,0,0,.3); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .prop-acc { background: linear-gradient(165deg, rgba(255,255,255,.12), rgba(255,255,255,.04) 45%, rgba(255,255,255,.08)); box-shadow: inset 1px 0 0 rgba(255,255,255,.14), -1px 0 0 rgba(0,0,0,.3); } }
+  border-radius: 0 15px 15px 0; background: #e6e8eb; /* light gray strip inside the card border */ }
+:root[data-theme="dark"] .prop-acc { background: #2a302e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .prop-acc { background: #2a302e; } }
 .prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
 .prop-acc .prop-ed svg { width: 17px; height: 17px; }
 .prop-acc .prop-wa { color: #25a244; }
