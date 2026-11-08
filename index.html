@@ -2650,12 +2650,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       lugares = snap.docs.map(leerProp).sort((a, b) => b.creado.localeCompare(a.creado));
       pintarProps(); flRefrescar();
     }, () => {}); } catch (e) {}
-    try { col('zonas').onSnapshot((snap) => {
+    try { col('zonas').onSnapshot((snap) => { try { raw['zonas'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
       zonas = snap.docs.map((d) => zonaDe(d.id, d.data() || {})).filter((z) => z.poligono.length > 2);
       pintarPins(); flRefrescar();
     }, () => {}); } catch (e) {}
-    try { col('interesados').onSnapshot((snap) => { interesados = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })).sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || ''))); flRefrescar(); pintarLista(); }, () => {}); } catch (e) {}
-    try { col('visitas').onSnapshot((snap) => { visitas = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })); flRefrescar(); pintarLista(); }, () => {}); } catch (e) {}
+    try { col('interesados').onSnapshot((snap) => { try { raw['interesados'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {} interesados = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })).sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || ''))); flRefrescar(); pintarLista(); }, () => {}); } catch (e) {}
+    try { col('visitas').onSnapshot((snap) => { try { raw['visitas'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {} visitas = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })); flRefrescar(); pintarLista(); }, () => {}); } catch (e) {}
   }
 
   // Sale workflow after capture: buyers (Interesados), property visits (Visitas) and closing (Cierre: reservation, sale, paperwork, commission into the books).
@@ -3358,7 +3358,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const base = libroRef.collection('negocios').doc(n.id);
     const leer = (c) => new Promise((ok) => { let un = null, listo = false; un = c.onSnapshot((snap) => { if (listo) return; listo = true; ok(snap.docs.map((d) => { const x = d.data() || {}; if (x.ruta) { try { deleteObject(sRef(storage, String(x.ruta))).catch(() => {}); } catch (e) {} } return d.id; })); setTimeout(() => { try { un && un(); } catch (e) {} }, 0); }, () => { if (!listo) { listo = true; ok([]); } }); });
     negocios = negocios.filter((x) => x.id !== n.id); borrarNeg = null; guardarNegs();
-    for (const name of ['movimientos', 'fijos', 'inversiones', 'casos', 'audiencias', 'respaldos', 'biblioteca', 'lugares']) {
+    for (const name of ['movimientos', 'fijos', 'inversiones', 'casos', 'audiencias', 'respaldos', 'biblioteca', 'lugares', 'zonas', 'interesados', 'visitas']) {
       const c = base.collection(name); const ids = await leer(c);
       ids.forEach((id) => { try { c.doc(id).delete(); } catch (e) {} });
     }
@@ -4572,7 +4572,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     try { if (gcalToken && window.google) google.accounts.oauth2.revoke(gcalToken, () => {}); sessionStorage.removeItem('libro-gtoken'); } catch (e) {}
     gcalToken = null; setMsg('Google Calendar desconectado.'); render();
   }
-  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias', 'lugares'];
+  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias', 'lugares', 'zonas', 'interesados', 'visitas'];
   const raw = {};
   // Automatic daily copies, kept inside the account (last 30)
   let respaldos = [], ultimaDescarga = '', autoHecho = false;
@@ -4581,7 +4581,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function contar(data) { return COLS.reduce((n, c) => n + Object.keys(data[c] || {}).length, 0); }
   async function autoRespaldo() {
     if (autoHecho || !libroRef) return;
-    if (!COLS.every((c) => raw[c])) { setTimeout(autoRespaldo, 5000); return; }
+    if (!COLS.slice(0, 6).every((c) => raw[c])) { setTimeout(autoRespaldo, 5000); return; } // zonas/interesados/visitas are added when loaded
     autoHecho = true;
     const data = snapshotData(); const n = contar(data);
     if (!n) return;
