@@ -964,6 +964,43 @@ button.prop-op:hover { filter: brightness(1.08); }
 #mapa.dibujando .prop-pill, #mapa.marcando .prop-pill, #mapa.dibujando .leaflet-interactive:not(.dib-vert):not(.dib-mover):not(.dib-zona), #mapa.marcando .leaflet-interactive:not(.dib-vert):not(.dib-mover):not(.dib-zona) { pointer-events: none; }
 .mapa-dib input[type=text] { flex: 1 1 180px; min-width: 0; font: 13.5px var(--font-body); padding: 6px 12px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
 .zona-c { border-color: #b08a4e !important; }
+.flujo { display: inline-flex; align-items: center; gap: 4px; background: #e6e7ea; border-radius: 999px; padding: 3px; }
+.fl-op { padding: 7px 13px; }
+.fl-n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font: 600 11px/18px var(--font-body); text-align: center; }
+.fl-n:empty { display: none; }
+.dlg-flujo { width: min(760px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.fl-in { display: grid; gap: 12px; }
+.fl-acc { display: inline-flex; align-items: center; gap: 8px; }
+.fl-acc .btn { padding: 8px 16px; }
+.fl-acc select { width: auto; max-width: 240px; padding: 7px 10px; font-size: 13px; }
+.fl-lista { display: grid; gap: 10px; }
+.fl-vacio { color: var(--muted); font-size: 14px; padding: 18px 4px; text-align: center; }
+.fl-card { display: grid; gap: 8px; padding: 12px 14px; border-radius: 16px; background: color-mix(in srgb, var(--accent) 5%, var(--panel)); border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); }
+.fl-card.hecha { opacity: .6; }
+.fl-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fl-fila > label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.fl-card input, .fl-card select { font: 13.5px var(--font-body); padding: 6px 10px; border-radius: 10px; width: auto; min-width: 0; text-transform: none; letter-spacing: 0; }
+.fl-card .fl-nom { flex: 1 1 200px; font-weight: 600; font-size: 15px; }
+.fl-card .fl-txt { flex: 1 1 160px; }
+.fl-card .fl-num { width: 110px; }
+.fl-card .fl-pct { width: 70px; }
+.fl-card .fl-sel { max-width: 220px; }
+.fl-tit { flex: 1 1 200px; font-weight: 600; font-size: 15px; color: var(--ink); text-align: left; background: none; box-shadow: none !important; padding: 2px 0; }
+.fl-tit:hover { color: var(--accent); }
+.fl-card .btn { padding: 8px 16px; font-size: 13.5px; }
+.fl-chip { border: 0; background: var(--panel); color: var(--ink); font: 500 12.5px var(--font-body); padding: 4px 10px; border-radius: 999px; cursor: pointer; box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent); }
+.fl-chip:hover { box-shadow: 0 0 0 1.5px var(--accent); }
+.fl-tag { font-size: 12.5px; color: var(--muted); }
+.fl-del { margin-left: auto; width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; box-shadow: none; padding: 0; }
+.fl-del svg { width: 17px; height: 17px; }
+.fl-del:hover, .fl-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
+.fl-est { border: 0; border-radius: 999px; padding: 5px 12px; font: 600 12.5px var(--font-body); cursor: pointer; box-shadow: none; background: #f3e7b8; color: #6b5310; }
+.fl-est.si { background: #d5ecd9; color: #1d6b34; }
+.fl-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px !important; color: var(--ink) !important; cursor: pointer; }
+.fl-check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.fl-com { font-weight: 600; color: var(--ink); font-size: 13.5px; }
+.fl-ok { color: #1d6b34; font-weight: 600; font-size: 13px; }
+@media (max-width: 700px) { .flujo { flex-wrap: wrap; border-radius: 18px; } }
 .capt-box { display: inline-flex; align-items: center; gap: 4px; background: #e6e7ea; border-radius: 999px; padding: 3px; color: #4a4d53; }
 .capt-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: #8b8f97; color: #fff; font: 600 14.5px var(--font-body); padding: 7px 14px; border-radius: 999px; cursor: pointer; box-shadow: none; }
 .capt-btn:hover { background: #767a82; }
@@ -1342,7 +1379,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     </form>
     <div class="prop-filtros" id="prop-filtros">
       <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
-      <div class="capt-box" id="capt-box"><button type="button" class="capt-btn" id="capt-btn" aria-expanded="false" aria-controls="capt-ops">Captación<svg class="capt-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="capt-ops" id="capt-ops"><button type="button" class="capt-op" id="capt-radio" title="Dibujar en el mapa la zona donde vas a captar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.4"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><path d="M12 12h8.5" stroke="currentColor" stroke-width="1.8"/></svg><span>Zona</span></button><button type="button" class="capt-op capt-ver" id="capt-ver" aria-pressed="false" title="Marcar en el mapa el lugar exacto de una propiedad en captación"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8 2h10a1.5 1.5 0 0 1 1.5 1.5v14A1.5 1.5 0 0 1 18 19h-5.3a5.6 5.6 0 0 0-6.2-7.6V3.5A1.5 1.5 0 0 1 8 2zm5 2.6-4.2 3.6.7.8.8-.7v3.5h1.9V9.7h1.6v2.1h1.9V8.3l.8.7.7-.8zM13.6 13.3h3.6v1.1h-3.6zm0 2.2h3.6v1.1h-3.6z"/><circle cx="8.6" cy="16.3" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M6.2 18.7 3.2 21.7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg><span>Marcar propiedad</span></button></span></div>
+      <div class="capt-box" id="capt-box"><button type="button" class="capt-btn" id="capt-btn" aria-expanded="false" aria-controls="capt-ops">Captación<svg class="capt-car" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="capt-ops" id="capt-ops"><button type="button" class="capt-op" id="capt-radio" title="Dibujar en el mapa la zona donde vas a captar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.4"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><path d="M12 12h8.5" stroke="currentColor" stroke-width="1.8"/></svg><span>Zona</span></button><button type="button" class="capt-op capt-ver" id="capt-ver" aria-pressed="false" title="Marcar en el mapa el lugar exacto de una propiedad en captación"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8 2h10a1.5 1.5 0 0 1 1.5 1.5v14A1.5 1.5 0 0 1 18 19h-5.3a5.6 5.6 0 0 0-6.2-7.6V3.5A1.5 1.5 0 0 1 8 2zm5 2.6-4.2 3.6.7.8.8-.7v3.5h1.9V9.7h1.6v2.1h1.9V8.3l.8.7.7-.8zM13.6 13.3h3.6v1.1h-3.6zm0 2.2h3.6v1.1h-3.6z"/><circle cx="8.6" cy="16.3" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M6.2 18.7 3.2 21.7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg><span>Marcar propiedad</span></button></span></div><div class="flujo" id="flujo" role="group" aria-label="Pasos de la venta"><button type="button" class="capt-op fl-op" id="fl-int" title="Compradores y lo que buscan"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 14.2c2.6-.3 4.5 1.3 5 4.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Interesados<span class="fl-n" id="fl-int-n"></span></button><button type="button" class="capt-op fl-op" id="fl-vis" title="Visitas a las propiedades"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 14.5l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Visitas<span class="fl-n" id="fl-vis-n"></span></button><button type="button" class="capt-op fl-op" id="fl-cie" title="Reservas, ventas y comisiones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h9l5 5v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 4.5v5h5M8 17c1.2-1.6 2-2.4 2.6-1.4.5.9 1.1.9 2-.2.8-.9 1.4-.6 2.4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Cierre<span class="fl-n" id="fl-cie-n"></span></button></div>
     </div>
     <form class="mapa-gkey" id="mapa-gkey-form" hidden>
       <span>Para ver <b>Google Maps</b>, pega aquí tu clave de Google Maps:</span>
@@ -2542,19 +2579,166 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
-    dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
+    dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
     try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
       try { raw['lugares'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
       lugares = snap.docs.map(leerProp).sort((a, b) => b.creado.localeCompare(a.creado));
-      pintarProps();
+      pintarProps(); flRefrescar();
     }, () => {}); } catch (e) {}
     try { col('zonas').onSnapshot((snap) => {
       zonas = snap.docs.map((d) => zonaDe(d.id, d.data() || {})).filter((z) => z.poligono.length > 2);
-      pintarPins();
+      pintarPins(); flRefrescar();
     }, () => {}); } catch (e) {}
+    try { col('interesados').onSnapshot((snap) => { interesados = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })).sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || ''))); flRefrescar(); }, () => {}); } catch (e) {}
+    try { col('visitas').onSnapshot((snap) => { visitas = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })); flRefrescar(); }, () => {}); } catch (e) {}
   }
+
+  // Sale workflow after capture: buyers (Interesados), property visits (Visitas) and closing (Cierre: reservation, sale, paperwork, commission into the books).
+  let interesados = [], visitas = [], flModo = null;
+  const ICO_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 7h15M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/></svg>';
+  const dlgF = $('dlg-flujo');
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const opciones = (sel, ops, v) => { sel.replaceChildren(...ops.map(([k, t]) => new Option(t, k))); sel.value = v == null ? '' : String(v); if (sel.value !== String(v == null ? '' : v) && v) { sel.appendChild(new Option('(ya no existe)', v)); sel.value = v; } return sel; };
+  const nomProp = (x) => x ? (x.nombre || 'Sin título') + (x.dir ? ' · ' + x.dir : '') : '';
+  const nomInt = (id) => { const i = interesados.find((q) => q.id === id); return i ? (i.nombre || 'Sin nombre') : ''; };
+  function enPoli(lat, lng, pts) { let d = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [yi, xi] = pts[i], [yj, xj] = pts[j]; if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi) d = !d; } return d; }
+  const vendible = (x) => x.estado !== 'Vendida';
+  function coincidencias(q) {
+    const z = q.zona ? zonas.find((zz) => zz.id === q.zona) : null, max = Number(q.presupuesto) || 0;
+    return lugares.filter((x) => vendible(x) && (!q.tipo || x.tipo === q.tipo) && (!max || !x.precio || x.precio <= max) && (!z || (tieneUbic(x) && enPoli(x.lat, x.lng, z.poligono))));
+  }
+  function botonBorrar(fn, que) {
+    const b = el('button', 'fl-del'); b.type = 'button'; b.innerHTML = ICO_TRASH; b.title = 'Eliminar ' + que; b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', () => { if (!b.classList.contains('armado')) { b.classList.add('armado'); b.title = 'Toca otra vez para eliminar'; setTimeout(() => { b.classList.remove('armado'); b.title = 'Eliminar ' + que; }, 3500); return; } fn(); });
+    return b;
+  }
+  const campo = (tag, cls, attrs, v, guardar) => {
+    const e = el(tag, cls); Object.assign(e, attrs || {}); if (tag !== 'select') e.value = v == null ? '' : v;
+    e.addEventListener('change', () => guardar(e.type === 'number' ? (e.value === '' ? 0 : Number(e.value)) : e.value));
+    return e;
+  };
+  const etiqueta = (txt, ...hijos) => { const l = el('label'); l.append(txt, ...hijos); return l; };
+  function flContar() {
+    const hoy = hoyYmd();
+    $('fl-int-n').textContent = interesados.length ? String(interesados.length) : '';
+    const pend = visitas.filter((v) => !v.hecha && String(v.fecha || '') >= hoy).length; $('fl-vis-n').textContent = pend ? String(pend) : '';
+    const res = lugares.filter((x) => x.estado === 'Reservada').length; $('fl-cie-n').textContent = res ? String(res) : '';
+  }
+  function flRefrescar() {
+    try { flContar(); } catch (e) {}
+    if (!dlgF.open) return;
+    const a = document.activeElement; if (a && dlgF.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return; // don't repaint under the cursor
+    flPintar();
+  }
+  // Interesados
+  function cardInteresado(q) {
+    const ref = col('interesados').doc(q.id), g = (k) => (v) => { q[k] = v; ref.update({ [k]: v }); if (k === 'tipo' || k === 'presupuesto' || k === 'zona') flPintar(); };
+    const c = el('div', 'fl-card');
+    const f1 = el('div', 'fl-fila');
+    f1.append(campo('input', 'fl-nom', { type: 'text', maxLength: 80, placeholder: 'Nombre del interesado', ariaLabel: 'Nombre' }, q.nombre, g('nombre')),
+      campo('input', 'fl-txt', { type: 'tel', maxLength: 40, placeholder: 'Teléfono o correo', ariaLabel: 'Contacto' }, q.contacto, g('contacto')),
+      botonBorrar(() => ref.delete(), 'interesado'));
+    const f2 = el('div', 'fl-fila');
+    const tipo = opciones(campo('select', 'fl-sel', { ariaLabel: 'Tipo que busca' }, null, g('tipo')), [['', 'Cualquier tipo'], ...TIPOS_PROP.map((t) => [t, t])], q.tipo || '');
+    const zona = opciones(campo('select', 'fl-sel', { ariaLabel: 'Zona' }, null, g('zona')), [['', 'Cualquier zona'], ...zonas.map((z, i) => [z.id, z.nombre || 'Zona ' + (i + 1)])], q.zona || '');
+    f2.append(etiqueta('Busca', tipo), etiqueta('Hasta $', campo('input', 'fl-num', { type: 'number', min: 0, step: 1000, placeholder: 'Presupuesto', ariaLabel: 'Presupuesto máximo' }, q.presupuesto || '', g('presupuesto'))), etiqueta('En', zona));
+    const f3 = el('div', 'fl-fila');
+    f3.append(campo('input', 'fl-txt', { type: 'text', maxLength: 200, placeholder: 'Nota (ej.: necesita 3 habitaciones, paga con crédito)', ariaLabel: 'Nota' }, q.nota, g('nota')));
+    const f4 = el('div', 'fl-fila'), cs = coincidencias(q);
+    f4.append(el('span', 'fl-tag', cs.length ? `Le pueden servir (${cs.length}):` : 'Todavía no hay propiedades que le sirvan.'));
+    cs.slice(0, 8).forEach((x) => { const b = el('button', 'fl-chip', (x.nombre || 'Sin título') + (x.precio ? ' · ' + precioTxt(x, true) : '')); b.type = 'button'; b.title = 'Ver en el mapa'; b.addEventListener('click', () => { dlgF.close(); seleccionar(x.id, false); }); f4.append(b); });
+    c.append(f1, f2, f3, f4); return c;
+  }
+  // Visitas
+  function cardVisita(v) {
+    const ref = col('visitas').doc(v.id), g = (k) => (val) => { v[k] = val; ref.update({ [k]: val }); };
+    const c = el('div', 'fl-card' + (v.hecha ? ' hecha' : ''));
+    const f1 = el('div', 'fl-fila');
+    const est = el('button', 'fl-est' + (v.hecha ? ' si' : ''), v.hecha ? 'Hecha ✓' : 'Pendiente'); est.type = 'button'; est.title = 'Cambiar estado';
+    est.addEventListener('click', () => { v.hecha = !v.hecha; ref.update({ hecha: v.hecha }); flPintar(); });
+    f1.append(campo('input', '', { type: 'date', ariaLabel: 'Fecha' }, v.fecha, (x) => { g('fecha')(x); flPintar(); }), campo('input', '', { type: 'time', ariaLabel: 'Hora' }, v.hora, g('hora')), est, botonBorrar(() => ref.delete(), 'visita'));
+    const f2 = el('div', 'fl-fila');
+    f2.append(etiqueta('Propiedad', opciones(campo('select', 'fl-sel', { ariaLabel: 'Propiedad' }, null, g('prop')), [['', 'Elige…'], ...lugares.filter((x) => vendible(x) || x.id === v.prop).map((x) => [x.id, nomProp(x)])], v.prop || '')),
+      etiqueta('Con', opciones(campo('select', 'fl-sel', { ariaLabel: 'Interesado' }, null, g('interesado')), [['', 'Elige…'], ...interesados.map((q) => [q.id, q.nombre || 'Sin nombre'])], v.interesado || '')));
+    const f3 = el('div', 'fl-fila');
+    f3.append(campo('input', 'fl-txt', { type: 'text', maxLength: 200, placeholder: 'Qué le pareció (ej.: le gustó, pide rebaja)', ariaLabel: 'Comentario' }, v.nota, g('nota')));
+    c.append(f1, f2, f3); return c;
+  }
+  // Cierre
+  function catComision() { const l = CATS['Ingreso'] || []; return l.find((c) => /comisi/i.test(c)) || l.find((c) => /otro ingreso/i.test(c)) || l[0] || 'Otro ingreso'; }
+  function cardCierre(x) {
+    const vt = Object.assign({}, x.venta || {}), ref = col('lugares').doc(x.id);
+    const gv = (k, pinta) => (val) => { vt[k] = val; x.venta = vt; ref.update({ ['venta.' + k]: val }); if (pinta) flPintar(); };
+    const c = el('div', 'fl-card');
+    const f1 = el('div', 'fl-fila');
+    const est = opciones(campo('select', 'fl-sel', { ariaLabel: 'Estado' }, null, (val) => { x.estado = val; ref.update({ estado: val }); flPintar(); }), [['Reservada', 'Reservado'], ['Vendida', 'Vendido'], ['Disponible', 'Volver a disponible']], x.estado);
+    const tit = el('button', 'fl-chip fl-tit', nomProp(x)); tit.type = 'button'; tit.title = 'Ver en el mapa'; tit.addEventListener('click', () => { dlgF.close(); seleccionar(x.id, false); });
+    f1.append(tit, est);
+    const f2 = el('div', 'fl-fila');
+    const precio = Number(vt.precio) || x.precio || 0, pct = vt.comPct == null ? 3 : Number(vt.comPct) || 0, com = Math.round(precio * pct) / 100;
+    f2.append(etiqueta('Comprador', opciones(campo('select', 'fl-sel', { ariaLabel: 'Comprador' }, null, gv('comprador')), [['', 'Elige…'], ...interesados.map((q) => [q.id, q.nombre || 'Sin nombre'])], vt.comprador || '')),
+      etiqueta('Precio final $', campo('input', 'fl-num', { type: 'number', min: 0, step: 500, ariaLabel: 'Precio final' }, precio || '', gv('precio', true))),
+      etiqueta('Comisión %', campo('input', 'fl-pct', { type: 'number', min: 0, max: 100, step: 0.5, ariaLabel: 'Comisión en porcentaje' }, pct, gv('comPct', true))),
+      el('span', 'fl-com', '= ' + usd.format(com)));
+    const f3 = el('div', 'fl-fila');
+    [['autorizacion', 'Autorización de venta'], ['promesa', 'Promesa de compraventa'], ['notaria', 'Escritura en notaría'], ['registro', 'Inscrita en el Registro']].forEach(([k, t]) => {
+      const l = el('label', 'fl-check'); const i = el('input'); i.type = 'checkbox'; i.checked = !!vt[k]; i.addEventListener('change', () => gv(k)(i.checked)); l.append(i, t); f3.append(l);
+    });
+    const f4 = el('div', 'fl-fila');
+    f4.append(etiqueta('Fecha', campo('input', '', { type: 'date', ariaLabel: 'Fecha de la venta' }, vt.fecha || '', gv('fecha'))));
+    if (vt.movId) f4.append(el('span', 'fl-ok', `Comisión de ${usd.format(Number(vt.comCobrada) || com)} registrada en tus ingresos ✓`));
+    else {
+      const b = el('button', 'btn', 'Registrar comisión en ingresos'); b.type = 'button'; b.disabled = !(com > 0);
+      b.title = 'Crea un ingreso con la comisión en tu libro de cuentas';
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        const ref2 = await col('movimientos').add({ fecha: vt.fecha || hoyYmd(), tipo: 'Ingreso', categoria: catComision(), descripcion: 'Comisión venta: ' + (x.nombre || 'propiedad'), monto: com, creado: new Date().toISOString() });
+        vt.movId = ref2.id; vt.comCobrada = com; x.venta = vt; ref.update({ 'venta.movId': ref2.id, 'venta.comCobrada': com, ...(x.estado !== 'Vendida' ? { estado: 'Vendida' } : {}) });
+        if (x.estado !== 'Vendida') x.estado = 'Vendida';
+        avisoDeshacer('Comisión registrada en ingresos'); flPintar();
+      });
+      f4.append(b);
+    }
+    c.append(f1, f2, f3, f4); return c;
+  }
+  const FL = {
+    int: { tit: 'Interesados', sub: 'Personas que buscan comprar. La app te muestra qué propiedades les pueden servir.' },
+    vis: { tit: 'Visitas', sub: 'Visitas agendadas a tus propiedades, de la más próxima a la más lejana.' },
+    cie: { tit: 'Cierre', sub: 'Propiedades reservadas o vendidas: comprador, precio, trámites y comisión.' },
+  };
+  function flPintar() {
+    const m = flModo, lista = $('fl-lista'); if (!m) return;
+    $('fl-tit').textContent = FL[m].tit; $('fl-sub').textContent = FL[m].sub;
+    const extra = $('fl-extra'); extra.replaceChildren(); $('fl-nuevo').hidden = m === 'cie';
+    let cards = [];
+    if (m === 'int') cards = interesados.map(cardInteresado);
+    else if (m === 'vis') {
+      const hoy = hoyYmd(), clave = (v) => (v.hecha || String(v.fecha || '') < hoy ? '1' : '0') + (v.hecha || String(v.fecha || '') < hoy ? String(9e15 - Date.parse((v.fecha || '1970-01-01') + 'T' + (v.hora || '00:00'))) : (v.fecha || '') + (v.hora || ''));
+      cards = visitas.slice().sort((a, b) => clave(a).localeCompare(clave(b))).map(cardVisita);
+    } else {
+      const sel = el('select'); sel.setAttribute('aria-label', 'Reservar una propiedad');
+      opciones(sel, [['', '+ Reservar una propiedad…'], ...lugares.filter((x) => x.estado !== 'Reservada' && x.estado !== 'Vendida').map((x) => [x.id, nomProp(x)])], '');
+      sel.addEventListener('change', () => { const x = lugares.find((p) => p.id === sel.value); if (!x) return; x.estado = 'Reservada'; col('lugares').doc(x.id).update({ estado: 'Reservada', 'venta.fecha': (x.venta && x.venta.fecha) || hoyYmd() }); flPintar(); });
+      extra.append(sel);
+      cards = lugares.filter((x) => x.estado === 'Reservada' || x.estado === 'Vendida').sort((a, b) => (a.estado === 'Reservada' ? 0 : 1) - (b.estado === 'Reservada' ? 0 : 1)).map(cardCierre);
+    }
+    lista.replaceChildren(...(cards.length ? cards : [el('p', 'fl-vacio', m === 'int' ? 'Aún no tienes interesados. Toca “+ Nuevo” para añadir el primero.' : m === 'vis' ? 'No hay visitas. Toca “+ Nuevo” para agendar una.' : 'Ninguna propiedad está reservada o vendida todavía.')]));
+    flContar();
+  }
+  function flAbrir(m) { flModo = m; flPintar(); if (!dlgF.open) dlgF.showModal(); }
+  $('fl-int').addEventListener('click', () => flAbrir('int'));
+  $('fl-vis').addEventListener('click', () => flAbrir('vis'));
+  $('fl-cie').addEventListener('click', () => flAbrir('cie'));
+  $('fl-cerrar').addEventListener('click', () => dlgF.close());
+  dlgF.addEventListener('focusout', () => setTimeout(() => { if (dlgF.open && !(document.activeElement && dlgF.contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName))) flPintar(); }, 0));
+  $('fl-nuevo').addEventListener('click', () => {
+    const creado = new Date().toISOString();
+    if (flModo === 'int') { const r = col('interesados').doc(); const q = { nombre: '', contacto: '', tipo: '', presupuesto: 0, zona: '', nota: '', creado }; r.set(q); interesados.unshift({ id: r.id, ...q }); }
+    else if (flModo === 'vis') { const r = col('visitas').doc(); const v = { fecha: hoyYmd(), hora: '10:00', prop: '', interesado: '', nota: '', hecha: false, creado }; r.set(v); visitas.push({ id: r.id, ...v }); }
+    flPintar(); const f = $('fl-lista').querySelector('input'); if (f) f.focus();
+  });
   // Filters
   document.querySelectorAll('.prop-seg button').forEach((b) => b.addEventListener('click', () => { filtro.op = b.dataset.op; document.querySelectorAll('.prop-seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pintarProps(); }));
   $('prop-f-tipo').addEventListener('change', (e) => { filtro.tipo = e.target.value; pintarProps(); });
@@ -5375,6 +5559,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
 })();
 </script>
+<dialog class="dlg-usr dlg-flujo" id="dlg-flujo" aria-labelledby="fl-tit">
+  <div class="fl-in">
+    <div class="cats-cab"><h3 id="fl-tit">Interesados</h3><span class="fl-acc"><span id="fl-extra"></span><button type="button" class="btn" id="fl-nuevo">+ Nuevo</button><button type="button" class="ghost" id="fl-cerrar">Listo</button></span></div>
+    <p class="sub" id="fl-sub" style="margin:0"></p>
+    <div class="fl-lista" id="fl-lista"></div>
+  </div>
+</dialog>
 <dialog class="dlg-usr dlg-cats" id="dlg-cats" aria-labelledby="cats-tit">
   <div class="cats-in">
     <div class="cats-cab"><h3 id="cats-tit">Opciones</h3><button type="button" class="ghost" id="cats-cerrar">Listo</button></div>
