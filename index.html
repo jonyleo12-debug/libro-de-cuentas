@@ -2223,13 +2223,6 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (volteadas.has(x.id)) li.classList.add('vuelta');
       const fe = fotoEl(x, 'prop-foto'); const izq = document.createElement('div'); izq.className = 'prop-izq'; izq.appendChild(fe); cara.appendChild(izq);
       if (!invitado) try { izq.appendChild(pasosCard(x)); } catch (e) {}
-      if (!invitado) { // upload photos straight from the card
-        const up = document.createElement('label'); up.className = 'prop-foto-up' + (fotosSubiendo[x.id] ? ' cargando' : ''); up.title = 'Subir fotos';
-        up.innerHTML = fotosSubiendo[x.id] ? '<span class="pfu-spin" aria-hidden="true"></span>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.5-2h5.6l1.5 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.3" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>';
-        const fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/*'; fi.multiple = true; fi.setAttribute('aria-label', 'Subir fotos de ' + (x.nombre || 'la propiedad'));
-        fi.addEventListener('change', () => { const fl = [...fi.files]; fi.value = ''; subirFotosCard(x, fl); });
-        up.addEventListener('click', (e) => e.stopPropagation()); up.appendChild(fi); fe.appendChild(up);
-      }
       const info = document.createElement('div'); info.className = 'prop-info';
       const h = document.createElement('b'); h.textContent = x.nombre || 'Sin título'; if (!x.nombre) h.classList.add('sin-tit'); info.appendChild(h);
       if (!invitado) {
