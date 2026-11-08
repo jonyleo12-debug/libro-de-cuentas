@@ -827,6 +827,39 @@ body.invitado .neg-mas { display: none; }
 .neg-pop button[aria-checked="true"] { font-weight: 600; color: var(--accent); }
 body.invitado .hero-neg-btn { pointer-events: none; } body.invitado .hero-neg-btn .hero-caret { display: none; }
 body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[aria-labelledby="h-mov"], body.sin-t-inv #sec-inv, body.sin-t-fijos #sec-fijos, body.sin-t-mapa #sec-mapa, body.sin-t-mkt #sec-mkt, body.invitado #sec-mkt { display: none !important; }
+.mk-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--accent-soft); justify-self: start; flex-wrap: wrap; }
+.mk-tabs button { border: 0; background: none; box-shadow: none; padding: 7px 14px; border-radius: 999px; font: 600 13px var(--font-body); color: var(--muted); cursor: pointer; }
+.mk-tabs button[aria-selected="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.mk-cuerpo { display: grid; gap: 12px; }
+.mk-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.mk-dato { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); }
+.mk-dato span { font-size: 12px; color: var(--muted); }
+.mk-dato b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.mk-dato small { font-size: 11.5px; color: var(--muted); }
+.mk-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mk-cab h3, .mk-sub { margin: 0; font-size: 15px; }
+.mk-nota { margin: 0; font-size: 12.5px; color: var(--muted); }
+.mk-vacio { margin: 0; padding: 18px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 14px; }
+.mk-lista { display: grid; gap: 10px; }
+.mk-card { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); }
+.mk-card.fin { opacity: .72; }
+.mk-card .fl-fila, .mk-pub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mk-card .fl-nom { flex: 1 1 260px; font-weight: 600; }
+.mk-card .fl-txt, .mk-pub .fl-txt { flex: 1 1 240px; }
+.mk-card label { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); text-transform: none; letter-spacing: 0; margin: 0; }
+.mk-card .fl-num { width: 110px; }
+.mk-res { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mk-chip { display: inline-grid; gap: 1px; padding: 6px 10px; border-radius: 10px; background: var(--accent-soft); }
+.mk-chip small { font-size: 11px; color: var(--muted); }
+.mk-chip b { font-size: 14px; font-variant-numeric: tabular-nums; }
+.mk-chip.bien b { color: #1f8a4c; }
+.mk-chip.mal b { color: #c0392b; }
+.mk-pub { padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+.mk-pub.hecha { opacity: .65; }
+.mk-pub.atrasada { border-color: #e5a29a; background: #fdf1ef; }
+.mk-origen { max-width: 220px; }
+.mk-pub .fl-sel { max-width: 170px; }
+#sec-mkt { display: grid; gap: 12px; }
 /* Marketing board (pizarra) */
 .pz-caja { display: grid; gap: 8px; }
 .pz-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -1519,8 +1552,10 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
   <section class="panel tone" id="sec-mkt" aria-labelledby="h-mkt">
     <div class="budget-row">
       <h2 id="h-mkt">Marketing</h2>
-      <span class="sub" style="display:inline">Pizarra creativa: ideas, guiones, diálogos y tomas</span>
+      <span class="sub" style="display:inline">Campañas, publicaciones e ideas creativas</span>
     </div>
+    <div class="mk-tabs" id="mk-tabs" role="tablist"><button type="button" role="tab" data-t="camp">Campañas y resultados</button><button type="button" role="tab" data-t="cal">Calendario</button><button type="button" role="tab" data-t="pizarra">Pizarra creativa</button></div>
+    <div class="mk-cuerpo" id="mk-cuerpo" hidden></div>
     <div class="pz-caja" id="pz-caja">
       <div class="pz-bar" id="pz-bar">
         <select id="pz-sel" aria-label="Pizarra"></select>
@@ -3141,7 +3176,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       botonBorrar(() => ref.delete(), 'interesado'));
     const f2 = el('div', 'fl-fila');
     const zona = opciones(campo('select', 'fl-sel', { ariaLabel: 'Zona' }, null, g('zona')), [['', 'Cualquier zona'], ...zonas.map((z, i) => [z.id, z.nombre || 'Zona ' + (i + 1)])], q.zona || '');
-    f2.append(etiqueta('Presupuesto $', campo('input', 'fl-num', { type: 'number', min: 0, step: 1000, placeholder: '0', ariaLabel: 'Presupuesto' }, q.presupuesto || '', g('presupuesto'))), etiqueta('En', zona));
+    f2.append(etiqueta('Presupuesto $', campo('input', 'fl-num', { type: 'number', min: 0, step: 1000, placeholder: '0', ariaLabel: 'Presupuesto' }, q.presupuesto || '', g('presupuesto'))), etiqueta('En', zona), selectOrigen(q.origen || '', (v) => { q.origen = v; ref.update({ origen: v }); mkPintar(); }));
     const f3 = el('div', 'fl-fila');
     f3.append(campo('input', 'fl-txt', { type: 'text', maxLength: 200, placeholder: 'Nota (ej.: necesita 3 habitaciones, paga con crédito)', ariaLabel: 'Nota' }, q.nota, g('nota')));
     const f4 = el('div', 'fl-fila'), cs = coincidencias(q);
@@ -3261,6 +3296,127 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     pintarTot(); c.append(tot);
     return c;
   }
+  // ── Marketing: campaigns, where clients come from, monthly summary and a posting calendar ──
+  const CANALES = ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Google', 'YouTube', 'Volantes', 'Radio o TV', 'Letrero', 'Referidos', 'Otro'];
+  let campanas = [], publicaciones = [], mkTab = 'pizarra', mkPendiente = false;
+  try { mkTab = localStorage.getItem('libro-mk-tab') || 'pizarra'; } catch (e) {}
+  const nomCampana = (id) => { const c = campanas.find((x) => x.id === id); return c ? c.nombre || 'Campaña sin nombre' : ''; };
+  const canalDe = (o) => { o = String(o || ''); if (o.startsWith('c:')) { const c = campanas.find((x) => x.id === o.slice(2)); return c ? c.canal || 'Otro' : ''; } return o; };
+  // "¿Cómo nos conoció?" select: campaigns first, then plain channels.
+  function selectOrigen(v, onCambio, aria) {
+    const s = document.createElement('select'); s.className = 'fl-sel mk-origen'; s.setAttribute('aria-label', aria || '¿Cómo nos conoció?');
+    s.appendChild(new Option('¿Cómo nos conoció?', ''));
+    const vivas = campanas.filter((c) => c.estado !== 'Terminada' || 'c:' + c.id === v);
+    if (vivas.length) { const g = document.createElement('optgroup'); g.label = 'Campañas'; vivas.forEach((c) => g.appendChild(new Option((c.nombre || 'Campaña') + (c.canal ? ' · ' + c.canal : ''), 'c:' + c.id))); s.appendChild(g); }
+    const g2 = document.createElement('optgroup'); g2.label = 'Canal'; CANALES.forEach((c) => g2.appendChild(new Option(c, c))); s.appendChild(g2);
+    s.value = v || ''; if (s.value !== (v || '')) s.value = '';
+    s.addEventListener('change', () => onCambio(s.value)); s.addEventListener('click', (e) => e.stopPropagation());
+    return s;
+  }
+  function suscribirMkt2() {
+    if (invitado) return;
+    try { col('campanas').onSnapshot((snap) => { campanas = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })).sort((a, b) => String(b.inicio || b.creado || '').localeCompare(String(a.inicio || a.creado || ''))); mkPintar(); }, () => {}); } catch (e) {}
+    try { col('publicaciones').onSnapshot((snap) => { publicaciones = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })); mkPintar(); }, () => {}); } catch (e) {}
+  }
+  const catPublicidad = () => { const l = CATS['Gasto'] || []; return l.find((c) => /publici|marketing/i.test(c)) || 'Publicidad'; };
+  // Who came from each campaign: interesados (real estate) and cases (law firm) that carry its origin.
+  function resultadoCampana(c) {
+    const o = 'c:' + c.id, ints = interesados.filter((q) => q.origen === o), cs = (typeof casos !== 'undefined' ? casos : []).filter((k) => k.origen === o);
+    const compradores = ints.filter((q) => lugares.some((x) => x.venta && x.venta.comprador === q.id && x.estado === 'Vendida'));
+    const clientes = cs.length + compradores.length, gastado = Number(c.gastado) || 0, ingresos = Number(c.ingresos) || 0;
+    return { contactos: ints.length + cs.length, clientes, gastado, ingresos, costo: clientes ? gastado / clientes : 0, retorno: ingresos - gastado };
+  }
+  function mkResumen() {
+    const mes = hoyYmd().slice(0, 7), enMes = (f) => String(f || '').slice(0, 7) === mes;
+    const gasto = Object.values(raw['movimientos'] || {}).filter((m) => m && m.tipo === 'Gasto' && enMes(m.fecha) && /publici|marketing/i.test(m.categoria || '')).reduce((a, m) => a + (Number(m.monto) || 0), 0);
+    const ints = interesados.filter((q) => q.origen && enMes(q.creado)), cs = (typeof casos !== 'undefined' ? casos : []).filter((k) => k.origen && enMes(k.creado));
+    const vendidas = lugares.filter((x) => x.estado === 'Vendida' && x.venta && enMes(x.venta.fecha) && interesados.some((q) => q.id === x.venta.comprador && q.origen));
+    const clientes = cs.length + vendidas.length, cuenta = {};
+    [...ints, ...cs].forEach((x) => { const k = canalDe(x.origen); if (k) cuenta[k] = (cuenta[k] || 0) + 1; });
+    const mejor = Object.entries(cuenta).sort((a, b) => b[1] - a[1])[0];
+    const caja = el('div', 'mk-resumen');
+    const dato = (t, v, s) => { const d = el('div', 'mk-dato'); d.append(el('span', '', t), el('b', '', v)); if (s) d.append(el('small', '', s)); return d; };
+    caja.append(dato('Gastado en publicidad', usd.format(gasto), MESES[Number(mes.slice(5)) - 1]), dato('Contactos que llegaron', String(ints.length + cs.length), 'con "¿Cómo nos conoció?"'), dato('Clientes', String(clientes)), dato('Costo por cliente', clientes ? usd.format(gasto / clientes) : '—'), dato('Mejor canal', mejor ? mejor[0] : '—', mejor ? mejor[1] + ' contacto' + (mejor[1] === 1 ? '' : 's') : ''));
+    return caja;
+  }
+  function mkCampana(c) {
+    const ref = col('campanas').doc(c.id), g = (k, pinta) => (v) => { c[k] = v; ref.update({ [k]: v }); if (pinta) mkPintar(); };
+    const card = el('div', 'mk-card' + (c.estado === 'Terminada' ? ' fin' : ''));
+    const f1 = el('div', 'fl-fila');
+    f1.append(campo('input', 'fl-nom', { type: 'text', maxLength: 80, placeholder: 'Nombre de la campaña (ej.: Video dron Casa Rentera)', ariaLabel: 'Nombre de la campaña' }, c.nombre, g('nombre')),
+      opciones(campo('select', 'fl-sel', { ariaLabel: 'Estado' }, null, g('estado', true)), [['Planeada', 'Planeada'], ['Activa', 'Activa'], ['Terminada', 'Terminada']], c.estado || 'Planeada'),
+      botonBorrar(() => ref.delete(), 'campaña'));
+    const f2 = el('div', 'fl-fila');
+    f2.append(etiqueta('Canal', opciones(campo('select', 'fl-sel', { ariaLabel: 'Canal' }, null, g('canal', true)), CANALES.map((x) => [x, x]), c.canal || 'Facebook')),
+      etiqueta('Desde', campo('input', '', { type: 'date', ariaLabel: 'Inicio' }, c.inicio || '', g('inicio'))),
+      etiqueta('Hasta', campo('input', '', { type: 'date', ariaLabel: 'Fin' }, c.fin || '', g('fin'))));
+    const num = (v) => Math.round((Number(v) || 0) * 100) / 100;
+    const f3 = el('div', 'fl-fila');
+    f3.append(etiqueta('Presupuesto $', campo('input', 'fl-num', { type: 'number', min: 0, step: 5, placeholder: '0', ariaLabel: 'Presupuesto' }, c.presupuesto || '', (v) => g('presupuesto', true)(num(v)))),
+      etiqueta('Gastado $', campo('input', 'fl-num', { type: 'number', min: 0, step: 5, placeholder: '0', ariaLabel: 'Gastado' }, c.gastado || '', (v) => g('gastado', true)(num(v)))),
+      etiqueta('Ingresos que trajo $', campo('input', 'fl-num', { type: 'number', min: 0, step: 50, placeholder: '0', ariaLabel: 'Ingresos generados' }, c.ingresos || '', (v) => g('ingresos', true)(num(v)))));
+    const f4 = el('div', 'fl-fila');
+    f4.append(campo('input', 'fl-txt', { type: 'text', maxLength: 200, placeholder: 'Qué promociona (una propiedad, un servicio legal…) y notas', ariaLabel: 'Qué promociona' }, c.promo, g('promo')));
+    const r = resultadoCampana(c), f5 = el('div', 'mk-res');
+    const chip = (t, v, cls) => { const d = el('span', 'mk-chip' + (cls ? ' ' + cls : '')); d.append(el('small', '', t), el('b', '', v)); return d; };
+    f5.append(chip('Contactos', String(r.contactos)), chip('Clientes', String(r.clientes)), chip('Costo por cliente', r.clientes ? usd.format(r.costo) : '—'), chip('Retorno', (r.retorno >= 0 ? '+' : '') + usd.format(r.retorno), r.ingresos || r.gastado ? (r.retorno >= 0 ? 'bien' : 'mal') : ''));
+    if (c.presupuesto && r.gastado > c.presupuesto) f5.append(chip('Pasaste el presupuesto por', usd.format(r.gastado - c.presupuesto), 'mal'));
+    const pend = Math.round(((Number(c.gastado) || 0) - (Number(c.gastoReg) || 0)) * 100) / 100;
+    if (pend > 0) {
+      const b = el('button', 'fl-chip', `Anotar ${usd.format(pend)} en gastos`); b.type = 'button'; b.title = 'Crea un gasto de Publicidad en tus movimientos';
+      b.addEventListener('click', async () => { b.disabled = true; await col('movimientos').add({ fecha: hoyYmd(), tipo: 'Gasto', categoria: catPublicidad(), descripcion: 'Publicidad: ' + (c.nombre || c.canal || 'campaña'), monto: pend, creado: new Date().toISOString() }); c.gastoReg = Math.round(((Number(c.gastoReg) || 0) + pend) * 100) / 100; ref.update({ gastoReg: c.gastoReg }); avisoDeshacer('Gasto de publicidad anotado'); mkPintar(); });
+      f5.append(b);
+    } else if (c.gastoReg) f5.append(el('span', 'fl-ok', 'Gasto anotado en tus movimientos ✓'));
+    card.append(f1, f2, f3, f4, f5); return card;
+  }
+  function mkPublicacion(p) {
+    const ref = col('publicaciones').doc(p.id), g = (k, pinta) => (v) => { p[k] = v; ref.update({ [k]: v }); if (pinta) mkPintar(); };
+    const atrasada = !p.hecho && p.fecha && p.fecha < hoyYmd();
+    const f = el('div', 'mk-pub' + (p.hecho ? ' hecha' : '') + (atrasada ? ' atrasada' : ''));
+    const est = el('button', 'fl-est' + (p.hecho ? ' si' : ''), p.hecho ? 'Publicado ✓' : atrasada ? 'Atrasada' : 'Pendiente'); est.type = 'button';
+    est.addEventListener('click', () => g('hecho', true)(!p.hecho));
+    f.append(campo('input', '', { type: 'date', ariaLabel: 'Fecha' }, p.fecha || '', g('fecha', true)),
+      opciones(campo('select', 'fl-sel', { ariaLabel: 'Red social' }, null, g('red')), CANALES.map((x) => [x, x]), p.red || 'Facebook'),
+      campo('input', 'fl-txt', { type: 'text', maxLength: 160, placeholder: 'Tema (ej.: video del dron, testimonio de cliente)', ariaLabel: 'Tema' }, p.tema, g('tema')),
+      opciones(campo('select', 'fl-sel', { ariaLabel: 'Campaña' }, null, g('campana')), [['', 'Sin campaña'], ...campanas.map((c) => [c.id, c.nombre || 'Campaña'])], p.campana || ''),
+      est, botonBorrar(() => ref.delete(), 'publicación'));
+    return f;
+  }
+  function mkPintar() {
+    const cuerpo = $('mk-cuerpo'); if (!cuerpo) return;
+    document.querySelectorAll('#mk-tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.t === mkTab)));
+    $('pz-caja').hidden = mkTab !== 'pizarra'; cuerpo.hidden = mkTab === 'pizarra';
+    if (mkTab === 'pizarra') return;
+    const a = document.activeElement; if (a && cuerpo.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { mkPendiente = true; return; }
+    mkPendiente = false;
+    if (mkTab === 'camp') {
+      const nueva = el('button', 'btn', '+ Nueva campaña'); nueva.type = 'button';
+      nueva.addEventListener('click', () => { const r = col('campanas').doc(); const d = { nombre: '', canal: 'Facebook', estado: 'Planeada', inicio: hoyYmd(), fin: '', presupuesto: 0, gastado: 0, ingresos: 0, promo: '', creado: new Date().toISOString() }; r.set(d); campanas.unshift({ id: r.id, ...d }); mkPintar(); const f = cuerpo.querySelector('.mk-card input'); if (f) f.focus(); });
+      const lista = el('div', 'mk-lista'); lista.append(...campanas.map(mkCampana));
+      if (!campanas.length) lista.append(el('p', 'mk-vacio', 'Todavía no tienes campañas. Crea una por cada publicidad (un video, un anuncio pagado, volantes) para saber cuánto te costó y cuántos clientes trajo.'));
+      const cab = el('div', 'mk-cab'); cab.append(el('h3', '', `Campañas (${campanas.length})`), nueva);
+      cuerpo.replaceChildren(el('h3', 'mk-sub', 'Este mes · ' + MESES[Number(hoyYmd().slice(5, 7)) - 1]), mkResumen(), cab, el('p', 'mk-nota', 'Para saber qué campaña trae clientes, elige "¿Cómo nos conoció?" en cada interesado y en cada caso nuevo.'), lista);
+    } else {
+      const nueva = el('button', 'btn', '+ Publicación'); nueva.type = 'button';
+      nueva.addEventListener('click', () => { const r = col('publicaciones').doc(); const d = { fecha: hoyYmd(), red: 'Facebook', tema: '', campana: '', hecho: false, creado: new Date().toISOString() }; r.set(d); publicaciones.push({ id: r.id, ...d }); mkPintar(); const f = cuerpo.querySelector('.mk-pub .fl-txt'); if (f) f.focus(); });
+      const hoy = hoyYmd(), ord = [...publicaciones].sort((x, y) => String(x.fecha || '').localeCompare(String(y.fecha || '')));
+      const prox = ord.filter((p) => !p.hecho), hechas = ord.filter((p) => p.hecho).reverse().slice(0, 30);
+      const cab = el('div', 'mk-cab'); cab.append(el('h3', '', `Por publicar (${prox.length})`), nueva);
+      const l1 = el('div', 'mk-lista'); l1.append(...prox.map(mkPublicacion)); if (!prox.length) l1.append(el('p', 'mk-vacio', 'No tienes publicaciones pendientes. Agenda qué vas a subir y cuándo, para no dejar de publicar.'));
+      const kids = [cab, l1];
+      if (hechas.length) { const l2 = el('div', 'mk-lista'); l2.append(...hechas.map(mkPublicacion)); kids.push(el('h3', 'mk-sub', 'Publicadas'), l2); }
+      const semana = publicaciones.filter((p) => p.hecho && p.fecha && p.fecha > new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10) && p.fecha <= hoy).length;
+      kids.unshift(el('p', 'mk-nota', `Esta semana publicaste ${semana} ${semana === 1 ? 'vez' : 'veces'}.`));
+      cuerpo.replaceChildren(...kids);
+    }
+  }
+  (function iniciarMkTabs() {
+    const t = $('mk-tabs'); if (!t) return;
+    t.addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (!b) return; mkTab = b.dataset.t; try { localStorage.setItem('libro-mk-tab', mkTab); } catch (er) {} mkPintar(); if (mkTab === 'pizarra') pzPintar(); });
+    $('mk-cuerpo').addEventListener('focusout', () => { if (mkPendiente) setTimeout(() => { const a = document.activeElement; if (!(a && $('mk-cuerpo').contains(a))) mkPintar(); }, 0); });
+    document.querySelectorAll('#mk-tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.t === mkTab)));
+    $('pz-caja').hidden = mkTab !== 'pizarra'; $('mk-cuerpo').hidden = mkTab === 'pizarra';
+  })();
   const FL = {
     req: { tit: 'Requisitos', sub: 'Todo lo que se necesita hasta la escritura notariada. Marca cada uno como visto y anota cuánto cuesta.' },
     int: { tit: 'Interesados', sub: 'Personas que buscan comprar. La app te muestra qué propiedades les pueden servir.' },
@@ -4451,6 +4607,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         else if (k === 'abono' || k === 'fpago' || k === 'parte') gPag.appendChild(lb);
         else gCli.appendChild(lb);
       });
+      { const lo = document.createElement('label'); lo.textContent = '¿Cómo nos conoció?'; lo.appendChild(selectOrigen(c.origen || '', (v) => { c.origen = v; col('casos').doc(c.id).update({ origen: v }).catch(() => {}); mkPintar(); })); gCli.appendChild(lo); }
       // Deletes one payment at a time, starting with the most recently entered one.
       const ultimoAbono = ps.slice().sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || '')) || b.fecha.localeCompare(a.fecha))[0];
       let eb = null;
@@ -5750,7 +5907,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     col('casos').onSnapshot((snap) => {
       raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       casosListos = true;
-      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, totales: Array.isArray(x.totales) && x.totales.length > 1 ? x.totales.map((v) => Math.max(0, Number(v) || 0)) : null, pagadosExtra: Array.isArray(x.pagadosExtra) ? x.pagadosExtra.map((v) => Math.max(0, Number(v) || 0)) : [], archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.ruta && a.url) : [], ultActuacion: String(x.ultActuacion || ''), ultActFecha: String(x.ultActFecha || ''), revisado: String(x.revisado || ''), calc: x.calc === true, creado: String(x.creado || ''), por: leerPor(x) }; });
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, totales: Array.isArray(x.totales) && x.totales.length > 1 ? x.totales.map((v) => Math.max(0, Number(v) || 0)) : null, pagadosExtra: Array.isArray(x.pagadosExtra) ? x.pagadosExtra.map((v) => Math.max(0, Number(v) || 0)) : [], archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.ruta && a.url) : [], ultActuacion: String(x.ultActuacion || ''), origen: String(x.origen || ''), ultActFecha: String(x.ultActFecha || ''), revisado: String(x.revisado || ''), calc: x.calc === true, creado: String(x.creado || ''), por: leerPor(x) }; });
       ligarAudiencias();
       renderPronto();
     }, lost);
@@ -5846,7 +6003,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       renderPronto();
     }, lost);
     suscribirCasos(lost);
-    suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares(); suscribirMkt(); suscribirMensajes();
+    suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares(); suscribirMkt(); suscribirMkt2(); suscribirMensajes();
     col('miembros').onSnapshot((snap) => {
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
