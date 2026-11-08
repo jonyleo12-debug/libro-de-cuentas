@@ -1236,7 +1236,9 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 .prop-servs span { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; }
 .prop-servs svg { width: 16px; height: 16px; flex: none; }
 .prop-mini .prop-servs { color: #444; }
-.prop-borrar { margin-right: auto; color: #a3402e; border-color: #e3b8ae; }
+.prop-borrar { color: #a3402e; border-color: #e3b8ae; }
+.prop-archivar { margin-right: auto; color: var(--muted); }
+#p-borrar[hidden] + #p-archivar[hidden] + .btn { margin-left: auto; }
 .prop-borrar.armado { background: #a3402e; color: #fff; border-color: #a3402e; }
 @media (max-width: 820px) {
   .prop-cuerpo { grid-template-columns: 1fr; }
@@ -1450,7 +1452,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     <form class="mapa-busca" id="mapa-form" role="search">
       <input type="search" id="mapa-txt" maxlength="120" placeholder="Busca por nombre, barrio, calle o coordenadas" aria-label="Buscar propiedades o lugares">
       <span class="prop-precio"><input type="number" id="prop-f-min" min="0" inputmode="numeric" placeholder="Precio desde" aria-label="Precio desde"><span aria-hidden="true">–</span><input type="number" id="prop-f-max" min="0" inputmode="numeric" placeholder="hasta" aria-label="Precio hasta"></span>
-      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select><select id="prop-f-estado" aria-label="Estado de la propiedad"><option value="">Estado: todos</option><option value="Captacion">Captación</option><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select>
+      <select id="prop-f-tipo" aria-label="Tipo de propiedad"><option value="">Tipo: todos</option></select><select id="prop-f-estado" aria-label="Estado de la propiedad"><option value="">Estado: todos</option><option value="Captacion">Captación</option><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option><option value="__arch">Archivadas</option></select>
     </form>
     <div class="prop-filtros" id="prop-filtros">
       <button type="button" class="btn prop-nueva-btn" id="prop-nueva" title="También puedes hacer clic derecho en el mapa">+ Nueva propiedad</button>
@@ -2008,11 +2010,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Captación (properties being captured and the capture zones) only shows while the Captación button is open, or when filtering by that estado.
   const verCapt = () => { const b = document.getElementById('capt-box'); return !!(b && b.classList.contains('abierto')) || filtro.estado === 'Captacion'; };
   const pasaFiltro = (x) => {
-    if (x.estado === 'Captacion' && !verCapt()) return false;
+    const arch = filtro.estado === '__arch'; if (arch !== !!x.archivada) return false; // archived ones only show under Estado → Archivadas
+    if (x.estado === 'Captacion' && !verCapt() && filtro.estado !== '__arch') return false;
     if (!filtro.cerradas && cerrada(x)) return false;
     if (filtro.op && x.op !== filtro.op) return false;
     if (filtro.tipo && x.tipo !== filtro.tipo) return false;
-    if (filtro.estado && (x.estado || 'Disponible') !== filtro.estado) return false;
+    if (filtro.estado && !arch && (x.estado || 'Disponible') !== filtro.estado) return false;
     if (filtro.hab && (x.hab || 0) < filtro.hab) return false;
     if (filtro.min !== '' && (x.precio || 0) < Number(filtro.min)) return false;
     if (filtro.max !== '' && (x.precio || 0) > Number(filtro.max)) return false;
@@ -2738,7 +2741,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       box.appendChild(g);
     });
   }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), corretaje: v.corretaje && typeof v.corretaje === 'object' ? { fecha: String(v.corretaje.fecha || ''), meses: Number(v.corretaje.meses) || 0 } : { fecha: '', meses: 0 }, creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), corretaje: v.corretaje && typeof v.corretaje === 'object' ? { fecha: String(v.corretaje.fecha || ''), meses: Number(v.corretaje.meses) || 0 } : { fecha: '', meses: 0 }, archivada: !!v.archivada, creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   function suscribirLugares() {
@@ -3052,7 +3055,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('p-nombre').value = draft.nombre || ''; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible'; $('p-tipo')._pintar();
     $('p-precio').value = draft.precio || ''; $('p-hab').value = draft.hab || ''; $('p-banos').value = draft.banos || ''; $('p-area').value = draft.area || ''; $('p-parq').value = draft.parq || '';
     $('p-dir').value = draft.dir || ''; $('p-serv').querySelectorAll('input').forEach((c) => { c.checked = (draft.servicios || []).includes(c.value); }); $('p-desc').value = draft.desc || ''; pintarPersonas(); if (!$('p-estado').value) $('p-estado').value = 'Disponible';
-    $('p-borrar').hidden = !draft.id; $('p-borrar').classList.remove('armado'); $('p-borrar').textContent = 'Borrar propiedad';
+    $('p-borrar').hidden = !draft.id; $('p-archivar').hidden = !draft.id; $('p-archivar').textContent = draft.archivada ? 'Desarchivar' : 'Archivar'; $('p-borrar').classList.remove('armado'); $('p-borrar').textContent = 'Borrar propiedad';
     pMsg(''); pintarDraft();
   }
   function leerForm() {
@@ -3169,6 +3172,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     catch (er) { console.error(er); pMsg('No se pudo guardar: ' + ((er && er.message) || 'error desconocido'), true); return; }
     if (w && w.catch) w.catch((er) => { console.error(er); setMsg('No se pudo guardar la propiedad: ' + ((er && er.message) || 'revisa tu internet'), true); });
     draftNuevas = []; cerrarProp(false); avisoMapa(`Se guardó "${datos.nombre || 'la propiedad'}".`); setTimeout(() => avisoMapa(''), 2500);
+  });
+  $('p-archivar').addEventListener('click', () => {
+    if (!draft || !draft.id) return; const v = !draft.archivada, id = draft.id, nom = draft.nombre || 'la propiedad';
+    col('lugares').doc(id).update({ archivada: v }).catch(() => setMsg('No se pudo archivar. Revisa tu internet.', true));
+    const x = lugares.find((q) => q.id === id); if (x) x.archivada = v;
+    cerrarProp(false); pintarProps();
+    avisoMapa(v ? `Se archivó "${nom}". La ves en Estado → Archivadas.` : `"${nom}" volvió a la lista.`); setTimeout(() => avisoMapa(''), 3500);
   });
   $('p-borrar').addEventListener('click', () => {
     const b = $('p-borrar'); if (!draft || !draft.id) return;
@@ -5919,7 +5929,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       <label class="ghost prop-subir">+ Agregar documentos<input type="file" id="p-docfile" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,image/*" multiple></label>
     </div>
     <p class="msg" id="p-msg" role="status"></p>
-    <div class="det-acts"><button type="button" class="ghost prop-borrar" id="p-borrar" hidden>Borrar propiedad</button><button type="submit" class="btn" id="p-ok">Guardar</button></div>
+    <div class="det-acts"><button type="button" class="ghost prop-borrar" id="p-borrar" hidden>Borrar propiedad</button><button type="button" class="ghost prop-archivar" id="p-archivar" hidden>Archivar</button><button type="submit" class="btn" id="p-ok">Guardar</button></div>
   </form>
 </dialog>
 <dialog class="dlg-usr dlg-calc" id="dlg-calc" aria-labelledby="calc-tit">
