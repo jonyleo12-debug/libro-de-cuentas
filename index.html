@@ -1987,7 +1987,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const cerrada = (x) => x.estado === 'Vendida';
   const usd0 = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   const precioTxt = (x, corto) => !x.precio ? (corto ? 'Ver' : 'Precio a consultar') : (corto && x.precio >= 10000 ? '$' + (Math.round(x.precio / 100) / 10).toString().replace('.', ',') + 'k' : usd0.format(x.precio)) + (x.op === 'Arriendo' ? (corto ? '/mes' : ' / mes') : '');
+  // Captación (properties being captured and the capture zones) only shows while the Captación button is open, or when filtering by that estado.
+  const verCapt = () => { const b = document.getElementById('capt-box'); return !!(b && b.classList.contains('abierto')) || filtro.estado === 'Captacion'; };
   const pasaFiltro = (x) => {
+    if (x.estado === 'Captacion' && !verCapt()) return false;
     if (!filtro.cerradas && cerrada(x)) return false;
     if (filtro.op && x.op !== filtro.op) return false;
     if (filtro.tipo && x.tipo !== filtro.tipo) return false;
@@ -2381,7 +2384,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     return { id, nombre: String(v.nombre || ''), usuario: String(v.usuario || ''), creado: v.creado || '', poligono: pts };
   };
   function pintarZonas() {
-    const vs = zonas.filter((z) => z.poligono.length > 2 && !(dibujo && dibujo.zona && dibujo.id === z.id));
+    const vs = zonas.filter((z) => verCapt() && z.poligono.length > 2 && !(dibujo && dibujo.zona && dibujo.id === z.id));
     if (motor === 'g' && mapaG) {
       zonasG.forEach((c) => c.setMap(null)); zonasG = [];
       vs.forEach((z) => { const cz = colorZona(z.usuario); const c = new google.maps.Polygon({ paths: z.poligono.map(([lat, lng]) => ({ lat, lng })), strokeColor: cz, strokeWeight: 2, strokeOpacity: .9, fillColor: cz, fillOpacity: .18, clickable: !dibujo && !marcando, zIndex: 0 }); c.setMap(mapaG); c.addListener('click', (e) => { if (dibujo && dibujo.fijo) terminarDibujo(true); else if (dibujo) { if (e.latLng) dibPunto(e.latLng.lat(), e.latLng.lng()); } else if (marcando) { if (e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); } else empezarDibujo(null, z); }); zonasG.push(c); });
@@ -2401,7 +2404,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     sel.value = v || ''; $('dib-usr-c').style.background = colorZona(sel.value);
   }
   // "Captación" button: grows to the right and shows its options.
-  $('capt-btn').addEventListener('click', () => { const v = $('capt-box').classList.toggle('abierto'); $('capt-btn').setAttribute('aria-expanded', String(v)); });
+  $('capt-btn').addEventListener('click', () => { const v = $('capt-box').classList.toggle('abierto'); $('capt-btn').setAttribute('aria-expanded', String(v)); pintarProps(); });
   $('capt-radio').addEventListener('click', () => { if (dibujo && dibujo.zona) terminarDibujo(false); else empezarDibujo(null, { id: '', nombre: '', poligono: [] }); });
   $('capt-ver').addEventListener('click', async () => {
     if (captPin) { captPin = false; setMarcando(false); $('capt-ver').setAttribute('aria-pressed', 'false'); return; }
