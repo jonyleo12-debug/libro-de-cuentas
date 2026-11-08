@@ -924,7 +924,7 @@ body.invitado .ajustes-btn { display: none; }
 .prop-op { position: absolute; top: 6px; left: 6px; font: 600 11px var(--font-body); letter-spacing: .02em; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; }
 .prop-op.arr { background: var(--arriendo); }
 .prop-op.cer { background: #8a8a8a; }
-.prop-op.est-disp { background: #2e9d5b; } .prop-op.est-res { background: #e0a800; color: #fff; } .prop-op.est-vend { background: #d32f2f; }
+.prop-op.est-disp { background: #2e9d5b; } .prop-op.est-capt { background: #e3d3b3; color: #5b4525; } .prop-op.est-res { background: #e0a800; color: #fff; } .prop-op.est-vend { background: #d32f2f; }
 button.prop-op { border: 0; box-shadow: none; cursor: pointer; z-index: 2; margin: 0; line-height: 1.3; }
 button.prop-op:hover { filter: brightness(1.08); }
 .est-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none; }
@@ -1949,7 +1949,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     menuOpciones(btn, x, 'tipo', tipos.map((t) => [t, t, icoTipo(t)]), x.tipo || 'Casa');
   }
   // Status of a property for sale; stored values stay as before, labels as Jonathan asked.
-  const ESTADOS_P = [['Disponible', 'Disponible', 'disp'], ['Reservada', 'Reservado', 'res'], ['Vendida', 'Vendido', 'vend']];
+  const ESTADOS_P = [['Disponible', 'Disponible', 'disp'], ['Captacion', 'Captación', 'capt'], ['Reservada', 'Reservado', 'res'], ['Vendida', 'Vendido', 'vend']];
   const estadoDe = (x) => ESTADOS_P.find(([v]) => v === x.estado) || ESTADOS_P[0];
   function menuOpciones(btn, x, campo, items, actual) {
     const abierto = menuT && menuT._x === x.id + campo; cerrarMenuTipo(); if (abierto) return;
@@ -5119,7 +5119,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <div class="prop-grid" hidden>
       <label>Tipo<select id="p-tipo"></select></label>
       <label>Precio (USD)<input type="number" id="p-precio" min="0" step="1" inputmode="numeric" placeholder="0"></label>
-      <label>Estado<select id="p-estado"><option value="Disponible">Disponible</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select></label>
+      <label>Estado<select id="p-estado"><option value="Disponible">Disponible</option><option value="Captacion">Captación</option><option value="Reservada">Reservado</option><option value="Vendida">Vendido</option></select></label>
       <label>Área (m²)<input type="number" id="p-area" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label>Habitaciones<input type="number" id="p-hab" min="0" max="50" inputmode="numeric" placeholder="0"></label>
       <label>Baños<input type="number" id="p-banos" min="0" max="50" step="0.5" inputmode="decimal" placeholder="0"></label>
