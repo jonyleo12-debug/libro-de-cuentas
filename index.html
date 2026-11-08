@@ -981,6 +981,8 @@ button.prop-op:hover { filter: brightness(1.08); }
 .mapa-dib[hidden] { display: none; }
 .dib-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .dib-fila b { font-size: 13.5px; } .dib-fila span { color: var(--muted); }
+.aviso-deshacer { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px); background: #1d1f23; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 9999; }
+.aviso-deshacer.ver { opacity: 1; transform: translate(-50%, 0); }
 .dib-usr-l { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); }
 .dib-usr-l select { width: auto; min-width: 150px; padding: 5px 8px; font-size: 13px; }
 .dib-usr-c { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid rgba(0,0,0,.15); }
@@ -1417,7 +1419,7 @@ button.prop-op:hover { filter: brightness(1.08); }
 <script type="module">
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, onSnapshotsInSync, getDoc, query, where, arrayUnion, arrayRemove, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, setDoc, updateDoc, deleteDoc, onSnapshot, onSnapshotsInSync, getDoc, getDocFromCache, query, where, arrayUnion, arrayRemove, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 // Firebase Storage loads only when a file is uploaded or deleted, so it does not slow down opening the app.
 
 // ⚙️ Configuración de Firebase (pega aquí la de tu proyecto)
@@ -1465,20 +1467,65 @@ const pending = new Set();
 const track = (p) => { pending.add(p); setSync(); p.catch((e) => { console.error(e); window.dispatchEvent(new CustomEvent('libro-write-error')); }).finally(() => { pending.delete(p); setSync(); }); return Promise.resolve(); };
 function setSync() { const el = document.getElementById('sync'); if (el) el.textContent = pending.size ? (navigator.onLine ? 'Guardando…' : 'Sin internet: se guardará al conectarte') : 'Sincronizado'; }
 window.addEventListener('online', setSync); window.addEventListener('offline', setSync);
+// Undo / redo (Cmd+Z / Cmd+Shift+Z): every write made right after the person touched the app remembers how the document was before.
+// Writes made within a short moment form one step, so an action that saves several documents is undone at once.
+const visto = new Map(); // path -> last known data (null = does not exist)
+const recordar = (r, s) => { try { visto.set(r.path, s.exists() ? s.data() : null); } catch (e) {} };
+const recordarCol = (s) => { try { s.docChanges().forEach((ch) => visto.set(ch.doc.ref.path, ch.type === 'removed' ? null : ch.doc.data())); } catch (e) {} };
+const SIN_DESHACER = /\/(respaldos|accesos)\//;
+const deshacerPila = [], rehacerPila = [];
+let pasoAbierto = null, pasoHasta = 0, ultimoToque = 0, aplicandoUndo = false;
+['pointerdown', 'keydown', 'change', 'drop', 'input'].forEach((ev) => window.addEventListener(ev, () => { ultimoToque = Date.now(); }, true));
+function anotar(r, antes, reciente) {
+  if (aplicandoUndo || !reciente || SIN_DESHACER.test('/' + r.path + '/')) return;
+  const ahora = Date.now();
+  if (!pasoAbierto || ahora > pasoHasta) { pasoAbierto = []; deshacerPila.push(pasoAbierto); if (deshacerPila.length > 60) deshacerPila.shift(); rehacerPila.length = 0; }
+  pasoHasta = ahora + 700;
+  if (!pasoAbierto.some((e) => e.r.path === r.path)) pasoAbierto.push({ r, antes });
+}
+// Runs the write once the document's previous state is known (usually at once, from what the app has already seen).
+function escribir(r, fn) {
+  const reciente = Date.now() - ultimoToque < 8000;
+  if (aplicandoUndo || !reciente || visto.has(r.path)) { anotar(r, visto.get(r.path), reciente); return track(fn()); }
+  return track(getDocFromCache(r).then((s) => (s.exists() ? s.data() : null), () => getDoc(r).then((s) => (s.exists() ? s.data() : null), () => undefined)).then((antes) => { if (antes !== undefined) anotar(r, antes, reciente); return fn(); }));
+}
+async function aplicarPaso(desde, hacia) {
+  const paso = desde.pop(); if (!paso) return 0;
+  const inverso = paso.map((e) => ({ r: e.r, antes: visto.has(e.r.path) ? visto.get(e.r.path) : undefined }));
+  for (const e of inverso) if (e.antes === undefined) { try { const s = await getDocFromCache(e.r); e.antes = s.exists() ? s.data() : null; } catch (x) { try { const s = await getDoc(e.r); e.antes = s.exists() ? s.data() : null; } catch (y) { e.antes = null; } } }
+  hacia.push(inverso); pasoAbierto = null;
+  aplicandoUndo = true;
+  try { paso.slice().reverse().forEach((e) => { track(e.antes ? setDoc(e.r, e.antes) : deleteDoc(e.r)); visto.set(e.r.path, e.antes || null); }); } finally { aplicandoUndo = false; }
+  return paso.length;
+}
+let avisoT = 0;
+function avisoDeshacer(txt) {
+  let el = document.getElementById('aviso-deshacer');
+  if (!el) { el = document.createElement('div'); el.id = 'aviso-deshacer'; el.className = 'aviso-deshacer'; el.setAttribute('role', 'status'); document.body.append(el); }
+  el.textContent = txt; el.classList.add('ver'); clearTimeout(avisoT); avisoT = setTimeout(() => el.classList.remove('ver'), 2200);
+}
+window.addEventListener('keydown', (e) => {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey || (e.key || '').toLowerCase() !== 'z' && (e.key || '').toLowerCase() !== 'y') return;
+  const t = e.target, editable = t && (t.isContentEditable || (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !/^(checkbox|radio|range|button|submit|file|color)$/i.test(t.type || '')));
+  if (editable) return; // inside a text box the browser undoes the typing
+  const rehacer = e.shiftKey || (e.key || '').toLowerCase() === 'y';
+  e.preventDefault();
+  aplicarPaso(rehacer ? rehacerPila : deshacerPila, rehacer ? deshacerPila : rehacerPila).then((n) => avisoDeshacer(n ? (rehacer ? 'Se rehízo el cambio' : 'Se deshizo el último cambio · ⌘⇧Z para rehacer') : (rehacer ? 'No hay nada para rehacer' : 'No hay nada para deshacer')));
+});
 const wrapDoc = (r) => ({
   id: r.id,
-  set: (d) => track(setDoc(r, d, { merge: true })),
-  update: (d) => track(updateDoc(r, d)),
-  delete: () => track(deleteDoc(r)),
-  onSnapshot: (next, err) => onSnapshot(r, (s) => next({ id: s.id, exists: s.exists(), data: () => s.data() }), err),
+  set: (d) => escribir(r, () => setDoc(r, d, { merge: true })),
+  update: (d) => escribir(r, () => updateDoc(r, d)),
+  delete: () => escribir(r, () => deleteDoc(r)),
+  onSnapshot: (next, err) => onSnapshot(r, (s) => { recordar(r, s); next({ id: s.id, exists: s.exists(), data: () => s.data() }); }, err),
   collection: (name) => wrapCol(collection(r, name)),
 });
 const wrapCol = (c) => ({
   doc: (id) => wrapDoc(id ? doc(c, id) : doc(c)),
-  add: async (d) => { const r = doc(c); track(setDoc(r, d)); return wrapDoc(r); },
-  onSnapshot: (next, err) => onSnapshot(c, (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
-  onSnapshotDonde: (campo, op, valor, next, err) => onSnapshot(query(c, where(campo, op, valor)), (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
-  onSnapshotDeCasos: (next, err) => onSnapshot(query(c, where('casoId', '>', '')), (s) => next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }), err),
+  add: async (d) => { const r = doc(c); visto.set(r.path, null); escribir(r, () => setDoc(r, d)); return wrapDoc(r); },
+  onSnapshot: (next, err) => onSnapshot(c, (s) => { recordarCol(s); next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }); }, err),
+  onSnapshotDonde: (campo, op, valor, next, err) => onSnapshot(query(c, where(campo, op, valor)), (s) => { recordarCol(s); next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }); }, err),
+  onSnapshotDeCasos: (next, err) => onSnapshot(query(c, where('casoId', '>', '')), (s) => { recordarCol(s); next({ docs: s.docs.map((x) => ({ id: x.id, data: () => x.data() })) }); }, err),
 });
 const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
