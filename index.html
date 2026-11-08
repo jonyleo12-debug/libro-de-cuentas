@@ -961,7 +961,7 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
 .prop-ubi.activo, .prop-dib.activo { color: #fff; background: var(--accent); }
 .prop-dib.tiene { color: var(--accent); }
-#mapa.dibujando .prop-pill, #mapa.marcando .prop-pill, #mapa.dibujando .leaflet-interactive:not(.dib-vert), #mapa.marcando .leaflet-interactive:not(.dib-vert) { pointer-events: none; }
+#mapa.dibujando .prop-pill, #mapa.marcando .prop-pill, #mapa.dibujando .leaflet-interactive:not(.dib-vert):not(.dib-mover):not(.dib-zona), #mapa.marcando .leaflet-interactive:not(.dib-vert):not(.dib-mover):not(.dib-zona) { pointer-events: none; }
 .mapa-dib input[type=text] { flex: 1 1 180px; min-width: 0; font: 13.5px var(--font-body); padding: 6px 12px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
 .zona-c { border-color: #b08a4e !important; }
 .capt-box { display: inline-flex; align-items: center; gap: 4px; background: #e6e7ea; border-radius: 999px; padding: 3px; color: #4a4d53; }
@@ -2243,16 +2243,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const la = Number(v.lat), ln = Number(v.lng), r = Math.max(50, Number(v.radio) || 500), dy = r / 110540, dx = r / (Math.cos(la * Math.PI / 180) * 111320);
       pts = [[la + dy, ln - dx], [la + dy, ln + dx], [la - dy, ln + dx], [la - dy, ln - dx]];
     }
-    return { id, nombre: String(v.nombre || ''), usuario: String(v.usuario || ''), poligono: pts };
+    return { id, nombre: String(v.nombre || ''), usuario: String(v.usuario || ''), creado: v.creado || '', poligono: pts };
   };
   function pintarZonas() {
     const vs = zonas.filter((z) => z.poligono.length > 2 && !(dibujo && dibujo.zona && dibujo.id === z.id));
     if (motor === 'g' && mapaG) {
       zonasG.forEach((c) => c.setMap(null)); zonasG = [];
-      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = new google.maps.Polygon({ paths: z.poligono.map(([lat, lng]) => ({ lat, lng })), strokeColor: cz, strokeWeight: 2, strokeOpacity: .9, fillColor: cz, fillOpacity: .18, clickable: !dibujo && !marcando, zIndex: 0 }); c.setMap(mapaG); c.addListener('click', (e) => { if (dibujo) { if (e.latLng) dibPunto(e.latLng.lat(), e.latLng.lng()); } else if (marcando) { if (e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); } else empezarDibujo(null, z); }); zonasG.push(c); });
+      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = new google.maps.Polygon({ paths: z.poligono.map(([lat, lng]) => ({ lat, lng })), strokeColor: cz, strokeWeight: 2, strokeOpacity: .9, fillColor: cz, fillOpacity: .18, clickable: !dibujo && !marcando, zIndex: 0 }); c.setMap(mapaG); c.addListener('click', (e) => { if (dibujo && dibujo.fijo) terminarDibujo(true); else if (dibujo) { if (e.latLng) dibPunto(e.latLng.lat(), e.latLng.lng()); } else if (marcando) { if (e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); } else empezarDibujo(null, z); }); zonasG.push(c); });
     } else if (motor === 'l' && mapaL && casasCapa) {
       const L = window.L;
-      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = L.polygon(z.poligono, { color: cz, weight: 2, opacity: .9, fillColor: cz, fillOpacity: .18, dashArray: '6 5' }).addTo(casasCapa); c.bindTooltip('Zona de captación' + (z.nombre ? ': ' + z.nombre : '') + (z.usuario ? ' · ' + nombreUsuario(z.usuario) : '') + ' (toca para editar)'); c.on('click', (e) => { L.DomEvent.stopPropagation(e); if (dibujo) dibPunto(e.latlng.lat, e.latlng.lng); else if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); else empezarDibujo(null, z); }); });
+      vs.forEach((z) => { const cz = colorZona(z.usuario); const c = L.polygon(z.poligono, { color: cz, weight: 2, opacity: .9, fillColor: cz, fillOpacity: .18, dashArray: '6 5' }).addTo(casasCapa); c.bindTooltip('Zona de captación' + (z.nombre ? ': ' + z.nombre : '') + (z.usuario ? ' · ' + nombreUsuario(z.usuario) : '') + ' (toca para editar)'); c.on('click', (e) => { L.DomEvent.stopPropagation(e); if (dibujo && dibujo.fijo) terminarDibujo(true); else if (dibujo) dibPunto(e.latlng.lat, e.latlng.lng); else if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); else empezarDibujo(null, z); }); });
     }
   }
   let captPin = false;
@@ -2327,7 +2327,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function dibTexto() {
     const n = dibujo.pts.length, a = areaPoli(dibujo.pts);
     $('dib-txt').textContent = n < 3 ? (n ? `Toca el mapa para marcar cada esquina (${n} de al menos 3).` : 'Mantén presionado y arrastra para dibujar un rectángulo, o toca cada esquina.') : `${Math.round(a).toLocaleString('es-EC')} m² aprox. · ` + (dibujo.fijo ? 'arrastra la zona para moverla o usa Girar.' : 'arrastra una esquina para ajustarla.');
-    $('dib-ok').disabled = n > 0 && n < 3; $('dib-undo').disabled = !n; $('dib-undo').hidden = !!dibujo.fijo; $('dib-borrar').disabled = !n; $('dib-borrar').hidden = !!dibujo.fijo;
+    $('dib-ok').disabled = n > 0 && n < 3; $('dib-undo').disabled = !n; $('dib-undo').hidden = !!dibujo.fijo; $('dib-borrar').disabled = !n; $('dib-borrar').hidden = !!dibujo.fijo; $('dib-ok').hidden = !!dibujo.fijo; $('dib-cancel').hidden = !!dibujo.fijo;
   }
   function dibPintar() {
     if (!dibujo) return;
@@ -2338,20 +2338,21 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (motor === 'g' && mapaG) {
       const pg = new google.maps.Polygon({ paths: pts.map(([lat, lng]) => ({ lat, lng })), strokeColor: c, strokeWeight: 2, fillColor: c, fillOpacity: .35, editable: !vivo && !dibujo.fijo, draggable: !vivo && pts.length > 2, clickable: !vivo, zIndex: 5 });
       pg.setMap(mapaG); dibujo.capa.push(pg);
-      const leer = () => { dibujo.pts = pg.getPath().getArray().map((q) => [q.lat(), q.lng()]); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); };
+      const leer = () => { dibujo.pts = pg.getPath().getArray().map((q) => [q.lat(), q.lng()]); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); if (dibujo.fijo) guardarZonaYa(); };
       const path = pg.getPath(); ['set_at', 'insert_at', 'remove_at'].forEach((ev) => path.addListener(ev, leer)); pg.addListener('dragend', leer);
-      pg.addListener('click', (e) => { if (e.vertex == null && e.latLng && pts.length < 3 && !dibujo.fijo) dibPunto(e.latLng.lat(), e.latLng.lng()); });
+      pg.addListener('click', (e) => { if (dibujo.fijo) return; if (e.vertex == null && e.latLng && pts.length < 3 && !dibujo.fijo) dibPunto(e.latLng.lat(), e.latLng.lng()); });
     } else if (motor === 'l' && mapaL) {
       const L = window.L;
-      const poli = (pts.length > 2 ? L.polygon(pts, { color: c, weight: 2, fillColor: c, fillOpacity: .35, interactive: false }) : L.polyline(pts, { color: c, weight: 2, interactive: false })).addTo(mapaL);
+      const poli = (pts.length > 2 ? L.polygon(pts, { color: c, weight: 2, fillColor: c, fillOpacity: .35, interactive: !!dibujo.fijo, bubblingMouseEvents: false, className: 'dib-zona' }) : L.polyline(pts, { color: c, weight: 2, interactive: false })).addTo(mapaL);
       dibujo.capa.push(poli);
+      if (dibujo.fijo) poli.on('click', (e) => L.DomEvent.stopPropagation(e));
       if (dibujo.fijo && pts.length > 2) { // saved zone: one handle in the middle moves the whole zone
         const cen = () => [dibujo.pts.reduce((a, q) => a + q[0], 0) / dibujo.pts.length, dibujo.pts.reduce((a, q) => a + q[1], 0) / dibujo.pts.length];
         const mk = L.marker(cen(), { draggable: true, keyboard: false, title: 'Arrastra para mover la zona', icon: L.divIcon({ className: 'dib-mover', html: '✥', iconSize: [26, 26] }) }).addTo(mapaL);
         let ini = null, desde = null;
         mk.on('dragstart', () => { ini = dibujo.pts.map((q) => q.slice()); desde = mk.getLatLng(); });
         mk.on('drag', () => { const ll = mk.getLatLng(), dl = ll.lat - desde.lat, dg = ll.lng - desde.lng; dibujo.pts = ini.map(([a, b]) => [a + dl, b + dg]); poli.setLatLngs(dibujo.pts); });
-        mk.on('dragend', () => { dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); });
+        mk.on('dragend', () => { dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibTexto(); guardarZonaYa(); });
         dibujo.capa.push(mk);
       }
       if (!vivo && !dibujo.fijo) pts.forEach((q, i) => {
@@ -2381,7 +2382,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function dibFin() {
     if (!arrastre) return;
     const fue = arrastre.activo; arrastre = null;
-    if (fue) { sinClickHasta = Date.now() + 400; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; if (rafDib) { cancelAnimationFrame(rafDib); rafDib = 0; } dibPintar(); }
+    if (fue) { sinClickHasta = Date.now() + 400; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; if (rafDib) { cancelAnimationFrame(rafDib); rafDib = 0; } dibPintar(); if (dibujo && dibujo.zona && !dibujo.id) guardarZonaYa(true); }
   }
   document.addEventListener('mouseup', () => { if (arrastre) setTimeout(dibFin, 0); });
   function dibPunto(lat, lng) { if (!dibujo || dibujo.fijo) return; if (Date.now() < sinClickHasta) return; dibujo.pts.push([lat, lng]); dibujo.base = null; $('dib-giro').value = '0'; $('dib-grados').textContent = '0°'; dibPintar(); }
@@ -2407,14 +2408,37 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (centro) { if (mapaG) { mapaG.panTo({ lat: centro[0], lng: centro[1] }); if (mapaG.getZoom() < 17) mapaG.setZoom(17); } else if (mapaL) mapaL.setView(centro, Math.max(mapaL.getZoom(), 17)); }
     $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
+  // Capture zones save themselves: a new rectangle is stored as soon as it is drawn, and every later move, turn, name or user change is saved at once.
+  let zonaT = 0;
+  function guardarZonaYa(ya) {
+    clearTimeout(zonaT); zonaT = 0;
+    const run = () => {
+      zonaT = 0;
+      if (!dibujo || !dibujo.zona || dibujo.pts.length < 3) return;
+      const pts = dibujo.pts.map((q) => q.slice());
+      const datos = { poligono: pts.map(([lat, lng]) => ({ lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 })), nombre: $('dib-nom').value.trim().slice(0, 60), usuario: $('dib-usr').value };
+      if (!dibujo.id) {
+        const r = col('zonas').doc(); datos.creado = new Date().toISOString();
+        dibujo.id = r.id; dibujo.fijo = true; r.set(datos);
+        zonas.push({ id: r.id, nombre: datos.nombre, usuario: datos.usuario, creado: datos.creado, poligono: pts });
+        avisoMapa('Zona de captación guardada.'); setTimeout(() => avisoMapa(''), 2500); dibPintar();
+      } else {
+        const o = zonas.find((z) => z.id === dibujo.id);
+        col('zonas').doc(dibujo.id).set({ ...datos, creado: (o && o.creado) || new Date().toISOString() });
+        if (o) Object.assign(o, { poligono: pts, nombre: datos.nombre, usuario: datos.usuario });
+      }
+    };
+    if (ya) run(); else zonaT = setTimeout(run, 500);
+  }
   function terminarDibujo(guardar) {
     if (!dibujo) return;
+    if (dibujo.zona && zonaT) guardarZonaYa(true);
     const d = dibujo; dibujo = null; arrastre = null; mapaArrastrable(true);
     try { d.capa.forEach((o) => (o.setMap ? o.setMap(null) : o.remove())); } catch (e) {}
     $('mapa-dib').hidden = true; $('mapa').classList.remove('marcando', 'dibujando'); if (mapaG) mapaG.setOptions({ draggableCursor: null }); $('capt-radio').classList.remove('activo');
     if (d.zona) {
       const pts = d.pts.length > 2 ? d.pts : [];
-      if (guardar) {
+      if (guardar && !(d.fijo && pts.length)) {
         const datos = { poligono: pts.map(([lat, lng]) => ({ lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7 })), nombre: $('dib-nom').value.trim().slice(0, 60), usuario: $('dib-usr').value };
         if (!pts.length) { if (d.id) { col('zonas').doc(d.id).delete(); zonas = zonas.filter((z) => z.id !== d.id); avisoMapa('Se borró la zona de captación.'); } }
         else {
@@ -2437,7 +2461,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
     pintarLista(); pintarPins();
   }
-  $('dib-usr').addEventListener('change', () => { $('dib-usr-c').style.background = colorZona($('dib-usr').value); dibPintar(); });
+  $('dib-usr').addEventListener('change', () => { $('dib-usr-c').style.background = colorZona($('dib-usr').value); dibPintar(); if (dibujo && dibujo.fijo) guardarZonaYa(true); });
+  $('dib-nom').addEventListener('input', () => { if (dibujo && dibujo.fijo) guardarZonaYa(); });
+  $('dib-giro').addEventListener('change', () => { if (dibujo && dibujo.fijo) guardarZonaYa(true); });
   $('dib-giro').addEventListener('input', () => {
     if (!dibujo || dibujo.pts.length < 2) return;
     if (!dibujo.base) dibujo.base = dibujo.pts.map((q) => q.slice());
@@ -2725,7 +2751,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           mapaG.addListener('mousedown', (e) => { if (dibujo && e.latLng) dibIni(e.latLng.lat(), e.latLng.lng(), e.domEvent); });
           mapaG.addListener('mousemove', (e) => { if (arrastre && e.latLng) dibMov(e.latLng.lat(), e.latLng.lng(), e.domEvent); });
           mapaG.addListener('mouseup', () => dibFin());
-          mapaG.addListener('click', (e) => { if (dibujo && e.latLng) { dibPunto(e.latLng.lat(), e.latLng.lng()); return; } if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
+          mapaG.addListener('click', (e) => { if (dibujo && dibujo.fijo) { if (Date.now() >= sinClickHasta) terminarDibujo(true); return; } if (dibujo && e.latLng) { dibPunto(e.latLng.lat(), e.latLng.lng()); return; } if (marcando && e.latLng) marcarEn(e.latLng.lat(), e.latLng.lng()); else infoG.close(); });
           mapaG.addListener('contextmenu', (e) => { if (e.latLng) nuevaEn(e.latLng.lat(), e.latLng.lng()); });
           pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins(); return;
         } catch (e) { motor = null; avisoMapa('No se pudo cargar Google Maps. Uso el mapa gratuito.'); }
@@ -2743,7 +2769,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       mapaL.on('mousedown', (e) => { if (dibujo) dibIni(e.latlng.lat, e.latlng.lng, e.originalEvent); });
       mapaL.on('mousemove', (e) => { if (arrastre) dibMov(e.latlng.lat, e.latlng.lng, e.originalEvent); });
       mapaL.on('mouseup', () => dibFin());
-      mapaL.on('click', (e) => { if (dibujo) { dibPunto(e.latlng.lat, e.latlng.lng); return; } if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
+      mapaL.on('click', (e) => { if (dibujo && dibujo.fijo) { if (Date.now() >= sinClickHasta) terminarDibujo(true); return; } if (dibujo) { dibPunto(e.latlng.lat, e.latlng.lng); return; } if (marcando) marcarEn(e.latlng.lat, e.latlng.lng); });
       mapaL.on('contextmenu', (e) => { nuevaEn(e.latlng.lat, e.latlng.lng); });
       pintarEstilos(); aplicarEstilo($('mapa-estilo').value); pintarPins();
     })();
