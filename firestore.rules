@@ -55,6 +55,13 @@ service cloud.firestore {
     }
 
     // Aviso para que cada usuario sepa a qué libro entra. No da permisos por sí solo.
+    // Propiedades publicadas en la página web: cualquiera las puede ver; solo su dueño las escribe.
+    match /publico/{sitio}/propiedades/{id} {
+      allow read: if true;
+      allow create: if firmado() && request.resource.data.owner == request.auth.uid;
+      allow update: if firmado() && resource.data.owner == request.auth.uid && request.resource.data.owner == request.auth.uid;
+      allow delete: if firmado() && resource.data.owner == request.auth.uid;
+    }
     match /accesos/{guest} {
       allow read: if firmado() && (request.auth.uid == guest || resource.data.owner == request.auth.uid);
       allow create: if firmado() && request.resource.data.owner == request.auth.uid;

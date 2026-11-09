@@ -1064,6 +1064,7 @@ button.prop-op:hover { filter: brightness(1.08); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .prop-acc { background: #2a302e; } }
 .prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
 .prop-acc .prop-ed svg { width: 17px; height: 17px; }
+.prop-acc .prop-web.activo { color: var(--accent); background: var(--accent-soft); }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
 .prop-ubi.activo, .prop-dib.activo { color: #fff; background: var(--accent); }
 .prop-dib.tiene { color: var(--accent); }
@@ -1704,7 +1705,7 @@ window.addEventListener('online', setSync); window.addEventListener('offline', s
 const visto = new Map(); // path -> last known data (null = does not exist)
 const recordar = (r, s) => { try { visto.set(r.path, s.exists() ? s.data() : null); } catch (e) {} };
 const recordarCol = (s) => { try { s.docChanges().forEach((ch) => visto.set(ch.doc.ref.path, ch.type === 'removed' ? null : ch.doc.data())); } catch (e) {} };
-const SIN_DESHACER = /\/(respaldos|accesos)\//;
+const SIN_DESHACER = /\/(respaldos|accesos|publico)\//;
 const deshacerPila = [], rehacerPila = [];
 let pasoAbierto = null, pasoHasta = 0, ultimoToque = 0, aplicandoUndo = false;
 ['pointerdown', 'keydown', 'change', 'drop', 'input'].forEach((ev) => window.addEventListener(ev, () => { ultimoToque = Date.now(); }, true));
@@ -2302,6 +2303,24 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (tieneUbic(x)) L.push('', '\u261B Ubicación: https://maps.google.com/?q=' + Number(x.lat).toFixed(6) + ',' + Number(x.lng).toFixed(6));
     return L.join('\n');
   }
+  // Website: properties marked "Publicar en la web" get a public, read-only copy (no owner data, paperwork, commission or documents).
+  const WEB_SITIO = 'beltran';
+  const enWeb = (x) => x.web && !x.archivada && x.estado !== 'Captacion';
+  const pubHecho = new Map();
+  function datosWeb(x) {
+    return { owner: yoUid, nombre: x.nombre || '', tipo: x.tipo || 'Casa', op: 'Venta', estado: x.estado || 'Disponible', precio: Number(x.precio) || 0, hab: Number(x.hab) || 0, banos: Number(x.banos) || 0, parq: Number(x.parq) || 0, area: Number(x.area) || 0,
+      servicios: x.servicios || [], desc: x.desc || '', dir: x.dir || '', lat: tieneUbic(x) ? Number(x.lat) : null, lng: tieneUbic(x) ? Number(x.lng) : null,
+      fotos: (x.fotos || []).map((f) => f.url).filter(Boolean), poligono: (x.poligono || []).map(([lat, lng]) => ({ lat, lng })), orden: x.orden == null ? null : x.orden, creado: x.creado || '' };
+  }
+  function sincronizarWeb() {
+    if (invitado || !yoUid || !db) return;
+    lugares.forEach((x) => {
+      const ref = db.doc(`publico/${WEB_SITIO}/propiedades/${x.id}`);
+      if (enWeb(x)) { const d = datosWeb(x), k = JSON.stringify(d); if (pubHecho.get(x.id) !== k) { pubHecho.set(x.id, k); ref.set({ ...d, actualizado: new Date().toISOString() }).catch(() => { pubHecho.delete(x.id); setMsg('No se pudo publicar en la web. Falta actualizar las reglas de Firestore.', true); }); } }
+      else if (pubHecho.get(x.id) !== 'no') { pubHecho.set(x.id, 'no'); ref.delete().catch(() => {}); }
+    });
+    [...pubHecho.keys()].forEach((id) => { if (!lugares.some((x) => x.id === id)) { pubHecho.delete(id); db.doc(`publico/${WEB_SITIO}/propiedades/${id}`).delete().catch(() => {}); } });
+  }
   function datosDorso(x) {
     const d = document.createElement('div');
     const cab = document.createElement('div'); cab.className = 'pcd-cab';
@@ -2524,7 +2543,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const wa = document.createElement('button'); wa.type = 'button'; wa.className = 'prop-ed prop-wa'; wa.title = 'Enviar por WhatsApp'; wa.setAttribute('aria-label', 'Enviar ' + nom + ' por WhatsApp');
       wa.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 3.6a8.4 8.4 0 0 0-7.2 12.7L3.6 20.4l4.2-1.1A8.4 8.4 0 1 0 12 3.6z"/><path fill="currentColor" transform="translate(-0.75 -0.9)" d="M9.3 7.9c-.2 0-.5 0-.7.3-.3.3-.9.9-.9 2.2s.9 2.6 1.1 2.7c.1.2 1.8 2.8 4.4 3.9 2.2.9 2.6.7 3.1.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.4-.3-1.8-.9c-.2-.1-.4-.1-.6.2l-.8 1c-.1.2-.3.2-.5.1-.3-.1-1.1-.4-2.1-1.3-.8-.7-1.3-1.5-1.4-1.8-.2-.3 0-.4.1-.5l.4-.5.3-.4v-.5l-.8-2c-.2-.5-.4-.4-.5-.4h-.5z"/></svg>';
       wa.addEventListener('click', (e) => { e.stopPropagation(); window.open('https://wa.me/?text=' + encodeURIComponent(textoWhatsApp(x)), '_blank', 'noopener'); });
-      acc.append(ed, ub, dib, wa, del);
+      const wb = document.createElement('button'); wb.type = 'button'; wb.className = 'prop-ed prop-web' + (enWeb(x) ? ' activo' : ''); wb.setAttribute('aria-pressed', String(!!x.web));
+      wb.title = x.estado === 'Captacion' ? 'Las propiedades en captación no se publican' : x.web ? 'Publicada en la web · toca para quitarla' : 'Publicar en la web'; wb.setAttribute('aria-label', wb.title + ': ' + nom);
+      wb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6S9.6 5.8 12 3.4z"/></svg>';
+      wb.addEventListener('click', (e) => { e.stopPropagation(); if (x.estado === 'Captacion') { avisoMapa('Las propiedades en captación no se publican. Cámbiala a Disponible primero.'); setTimeout(() => avisoMapa(''), 3000); return; } guardarCampo(x, { web: !x.web }); pintarLista(); avisoMapa(x.web ? `"${nom}" se publicó en la web.` : `"${nom}" ya no está en la web.`); setTimeout(() => avisoMapa(''), 2500); });
+      acc.append(ed, ub, dib, wb, wa, del);
       cara.append(info, acc);
       const curl = (izq, txt) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'doblez izq'; b.setAttribute('aria-label', txt); b.innerHTML = '<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M5.5 6 A16.5 16.5 0 0 0 24 24.5"/></svg>'; b.addEventListener('click', (e) => { e.stopPropagation(); const v = li.classList.toggle('vuelta'); if (v) volteadas.add(x.id); else { volteadas.delete(x.id); delete ppCard[x.id]; } }); return b; };
       cara.appendChild(curl(true, 'Ver datos del dueño'));
@@ -2871,7 +2894,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       box.appendChild(g);
     });
   }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), corretaje: v.corretaje && typeof v.corretaje === 'object' ? { fecha: String(v.corretaje.fecha || ''), meses: Number(v.corretaje.meses) || 0 } : { fecha: '', meses: 0 }, archivada: !!v.archivada, creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), corretaje: v.corretaje && typeof v.corretaje === 'object' ? { fecha: String(v.corretaje.fecha || ''), meses: Number(v.corretaje.meses) || 0 } : { fecha: '', meses: 0 }, archivada: !!v.archivada, web: !!v.web, creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   // ── Marketing: free-form board (pizarra) like Freeform: paste images, sticky notes for scripts and dialogues, text, arrows linking steps ──
@@ -3107,7 +3130,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (lugaresUnsub || invitado) return;
     try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
       try { raw['lugares'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
-      lugares = snap.docs.map(leerProp).sort(ordenProps);
+      lugares = snap.docs.map(leerProp).sort(ordenProps); try { sincronizarWeb(); } catch (e) {}
       pintarProps(); flRefrescar();
     }, () => {}); } catch (e) {}
     try { col('zonas').onSnapshot((snap) => { try { raw['zonas'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
