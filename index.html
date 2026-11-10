@@ -1291,6 +1291,11 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 .dlg-prop label.prop-subir { display: inline-flex; justify-self: start; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--accent); border: 1px dashed var(--accent); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
 .prop-subir input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .prop-docs-box { display: grid; gap: 8px; }
+.prop-amb-box { display: grid; gap: 8px; }
+#p-amb { display: grid; gap: 6px; } #p-amb:empty { display: none; }
+.amb-fila { display: grid; grid-template-columns: 1fr 90px 32px; gap: 6px; align-items: center; }
+.amb-fila input { min-width: 0; }
+.amb-fila button { border: 0; background: none; color: var(--muted); font-size: 18px; cursor: pointer; }
 .prop-docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .prop-docs:empty { display: none; }
 .prop-docs li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 5%, var(--panel)); }
@@ -2310,7 +2315,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function datosWeb(x) {
     return { owner: yoUid, nombre: x.nombre || '', tipo: x.tipo || 'Casa', op: 'Venta', estado: x.estado || 'Disponible', precio: Number(x.precio) || 0, hab: Number(x.hab) || 0, banos: Number(x.banos) || 0, parq: Number(x.parq) || 0, area: Number(x.area) || 0,
       servicios: x.servicios || [], desc: x.desc || '', dir: x.dir || '', lat: tieneUbic(x) ? Number(x.lat) : null, lng: tieneUbic(x) ? Number(x.lng) : null,
-      fotos: (x.fotos || []).map((f) => f.url).filter(Boolean), poligono: (x.poligono || []).map(([lat, lng]) => ({ lat, lng })), orden: x.orden == null ? null : x.orden, creado: x.creado || '' };
+      fotos: (x.fotos || []).map((f) => f.url).filter(Boolean), poligono: (x.poligono || []).map(([lat, lng]) => ({ lat, lng })), orden: x.orden == null ? null : x.orden, creado: x.creado || '', ambientes: (x.ambientes || []).map((a) => ({ nombre: a.nombre, m2: Number(a.m2) || 0 })) };
   }
   function sincronizarWeb() {
     if (invitado || !yoUid || !db) return;
@@ -3530,6 +3535,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
   // ── Property form ──
   let draft = null, draftNuevas = [], subiendoFotos = 0, subiendoDocs = 0;
+  // Room-by-room areas (lugares.ambientes [{nombre, m2}]) shown on the website
+  function leerAmb() { return [...$('p-amb').querySelectorAll('.amb-fila')].map((f) => ({ nombre: f.children[0].value.trim().slice(0, 40), m2: Math.round((parseFloat(f.children[1].value.replace(',', '.')) || 0) * 10) / 10 })).filter((a) => a.nombre); }
+  function filaAmb(a) { const f = document.createElement('div'); f.className = 'amb-fila'; f.innerHTML = '<input type="text" maxlength="40" placeholder="Sala, cocina, dormitorio…"><input type="text" inputmode="decimal" placeholder="m²"><button type="button" aria-label="Quitar">×</button>'; f.children[0].value = a.nombre || ''; f.children[1].value = a.m2 || ''; f.children[2].addEventListener('click', () => f.remove()); return f; }
+  function pintarAmb() { $('p-amb').replaceChildren(...(draft.ambientes || []).map(filaAmb)); }
+  document.getElementById('p-amb-mas')?.addEventListener('click', () => { const f = filaAmb({}); $('p-amb').append(f); f.children[0].focus(); });
   const dlgP = $('dlg-prop');
   $('p-tipo').replaceChildren(...TIPOS_PROP.map((t) => new Option(t, t))); iconSelect($('p-tipo')); iconSelect($('prop-f-tipo')); iconSelect($('prop-f-estado'), () => '');
   $('p-serv').replaceChildren(...SERVICIOS.map(([k, t, path]) => { const l = document.createElement('label'); l.className = 'serv-ck'; l.innerHTML = `<input type="checkbox" value="${k}">${icoServ(path)}`; l.append(t); return l; }));
@@ -3557,7 +3567,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('prop-tit').textContent = draft.id ? 'Editar propiedad' : 'Nueva propiedad';
     $('p-nombre').value = draft.nombre || ''; $('p-tipo').value = draft.tipo || 'Casa'; $('p-estado').value = draft.estado || 'Disponible'; $('p-tipo')._pintar();
     $('p-precio').value = draft.precio || ''; $('p-hab').value = draft.hab || ''; $('p-banos').value = draft.banos || ''; $('p-area').value = draft.area || ''; $('p-parq').value = draft.parq || '';
-    $('p-dir').value = draft.dir || ''; $('p-serv').querySelectorAll('input').forEach((c) => { c.checked = (draft.servicios || []).includes(c.value); }); $('p-desc').value = draft.desc || ''; pintarPersonas(); if (!$('p-estado').value) $('p-estado').value = 'Disponible';
+    $('p-dir').value = draft.dir || ''; $('p-serv').querySelectorAll('input').forEach((c) => { c.checked = (draft.servicios || []).includes(c.value); }); $('p-desc').value = draft.desc || ''; pintarAmb(); pintarPersonas(); if (!$('p-estado').value) $('p-estado').value = 'Disponible';
     $('p-borrar').hidden = !draft.id; $('p-archivar').hidden = !draft.id; $('p-archivar').textContent = draft.archivada ? 'Desarchivar' : 'Archivar'; $('p-borrar').classList.remove('armado'); $('p-borrar').textContent = 'Borrar propiedad';
     pMsg(''); pintarDraft();
   }
@@ -3566,7 +3576,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     draft.duenos = limpiar(draft.duenos); draft.compradores = limpiar(draft.compradores);
     const d0 = draft.duenos[0] || {}; draft.dueno = d0.nombre || ''; draft.contacto = d0.telefono || d0.correo || ''; draft.comision = d0.comision || '';
     const n = (id) => { const v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : 0; };
-    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: 'Venta', tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio') * 100) / 100, hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), nota: '',  servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
+    Object.assign(draft, { nombre: $('p-nombre').value.trim().slice(0, 70), op: 'Venta', tipo: $('p-tipo').value, estado: $('p-estado').value, precio: Math.round(n('p-precio') * 100) / 100, hab: Math.round(n('p-hab')), banos: n('p-banos'), area: Math.round(n('p-area')), parq: Math.round(n('p-parq')), dir: $('p-dir').value.trim().slice(0, 120), desc: $('p-desc').value.trim().slice(0, 1500), ambientes: leerAmb(), nota: '',  servicios: [...$('p-serv').querySelectorAll('input:checked')].map((c) => c.value) });
   }
   function abrirProp(x) {
     if (invitado) return;
@@ -3669,7 +3679,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const antes = xa.fotos.concat(xa.docs || []), ahora = datos.fotos.concat(datos.docs);
     antes.filter((f) => !ahora.some((g) => g.ruta === f.ruta)).forEach((f) => { try { deleteObject(sRef(storage, f.ruta)).catch(() => {}); } catch (er) {} });
     // Only the fields this dialog edits are sent, so nothing else on the property (requisitos, cierre, drawing) can block or overwrite the save.
-    const cambios = JSON.parse(JSON.stringify({ desc: datos.desc || '', dir: datos.dir || '', fotos: datos.fotos || [], docs: datos.docs }));
+    const cambios = JSON.parse(JSON.stringify({ desc: datos.desc || '', dir: datos.dir || '', ambientes: datos.ambientes || [], fotos: datos.fotos || [], docs: datos.docs }));
     let w;
     try { w = id ? col('lugares').doc(id).update(cambios) : col('lugares').add({ ...JSON.parse(JSON.stringify(datos)), creado: new Date().toISOString() }); }
     catch (er) { console.error(er); pMsg('No se pudo guardar: ' + ((er && er.message) || 'error desconocido'), true); return; }
@@ -6422,6 +6432,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <div class="prop-wide prop-duenio" hidden><span class="prop-l">Dueños y compradores <small>(privado)</small></span><div id="p-personas"></div></div>
     <label class="prop-wide">Descripción<textarea id="p-desc" class="obs" rows="3" maxlength="1500" placeholder="Lo que la hace especial: patio, vista, cerca del centro…"></textarea></label>
     <label class="prop-wide">Dirección o barrio<input type="text" id="p-dir" maxlength="120" placeholder="Se llena solo al marcar la ubicación en el mapa"></label>
+    <div class="prop-wide prop-amb-box">
+      <span class="prop-l">Distribución <small>(áreas de cada ambiente, salen en la web)</small></span>
+      <div id="p-amb"></div>
+      <button type="button" class="ghost prop-subir" id="p-amb-mas">+ Agregar ambiente</button>
+    </div>
     <div class="prop-wide prop-fotos-box">
       <span class="prop-l">Fotos <small>(la primera es la portada)</small></span>
       <ul class="prop-fotos" id="p-fotos"></ul>
