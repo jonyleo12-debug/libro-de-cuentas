@@ -1331,6 +1331,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
   .prop-lista { max-height: none; overflow: visible; padding: 0; }
 }
 @media (max-width: 480px) { .pc-cara { grid-template-columns: 104px 1fr; } .prop-precio input { width: 96px; } }
+.fecha-edit { cursor: pointer; border-bottom: 1px dashed currentColor; } .fecha-edit:hover { color: var(--accent); } .fecha-in { font: inherit; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--accent); }
 </style>
 </head>
 <body>
@@ -4522,6 +4523,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           const li = document.createElement('li');
           const d = document.createElement('span'); d.textContent = `${r.fecha.slice(8, 10)} ${MESES[Number(r.fecha.slice(5, 7)) - 1]} ${r.fecha.slice(0, 4)}` + (r.descripcion ? ` · ${r.descripcion}` : '');
           const m = document.createElement('span'); m.className = 'c-in'; m.textContent = usd.format(r.bruto) + (r.parte < 100 ? ` (tu parte ${usd.format(r.monto)})` : '');
+          if (r.id) { d.classList.add('fecha-edit'); d.title = 'Cambiar fecha'; d.addEventListener('click', () => {
+            const fi = document.createElement('input'); fi.type = 'date'; fi.value = r.fecha; fi.className = 'fecha-in'; d.replaceWith(fi); fi.focus(); try { fi.showPicker && fi.showPicker(); } catch (e) {}
+            let hecho = false; const fin = async () => { if (hecho) return; hecho = true; const v = fi.value;
+              if (/^\d{4}-\d{2}-\d{2}$/.test(v) && v !== r.fecha) { try { await col('movimientos').doc(r.id).update({ fecha: v }); setMsg('Fecha del abono actualizada.'); } catch (e) { setMsg('No se pudo cambiar la fecha.', true); fi.replaceWith(d); } }
+              else fi.replaceWith(d); };
+            fi.addEventListener('change', fin); fi.addEventListener('blur', fin); fi.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hecho = true; fi.replaceWith(d); } if (e.key === 'Enter') fin(); });
+          }); }
           li.append(d, m); ul.appendChild(li);
         });
         cPag.appendChild(ul);
