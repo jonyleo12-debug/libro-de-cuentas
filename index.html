@@ -1067,7 +1067,7 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-acc .prop-web.activo { color: var(--accent); background: var(--accent-soft); }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
 .prop-ubi.activo, .prop-dib.activo { color: #fff; background: var(--accent); }
-.prop-dib.tiene { color: var(--accent); }
+.prop-dib.tiene { color: var(--accent); } .prop-dib.activo.tiene { color: #fff; }
 #mapa.dibujando .prop-pill, #mapa.marcando .prop-pill, #mapa.dibujando .leaflet-interactive:not(.dib-vert):not(.dib-mover):not(.dib-zona), #mapa.marcando .leaflet-interactive:not(.dib-vert):not(.dib-mover):not(.dib-zona) { pointer-events: none; }
 .mapa-dib input[type=text] { flex: 1 1 180px; min-width: 0; font: 13.5px var(--font-body); padding: 6px 12px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
 .zona-c { border-color: #b08a4e !important; }
@@ -2540,12 +2540,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ub.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (ubicandoId === x.id) { ubicandoId = null; setMarcando(false); pintarLista(); return; }
+        if (dibujo) terminarDibujo(true); captPin = false; $('capt-ver').setAttribute('aria-pressed', 'false');
         ubicandoId = x.id; pintarLista(); await iniciarMapa(); setMarcando(true);
         avisoMapa(`Toca en el mapa el lugar de "${nom}".`); $('mapa').scrollIntoView({ block: 'center', behavior: 'smooth' });
       });
       const dib = document.createElement('button'); dib.type = 'button'; dib.className = 'prop-ed prop-dib' + (dibujo && dibujo.id === x.id ? ' activo' : '') + (x.poligono.length > 2 ? ' tiene' : ''); dib.title = x.poligono.length > 2 ? 'Editar el dibujo del terreno' : 'Dibujar el terreno en el mapa'; dib.setAttribute('aria-label', dib.title);
       dib.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M4 7.5 9.5 4l9.5 3.5-2 11.5L6 20z"/><circle cx="4" cy="7.5" r="1.6" fill="currentColor"/><circle cx="9.5" cy="4" r="1.6" fill="currentColor"/><circle cx="19" cy="7.5" r="1.6" fill="currentColor"/><circle cx="17" cy="19" r="1.6" fill="currentColor"/><circle cx="6" cy="20" r="1.6" fill="currentColor"/></svg>';
-      dib.addEventListener('click', (e) => { e.stopPropagation(); if (dibujo && dibujo.id === x.id) terminarDibujo(false); else empezarDibujo(x); });
+      dib.addEventListener('click', (e) => { e.stopPropagation(); if (dibujo && dibujo.id === x.id) terminarDibujo(false); else { ubicandoId = null; setMarcando(false); empezarDibujo(x); } pintarLista(); });
       const wb = document.createElement('button'); wb.type = 'button'; wb.className = 'prop-ed prop-web' + (enWeb(x) ? ' activo' : ''); wb.setAttribute('aria-pressed', String(!!x.web));
       wb.title = x.estado === 'Captacion' ? 'Las propiedades en captación no se publican' : x.web ? 'Publicada en la web · toca para quitarla' : 'Publicar en la web'; wb.setAttribute('aria-label', wb.title + ': ' + nom);
       wb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6S9.6 5.8 12 3.4z"/></svg>';
