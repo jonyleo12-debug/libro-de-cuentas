@@ -1611,9 +1611,10 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
       <span class="solo-dinero cob-grupo"><span class="cob-it"><span class="sub" style="display:inline" id="cbr-l">Cobrado:</span> <b class="c-in" id="cbr-v">—</b> <span class="sub" style="display:inline" id="cbr-n"></span></span><span class="cob-it"><span class="sub" style="display:inline">Por cobrar:</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span></span>
     </div>
     <form class="nuevo-caso" id="nuevo-caso" hidden>
+      <label>Número de archivo<input type="text" id="nc-archivo" maxlength="20"></label>
       <label>Nombre del cliente<input type="text" id="nc-nombre" maxlength="120" required></label>
-      <label>N.º de archivo<input type="text" id="nc-archivo" maxlength="20"></label>
-      <label class="solo-dinero">Total (USD)<input type="number" id="nc-total" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+      <label>Cédula<input type="text" id="nc-cedula" maxlength="20" inputmode="numeric" placeholder="10 dígitos"></label>
+      <label class="solo-dinero">Total<input type="number" id="nc-total" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
       <button type="submit" class="btn">Crear caso</button>
     </form>
     <p class="sub solo-dinero" style="margin:0" id="casos-ayuda">Cuando anotes un honorario, escribe el caso y el total que debe pagar el cliente. Aquí ves cuánto te falta cobrar de cada uno.</p>
@@ -5599,13 +5600,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   });
 
   // New case form (Casos header)
-  $('nuevo-caso-btn').addEventListener('click', () => { const f = $('nuevo-caso'); f.hidden = !f.hidden; if (!f.hidden) $('nc-nombre').focus(); });
+  $('nuevo-caso-btn').addEventListener('click', () => { const f = $('nuevo-caso'); f.hidden = !f.hidden; if (!f.hidden) $('nc-archivo').focus(); });
   $('nuevo-caso').addEventListener('submit', async (e) => {
     e.preventDefault();
     const nombre = $('nc-nombre').value.trim().replace(/\s+/g, ' '); if (!nombre) return;
     const tv = parseFloat(String($('nc-total').value).replace(',', '.'));
-    await col('casos').add({ nombre, archivo: $('nc-archivo').value.trim(), total: tv >= 0 && !sinDinero() ? Math.round(tv * 100) / 100 : 0, creado: new Date().toISOString() });
-    $('nc-nombre').value = ''; $('nc-archivo').value = ''; $('nc-total').value = ''; $('nuevo-caso').hidden = true;
+    await col('casos').add({ nombre, archivo: $('nc-archivo').value.trim(), cedula: $('nc-cedula').value.trim(), total: tv >= 0 && !sinDinero() ? Math.round(tv * 100) / 100 : 0, creado: new Date().toISOString() });
+    $('nc-nombre').value = ''; $('nc-archivo').value = ''; $('nc-cedula').value = ''; $('nc-total').value = ''; $('nuevo-caso').hidden = true;
     setMsg(`Caso de ${nombre} creado.`);
   });
 
