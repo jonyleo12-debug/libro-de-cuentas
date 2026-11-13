@@ -1930,7 +1930,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let negocio = 'juridico';
   try { const n = localStorage.getItem('libro-negocio'); if (n && /^[a-z0-9]{2,30}$/.test(n)) negocio = n; } catch (e) {}
   const INMO_COLS = ['lugares', 'interesados', 'visitas', 'zonas'];
-  const baseNegocio = (name) => INMO_COLS.includes(name) ? libroRef.collection('negocios').doc('inmobiliaria') : (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
+  const JUR_COLS = ['casos', 'audiencias'];
+  const baseNegocio = (name) => JUR_COLS.includes(name) ? libroRef : INMO_COLS.includes(name) ? libroRef.collection('negocios').doc('inmobiliaria') : (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
   // Las propiedades viven siempre en el negocio Inmobiliaria; copia una vez las que se crearon en otro negocio
   const unirInmo = async () => {
     if (invitado) return; let k = 'libro-inmo-unido-' + negocio; try { if (localStorage.getItem(k)) return; } catch (e) {}
@@ -6473,7 +6474,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     document.querySelectorAll('.barra-it').forEach((b) => b.addEventListener('click', () => ir(b.dataset.vista)));
     const vacio = document.createElement('section'); vacio.className = 'panel vista-vacia'; vacio.innerHTML = '<p class="sub" style="margin:0"></p>';
     $('sec-usuario').before(vacio);
-    const TAB = { casos: 'casos', mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
+    const TAB = { mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
     const revisar = () => {
       const bc = document.body.classList;
       document.querySelectorAll('.barra-it').forEach((b) => { const t = TAB[b.dataset.vista]; b.hidden = !!t && bc.contains('sin-t-' + t) && !bc.contains('invitado'); });
