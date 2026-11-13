@@ -1332,6 +1332,40 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 }
 @media (max-width: 480px) { .pc-cara { grid-template-columns: 104px 1fr; } .prop-precio input { width: 96px; } }
 .fecha-edit { cursor: pointer; } .fecha-edit:hover { color: var(--accent); } .fecha-in { font: inherit; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--accent); }
+
+/* ===== Barra lateral ===== */
+.barra { position: fixed; z-index: 60; left: 0; top: 0; bottom: 0; width: 232px; display: flex; flex-direction: column; gap: 6px; padding: 22px 14px 16px; background: var(--panel); border-right: 1px solid var(--line); box-shadow: 4px 0 24px -18px rgba(0,0,0,.25); }
+.barra-logo { display: flex; align-items: center; gap: 10px; padding: 2px 10px 18px; font-size: 17px; }
+.barra-marca { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; }
+.barra-nav { display: grid; gap: 4px; }
+.barra-it { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: none; color: var(--muted); font: 500 14.5px var(--font, inherit); text-align: left; cursor: pointer; transition: background .2s, color .2s; }
+.barra-it svg { width: 20px; height: 20px; flex: none; }
+.barra-it:hover { background: var(--accent-soft); color: var(--ink, inherit); }
+.barra-it[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.barra-it[aria-current="page"]::before { content: ''; position: absolute; left: -14px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+.barra-pie { margin-top: auto; display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.barra-pie .usr { background: none; box-shadow: none; padding: 4px 6px; justify-content: space-between; flex-wrap: wrap; }
+.barra-pie .ajustes-btn { justify-self: start; }
+@media (min-width: 901px) { body:has(#app:not([hidden])) { padding-left: 232px; } }
+body[data-vista] [data-v] { display: none !important; }
+body[data-vista="usuario"] [data-v="usuario"]:not([hidden]), body[data-vista="finanzas"] [data-v="finanzas"]:not([hidden]), body[data-vista="casos"] [data-v="casos"]:not([hidden]), body[data-vista="inmo"] [data-v="inmo"]:not([hidden]), body[data-vista="mkt"] [data-v="mkt"]:not([hidden]) { display: revert !important; }
+body[data-vista="finanzas"] .totals[data-v], body[data-vista="finanzas"] .grid2[data-v] { display: grid !important; } body[data-vista="finanzas"] .aviso-resp[data-v]:not([hidden]) { display: flex !important; }
+body[data-vista="usuario"] #sec-notas { display: block !important; }
+body:not([data-vista="usuario"]):not([data-vista="finanzas"]) #fila-nuevo { display: none; }
+body[data-vista] .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
+body[data-vista] .fila-nuevo > #sec-notas { border-left: 0; }
+#hero-color { display: none; }
+.usu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px; }
+.usu-grid > div { display: grid; gap: 8px; align-content: start; }
+@media (max-width: 900px) {
+  .barra { top: auto; right: 0; width: auto; height: auto; flex-direction: row; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); border-right: 0; border-top: 1px solid var(--line); box-shadow: 0 -6px 24px -18px rgba(0,0,0,.3); }
+  .barra-logo { display: none; }
+  .barra-nav { grid-auto-flow: column; grid-auto-columns: 1fr; width: 100%; }
+  .barra-it { flex-direction: column; gap: 3px; padding: 7px 2px; font-size: 10.5px; text-align: center; }
+  .barra-it[aria-current="page"]::before { left: 25%; right: 25%; top: -6px; bottom: auto; width: auto; height: 3px; border-radius: 0 0 3px 3px; }
+  #app { padding-bottom: 90px; } .ia-btn { bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important; }
+  .barra > .barra-pie { display: none; }
+}
 </style>
 </head>
 <body>
@@ -1372,13 +1406,17 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
   <div class="ola ola5"><svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><path filter="url(#fs)" fill="url(#fb3)" d="M0 820 C90 840 170 900 210 1000 L0 1000 Z"/></svg></div>
 </div>
 <div class="wrap" id="app" hidden>
-  <nav class="side menu" aria-label="Menú">
+  <aside class="barra" id="barra" aria-label="Secciones">
+    <div class="barra-logo"><span class="barra-marca" aria-hidden="true">L</span><b>Libro</b></div>
+    <nav class="barra-nav"><button type="button" class="barra-it" data-vista="usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>Usuario</span></button><button type="button" class="barra-it" data-vista="finanzas"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m5.3 10V4m5.4 16v-7m5.3 7V8"/></svg><span>Finanzas</span></button><button type="button" class="barra-it" data-vista="casos"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 8h16v11H4zM9 8V5.5h6V8M4 13h16"/></svg><span>Casos</span></button><button type="button" class="barra-it" data-vista="inmo"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>Inmobiliaria</span></button><button type="button" class="barra-it" data-vista="mkt"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/></svg><span>Marketing</span></button></nav>
+    <div class="barra-pie" id="barra-pie">
     <button type="button" class="ajustes-btn" id="ajustes-btn" aria-label="Opciones" title="Opciones"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4c.6.2 1.2.6 1.7 1l2.3-.8 1.7 3-1.8 1.6c.1.6.1 1.3 0 1.9l1.8 1.6-1.7 3-2.3-.8c-.5.4-1.1.8-1.7 1l-.5 2.4h-3.4l-.5-2.4c-.6-.2-1.2-.6-1.7-1l-2.3.8-1.7-3 1.8-1.6a6 6 0 0 1 0-1.9L3.9 8.6l1.7-3 2.3.8c.5-.4 1.1-.8 1.7-1z"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     <div class="usr">
       <div><span class="usr-l">Usuario</span><b id="u-name">Cargando…</b><span class="sync" id="sync">Sincronizado</span></div>
       <button type="button" class="ghost" id="logout">Salir</button>
     </div>
-  </nav>
+  </div>
+  </aside>
   <header class="top">
     <div class="hero-wrap">
       <div class="hero-box">
@@ -1397,23 +1435,27 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
         <div class="color-pop" id="color-pop" hidden><span class="usr-l">Color</span><div id="colores" class="swatches" role="group" aria-label="Color del libro"></div>
           <span class="usr-l" id="usuarios-l" style="margin-top:6px" hidden>Usuarios</span><div id="usuarios" class="usuarios"></div></div>
       </div>
-      <p class="sub">Anota cada honorario, sueldo, gasto e inversión el día que ocurre. Los totales y tu promedio de honorarios se calculan solos.</p>
+      <p class="sub" data-v="finanzas">Anota cada honorario, sueldo, gasto e inversión el día que ocurre. Los totales y tu promedio de honorarios se calculan solos.</p>
     </div>
   </header>
 
-  <div class="aviso-resp" id="aviso-resp" role="status" hidden>
+  <div class="aviso-resp" id="aviso-resp" role="status" hidden data-v="finanzas">
     <span><b>Descarga tu respaldo del mes.</b> Guárdalo en iCloud para tener una copia fuera de la app.</span>
     <span class="acts"><button type="button" class="btn" id="aviso-desc">Descargar ahora</button><button type="button" class="ghost" id="aviso-luego">Más tarde</button></span>
   </div>
-  <section class="totals" aria-label="Totales del mes">
+  <section class="totals" aria-label="Totales del mes" data-v="finanzas">
     <div class="tot flip" data-k="in"><div class="tot-in"><div class="cara"><span>Ingresos</span><b class="c-in" id="t-in">—</b><small id="t-in-n"></small><button type="button" class="doblez" aria-label="Ver detalle de ingresos"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Ingresos del mes</span><ul class="tot-list" id="d-in"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div></div></div>
     <div class="tot flip" data-k="out"><div class="tot-in"><div class="cara"><span>Gastos</span><b class="c-out" id="t-out">—</b><small id="t-out-n"></small><button type="button" class="doblez" aria-label="Ver detalle de gastos"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Gastos del mes</span><ul class="tot-list" id="d-out"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div></div></div>
     <div class="tot flip" data-k="inv"><div class="tot-in"><div class="cara"><span>Invertido / ahorrado</span><b class="c-inv" id="t-inv">—</b><small id="t-inv-rinde" class="c-in" hidden></small><small>Lo que apartaste este mes</small><button type="button" class="doblez" aria-label="Ver detalle de invertido"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Invertido este mes</span><ul class="tot-list" id="d-inv"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div></div></div>
     <div class="tot flip" data-k="disp"><div class="tot-in"><div class="cara"><span>Disponible</span><b id="t-disp">—</b><small id="t-tasa"></small><button type="button" class="doblez" aria-label="Ver detalle de disponible"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div><div class="dorso" aria-hidden="true"><span>Cómo se calcula</span><ul class="tot-list" id="d-disp"></ul><button type="button" class="doblez" aria-label="Volver"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M24.5 6 A16.5 16.5 0 0 1 6 24.5"/></svg></button></div></div></div>
   </section>
 
+<section class="panel" id="sec-usuario" data-v="usuario" aria-labelledby="h-usuario">
+    <h2 id="h-usuario">Usuario</h2>
+    <div class="usu-grid" id="usu-grid"></div>
+  </section>
 <div class="fila-nuevo" id="fila-nuevo">
-  <section class="panel" aria-labelledby="h-nuevo">
+  <section class="panel" aria-labelledby="h-nuevo" data-v="finanzas">
     <h2 id="h-nuevo">Nuevo movimiento</h2>
     <form class="form" id="f">
       <label for="f-fecha">Fecha<input type="date" id="f-fecha" required></label>
@@ -1443,7 +1485,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     </form>
     <p class="msg" id="f-msg" role="status"></p>
   </section>
-  <section class="panel" id="sec-notas" aria-labelledby="h-notas">
+  <section class="panel" id="sec-notas" aria-labelledby="h-notas" data-v="usuario">
    <div class="nf-in">
    <div class="nf-cara">
     <div class="notas-cab"><h2 id="h-notas">Notas</h2><span class="nota-para-l" id="nota-para-l"><select id="nota-para" aria-label="Para quién es la nota" form="nota-form"></select></span><button type="button" class="nota-msg-btn" id="nota-msg-btn" title="Enviar un mensaje a otra cuenta (por correo)" aria-label="Enviar un mensaje a otra cuenta"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 7.5l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="sub" style="margin:0" id="nota-para-txt" hidden></span><span class="sub" style="display:inline;margin:0 0 0 auto" id="notas-n"></span></div>
@@ -1480,7 +1522,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
   </section>
 </div>
 
-  <div class="grid2">
+  <div class="grid2" data-v="finanzas">
     <section class="panel" aria-labelledby="h-mov">
       <h2 id="h-mov">Movimientos del mes</h2>
       <div class="tbox">
@@ -1510,7 +1552,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 
 
 
-  <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar">
+  <section class="panel tone" id="sec-casos" aria-labelledby="h-cobrar" data-v="casos">
     <div class="budget-row">
       <div class="casos-tit"><h2 id="h-cobrar">Casos</h2><button type="button" class="ghost nuevo-caso-btn" id="nuevo-caso-btn">+ Nuevo caso</button></div>
       <span class="solo-dinero cob-grupo"><span class="cob-it"><span class="sub" style="display:inline" id="cbr-l">Cobrado:</span> <b class="c-in" id="cbr-v">—</b> <span class="sub" style="display:inline" id="cbr-n"></span></span><span class="cob-it"><span class="sub" style="display:inline">Por cobrar:</span> <b class="c-out" id="cob-v">—</b> <span class="sub" style="display:inline" id="cob-n"></span></span></span>
@@ -1530,7 +1572,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     </div>
   </section>
 
-  <section class="panel tone" id="sec-mapa" aria-labelledby="h-mapa">
+  <section class="panel tone" id="sec-mapa" aria-labelledby="h-mapa" data-v="inmo">
     <div class="budget-row">
       <h2 id="h-mapa">Propiedades</h2>
       <span class="sub" style="display:inline" id="prop-n">Puyo · Pastaza</span>
@@ -1556,7 +1598,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     </div>
   </section>
 
-  <section class="panel tone" id="sec-mkt" aria-labelledby="h-mkt">
+  <section class="panel tone" id="sec-mkt" aria-labelledby="h-mkt" data-v="mkt">
     <div class="budget-row">
       <h2 id="h-mkt">Marketing</h2>
       <span class="sub" style="display:inline">Campañas, publicaciones e ideas creativas</span>
@@ -1591,7 +1633,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     </div>
   </section>
 
-  <section class="panel tone" id="sec-inv" aria-labelledby="h-inv">
+  <section class="panel tone" id="sec-inv" aria-labelledby="h-inv" data-v="finanzas">
     <div class="budget-row">
       <h2 id="h-inv">Mis inversiones</h2>
       <span><b class="c-inv" id="inv-v">—</b> <span class="sub" style="display:inline">invertido</span></span>
@@ -1606,7 +1648,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
     </div>
   </section>
 
-  <section class="panel tone" id="sec-fijos" aria-labelledby="h-fijos">
+  <section class="panel tone" id="sec-fijos" aria-labelledby="h-fijos" data-v="finanzas">
     <h2 id="h-fijos">Fijos de cada mes</h2>
     <p class="sub" style="margin:0">Estos movimientos se anotan solos en todos los meses desde que los agregas. Para sumar otro, marca "Repetir cada mes" al agregarlo.</p>
     <div class="tbox">
@@ -1618,7 +1660,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
   </section>
 
 
-  <section class="panel" aria-labelledby="h-resp">
+  <section class="panel" aria-labelledby="h-resp" data-v="finanzas">
     <h2 id="h-resp">Respaldo</h2>
     <p class="sub" style="margin:0">Descarga una copia de todo tu libro, o carga una copia guardada. Cargar una copia agrega o reemplaza los movimientos con el mismo identificador y no borra nada.</p>
     <div class="det-edit">
@@ -6397,6 +6439,22 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     pintarSub();
   }
 })();
+
+  // ===== Barra lateral: una sección a la vez =====
+  (function () { const $ = (id) => document.getElementById(id);
+    const grid = $('usu-grid');
+    const cajaU = document.createElement('div'); cajaU.innerHTML = '<span class="usr-l">Tu cuenta</span>'; grid.appendChild(cajaU);
+    const cajaC = document.createElement('div'); cajaC.innerHTML = '<span class="usr-l">Color</span>'; cajaC.appendChild($('colores')); grid.appendChild(cajaC);
+    const cajaUs = document.createElement('div'); cajaUs.append($('usuarios-l'), $('usuarios')); grid.appendChild(cajaUs);
+    const pie = $('barra-pie'), mq = matchMedia('(max-width: 900px)');
+    const ubicarPie = () => { if (mq.matches) cajaU.appendChild(pie); else $('barra').appendChild(pie); cajaU.hidden = !mq.matches; };
+    mq.addEventListener('change', ubicarPie); ubicarPie();
+    const VISTAS = ['usuario', 'finanzas', 'casos', 'inmo', 'mkt'];
+    let v = 'finanzas'; try { const g = localStorage.getItem('libro-vista'); if (VISTAS.includes(g)) v = g; } catch (e) {}
+    const ir = (k) => { document.body.dataset.vista = k; document.querySelectorAll('.barra-it').forEach((b) => { if (b.dataset.vista === k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); try { localStorage.setItem('libro-vista', k); } catch (e) {} window.scrollTo(0, 0); setTimeout(() => window.dispatchEvent(new Event('resize')), 60); };
+    document.querySelectorAll('.barra-it').forEach((b) => b.addEventListener('click', () => ir(b.dataset.vista)));
+    ir(v);
+  })();
 </script>
 <dialog class="dlg-usr dlg-flujo" id="dlg-flujo" aria-labelledby="fl-tit">
   <div class="fl-in">
