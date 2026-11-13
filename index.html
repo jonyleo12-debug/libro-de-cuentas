@@ -1354,7 +1354,7 @@ body[data-vista="usuario"] #sec-notas { display: block !important; }
 body:not([data-vista="usuario"]):not([data-vista="finanzas"]) #fila-nuevo { display: none; }
 body[data-vista] .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
 body[data-vista] .fila-nuevo > #sec-notas { border-left: 0; }
-#hero-color { display: none; } .hero::after { content: none !important; }
+#hero-color { display: none; } .neg-h1, #neg-pop { display: none !important; } @media (min-width: 901px) { header.top { display: none !important; } } .hero::after { content: none !important; }
 .barra-logo { flex-wrap: nowrap; gap: 8px; } .barra-logo .hero-fecha { display: flex; align-items: center; gap: 0; margin-left: auto; }
 .barra-logo .hero-fecha .hero-nav, .barra-logo .hero-mes-btn { color: var(--muted); background: none; } .barra-logo .hero-mes-btn { font-size: 12.5px; padding: 4px 2px; color: var(--ink, #1c1c1e); } .barra-logo .hero-nav { font-size: 16px; padding: 2px 4px; }
 .usu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px; }
