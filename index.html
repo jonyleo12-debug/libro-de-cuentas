@@ -6453,7 +6453,20 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     let v = 'finanzas'; try { const g = localStorage.getItem('libro-vista'); if (VISTAS.includes(g)) v = g; } catch (e) {}
     const ir = (k) => { document.body.dataset.vista = k; document.querySelectorAll('.barra-it').forEach((b) => { if (b.dataset.vista === k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); try { localStorage.setItem('libro-vista', k); } catch (e) {} window.scrollTo(0, 0); setTimeout(() => window.dispatchEvent(new Event('resize')), 60); };
     document.querySelectorAll('.barra-it').forEach((b) => b.addEventListener('click', () => ir(b.dataset.vista)));
-    ir(v);
+    const vacio = document.createElement('section'); vacio.className = 'panel vista-vacia'; vacio.innerHTML = '<p class="sub" style="margin:0"></p>';
+    $('sec-usuario').before(vacio);
+    const TAB = { casos: 'casos', inmo: 'mapa', mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
+    const revisar = () => {
+      const bc = document.body.classList;
+      document.querySelectorAll('.barra-it').forEach((b) => { const t = TAB[b.dataset.vista]; b.hidden = !!t && bc.contains('sin-t-' + t) && !bc.contains('invitado'); });
+      const k = document.body.dataset.vista, b = document.querySelector(`.barra-it[data-vista="${k}"]`);
+      if (b && b.hidden) { ir('finanzas'); return; }
+      const hay = [...document.querySelectorAll(`[data-v="${k}"]`)].some((x) => x.offsetHeight > 0);
+      vacio.hidden = hay; vacio.querySelector('p').textContent = k === 'casos' ? 'Aún no hay casos en este negocio. Anota un honorario con el nombre del caso en Finanzas o usa + Nuevo caso.' : `No hay nada para mostrar en ${NOM[k] || 'esta sección'} todavía.`;
+      if (k === 'casos' && !hay && $('sec-casos').hidden) { $('sec-casos').hidden = false; vacio.hidden = true; }
+    };
+    new MutationObserver(() => requestAnimationFrame(revisar)).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-vista'] });
+    ir(v); setTimeout(revisar, 300); setTimeout(revisar, 2000);
   })();
 </script>
 <dialog class="dlg-usr dlg-flujo" id="dlg-flujo" aria-labelledby="fl-tit">
