@@ -1645,9 +1645,9 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
   <section class="panel tone" id="sec-mkt" aria-labelledby="h-mkt" data-v="mkt">
     <div class="budget-row">
       <h2 id="h-mkt">Marketing</h2>
-      <span class="sub" style="display:inline">Campañas, publicaciones e ideas creativas</span>
+      <span class="sub" style="display:inline">Pizarras de imágenes y videos</span>
     </div>
-    <div class="mk-tabs" id="mk-tabs" role="tablist"><button type="button" role="tab" data-t="prod">Producción de videos</button><button type="button" role="tab" data-t="camp">Campañas y resultados</button><button type="button" role="tab" data-t="cal">Calendario</button><button type="button" role="tab" data-t="pizarra">Pizarra creativa</button></div>
+    <div class="mk-tabs" id="mk-tabs" role="tablist"><button type="button" role="tab" data-t="img">Imágenes</button><button type="button" role="tab" data-t="vid">Videos</button></div>
     <div class="mk-cuerpo" id="mk-cuerpo" hidden></div>
     <div class="pz-caja" id="pz-caja">
       <div class="pz-bar" id="pz-bar">
@@ -3004,6 +3004,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   // ── Marketing: free-form board (pizarra) like Freeform: paste images, sticky notes for scripts and dialogues, text, arrows linking steps ──
+  const pzTipo = () => (mkTab === 'vid' ? 'vid' : 'img'); let pzTodas = [];
   let pizarras = [], pzId = null, pz = null, pzSel = null, pzConectar = null, pzSucio = 0, pzEditando = false, pzVista = { x: 40, y: 40, z: 1 }, pzSubiendo = 0;
   const PZ_COLORES = [['#fff3b0', 'Amarillo'], ['#d9f2d0', 'Verde claro'], ['#d6e6ff', 'Celeste'], ['#ffd9e0', 'Rosa'], ['#ececec', 'Gris'], ['#6b7f55', 'Verde oliva'], ['#2f3138', 'Gris antracita'], ['#4f4034', 'Café']];
   const pzOscuro = (c) => ['#6b7f55', '#2f3138', '#4f4034'].includes(c);
@@ -3011,7 +3012,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function suscribirMkt() {
     if (invitado) return;
     try { col('pizarras').onSnapshot((snap) => {
-      pizarras = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, nombre: String(v.nombre || 'Pizarra'), creado: String(v.creado || ''), items: Array.isArray(v.items) ? v.items : [], lineas: Array.isArray(v.lineas) ? v.lineas : [] }; }).sort((a, b) => a.creado.localeCompare(b.creado));
+      pizarras = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, nombre: String(v.nombre || 'Pizarra'), creado: String(v.creado || ''), items: Array.isArray(v.items) ? v.items : [], lineas: Array.isArray(v.lineas) ? v.lineas : [], tipo: v.tipo === 'vid' ? 'vid' : 'img' }; }).sort((a, b) => a.creado.localeCompare(b.creado)); pzTodas = pizarras; pizarras = pzTodas.filter((p) => p.tipo === pzTipo());
       if (!pzId || !pizarras.some((p) => p.id === pzId)) { let g = ''; try { g = localStorage.getItem('libro-pizarra-' + negocio) || ''; } catch (e) {} pzId = (pizarras.find((p) => p.id === g) || pizarras[0] || {}).id || null; pz = null; }
       const p = pizarras.find((q) => q.id === pzId);
       if (p && !pzSucio && !pzEditando && !pzArr) pz = JSON.parse(JSON.stringify(p));
@@ -3221,7 +3222,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('pz-sel').addEventListener('change', (e) => { pzId = e.target.value; pzSel = null; pzConectar = null; try { localStorage.setItem('libro-pizarra-' + negocio, pzId); } catch (er) {} const p = pizarras.find((q) => q.id === pzId); pz = p ? JSON.parse(JSON.stringify(p)) : null; pzVista = { x: 40, y: 40, z: 1 }; pzPintarMenu(); pzPintar(); });
     const nueva = async () => {
       const n = (prompt('Nombre de la pizarra (por ejemplo: Video Casa Rentera, Campaña de divorcios)', 'Nueva pizarra') || '').trim(); if (!n) return;
-      const r = col('pizarras').doc(); const d = { nombre: n.slice(0, 60), creado: new Date().toISOString(), items: [], lineas: [] };
+      const r = col('pizarras').doc(); const d = { nombre: n.slice(0, 60), creado: new Date().toISOString(), items: [], lineas: [], tipo: pzTipo() };
       r.set(d); pizarras.push({ id: r.id, ...d }); pzId = r.id; pz = JSON.parse(JSON.stringify({ id: r.id, ...d })); try { localStorage.setItem('libro-pizarra-' + negocio, pzId); } catch (er) {} pzVista = { x: 40, y: 40, z: 1 }; pzPintarMenu(); pzPintar();
     };
     $('pz-nueva').addEventListener('click', nueva); $('pz-nueva2').addEventListener('click', nueva);
@@ -3429,7 +3430,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // ── Marketing: campaigns, where clients come from, monthly summary and a posting calendar ──
   const CANALES = ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Google', 'YouTube', 'Volantes', 'Radio o TV', 'Letrero', 'Referidos', 'Otro'];
   let campanas = [], publicaciones = [], mkTab = 'pizarra', mkPendiente = false;
-  try { mkTab = localStorage.getItem('libro-mk-tab') || 'pizarra'; } catch (e) {}
+  try { mkTab = localStorage.getItem('libro-mk-tab') || 'img'; } catch (e) {} if (mkTab !== 'vid') mkTab = 'img';
   const nomCampana = (id) => { const c = campanas.find((x) => x.id === id); return c ? c.nombre || 'Campaña sin nombre' : ''; };
   const canalDe = (o) => { o = String(o || ''); if (o.startsWith('c:')) { const c = campanas.find((x) => x.id === o.slice(2)); return c ? c.canal || 'Otro' : ''; } return o; };
   // "¿Cómo nos conoció?" select: campaigns first, then plain channels.
@@ -3618,8 +3619,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function mkPintar() {
     const cuerpo = $('mk-cuerpo'); if (!cuerpo) return;
     document.querySelectorAll('#mk-tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.t === mkTab)));
-    $('pz-caja').hidden = mkTab !== 'pizarra'; cuerpo.hidden = mkTab === 'pizarra';
-    if (mkTab === 'pizarra') return;
+    $('pz-caja').hidden = false; cuerpo.hidden = true; return;
     const a = document.activeElement; if (a && cuerpo.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { mkPendiente = true; return; }
     mkPendiente = false;
     if (mkTab === 'prod') { mkProduccion(cuerpo); return; }
@@ -3646,10 +3646,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   (function iniciarMkTabs() {
     const t = $('mk-tabs'); if (!t) return;
-    t.addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (!b) return; mkTab = b.dataset.t; try { localStorage.setItem('libro-mk-tab', mkTab); } catch (er) {} mkPintar(); if (mkTab === 'pizarra') pzPintar(); });
+    t.addEventListener('click', (e) => { const b = e.target.closest('button[data-t]'); if (!b) return; mkTab = b.dataset.t; try { localStorage.setItem('libro-mk-tab', mkTab); } catch (er) {} pizarras = pzTodas.filter((p) => p.tipo === pzTipo()); pzId = (pizarras[0] || {}).id || null; pz = pzId ? JSON.parse(JSON.stringify(pizarras[0])) : null; pzSel = null; pzVista = { x: 40, y: 40, z: 1 }; mkPintar(); pzPintarMenu(); pzPintar(); });
     $('mk-cuerpo').addEventListener('focusout', () => { if (mkPendiente) setTimeout(() => { const a = document.activeElement; if (!(a && $('mk-cuerpo').contains(a))) mkPintar(); }, 0); });
     document.querySelectorAll('#mk-tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.t === mkTab)));
-    $('pz-caja').hidden = mkTab !== 'pizarra'; $('mk-cuerpo').hidden = mkTab === 'pizarra';
+    $('pz-caja').hidden = false; $('mk-cuerpo').hidden = true;
   })();
   const FL = {
     req: { tit: 'Requisitos', sub: 'Todo lo que se necesita hasta la escritura notariada. Marca cada uno como visto y anota cuánto cuesta.' },
