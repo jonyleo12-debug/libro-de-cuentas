@@ -1416,6 +1416,14 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .pz-guion { display: grid; grid-template-rows: auto 1fr auto; gap: 6px; height: clamp(420px, 70vh, 760px); }
 .pz-guion label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .pz-guion textarea { resize: none; width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 16px; padding: 14px; font: inherit; font-size: 14.5px; line-height: 1.6; background: var(--panel); color: inherit; }
+.pz-gwrap { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
+.pz-gwrap textarea, .pz-guion-bg { position: absolute; inset: 0; margin: 0; border: 0 !important; border-radius: 0 !important; padding: 14px; font: inherit; font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word; box-sizing: border-box; width: 100%; height: 100%; }
+.pz-gwrap textarea { background: transparent !important; overflow-y: scroll; z-index: 1; }
+.pz-guion-bg { color: transparent; overflow-y: scroll; pointer-events: none; scrollbar-color: transparent transparent; }
+.pz-guion-bg mark { color: transparent; border-radius: 4px; padding: 1px 0; }
+.pz-vbtn { position: absolute; z-index: 3; border: 0; border-radius: 999px; padding: 6px 12px; background: #1f2328; color: #fff; font: 600 12.5px inherit; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.pz-vlinea { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; }
 .pz-guion small { font-size: 11.5px; color: var(--muted); min-height: 1em; }
 .pz-caja.pz-pantalla .pz-area { min-height: 0; } .pz-caja.pz-pantalla .pz-guion { height: auto; }
 @media (max-width: 800px) { .pz-area.con-guion { grid-template-columns: 1fr; } .pz-guion { height: 260px; } }
@@ -1687,7 +1695,7 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
       </div>
       <p class="pz-estado" id="pz-estado" role="status"></p>
       <div class="pz-vacia" id="pz-vacia">Crea tu primera pizarra para armar ideas de videos y publicaciones: pega imágenes de referencia, escribe guiones y diálogos en notas, y únelas con flechas para el orden de grabación.<br><button type="button" class="btn" id="pz-nueva2">+ Crear pizarra</button></div>
-      <div class="pz-area" id="pz-area"><aside class="pz-guion" id="pz-guion" hidden><label for="pz-guion-t">Guion</label><textarea id="pz-guion-t" placeholder="Escribe aquí el guion del video: lo que se dice en cada escena, diálogos, textos en pantalla…"></textarea><small id="pz-guion-e"></small></aside><div class="pz-zona" id="pz-zona" tabindex="0" aria-label="Pizarra: doble clic crea una nota, Cmd+V pega imágenes" hidden>
+      <div class="pz-area" id="pz-area"><aside class="pz-guion" id="pz-guion" hidden><label for="pz-guion-t">Guion</label><div class="pz-gwrap"><div class="pz-guion-bg" id="pz-guion-bg" aria-hidden="true"></div><textarea id="pz-guion-t" placeholder="Escribe aquí el guion del video: lo que se dice en cada escena, diálogos, textos en pantalla…"></textarea><button type="button" class="pz-vbtn" id="pz-vbtn" hidden>🔗 Vincular a un plano</button></div><small id="pz-guion-e"></small></aside><div class="pz-zona" id="pz-zona" tabindex="0" aria-label="Pizarra: doble clic crea una nota, Cmd+V pega imágenes" hidden>
         <div class="pz-mundo" id="pz-mundo"><svg class="pz-lineas" id="pz-lineas" aria-hidden="true"></svg><div id="pz-items"></div></div>
       </div></div>
       <div class="pz-planos" id="pz-planos" hidden><span class="pz-planos-t">Planos · arrástralos a la pizarra o tócalos</span><div class="pz-planos-l" id="pz-planos-l"></div></div>
@@ -3040,7 +3048,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pzGuionPintar() {
     const g = $('pz-guion'), t = $('pz-guion-t'); if (!g) return;
     const p = pizarras.find((q) => q.id === pzId); g.hidden = !(p && pzTipo() === 'vid'); $('pz-area').classList.toggle('con-guion', !g.hidden); if ($('pz-planos')) $('pz-planos').hidden = g.hidden;
-    if (p && document.activeElement !== t) t.value = p.guion || '';
+    if (p && document.activeElement !== t) t.value = p.guion || ''; pzGuionMarcas();
   }
   function pzPintarMenu() { pzGuionPintar();
     const s = $('pz-sel'); if (!s) return;
@@ -3069,13 +3077,25 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     pzPintarLineas(); pzAplicarVista();
     $('pz-zona').classList.toggle('conectando', !!pzConectar);
     $('pz-flecha').setAttribute('aria-pressed', String(!!pzConectar));
-    pzPintarColores();
+    pzPintarColores(); pzGuionMarcas();
   }
+  const PZ_VCOL = ['#f4a7a7', '#a7d3f4', '#b5e3a1', '#f7d38a', '#d2b4f0', '#f5b9dd', '#9fe0d6', '#f2c4a0', '#c9d17a', '#aab8f5'];
+  let pzVinc = null;
+  function pzGuionMarcas() {
+    const bg = $('pz-guion-bg'), t = $('pz-guion-t'); if (!bg || !t) return;
+    const txt = t.value, rs = [];
+    ((pz && pz.items) || []).forEach((it) => { if (it.t !== 'img' || !it.vinc || !it.vinc.txt) return; let i = txt.indexOf(it.vinc.txt); if (i < 0) return; rs.push([i, i + it.vinc.txt.length, it.vinc.color]); });
+    rs.sort((a, b) => a[0] - b[0]); const out = []; let k = 0;
+    rs.forEach(([a, b, c]) => { if (a < k) return; out.push(document.createTextNode(txt.slice(k, a))); const m = el('mark'); m.style.background = c; m.textContent = txt.slice(a, b); out.push(m); k = b; });
+    out.push(document.createTextNode(txt.slice(k) + '\n')); bg.replaceChildren(...out); bg.scrollTop = t.scrollTop;
+  }
+  function pzVincFin() { pzVinc = null; document.body.classList.remove('pz-vinculando'); const l = document.getElementById('pz-vlinea'); if (l) l.remove(); }
+
   function pzItemEl(it) {
     const d = el('div', 'pz-it pz-' + it.t + (pzSel === it.id ? ' sel' : '') + (pzConectar && pzConectar.de === it.id ? ' origen' : ''));
     d.dataset.id = it.id; Object.assign(d.style, { left: it.x + 'px', top: it.y + 'px', width: it.w + 'px' });
     if (it.t !== 'texto') d.style.height = it.h + 'px';
-    if (it.t === 'img') { const im = el('img'); im.src = it.url; im.alt = ''; im.draggable = false; d.appendChild(im); }
+    if (it.t === 'img') { if (it.vinc && it.vinc.color) { d.style.outline = `4px solid ${it.vinc.color}`; d.style.outlineOffset = '2px'; d.style.borderRadius = '8px'; } const im = el('img'); im.src = it.url; im.alt = ''; im.draggable = false; d.appendChild(im); }
     else {
       if (it.t === 'nota') { d.style.background = it.color || '#fff3b0'; if (pzOscuro(it.color)) d.classList.add('oscura'); }
       const tx = el('div', 'pz-tx'); tx.textContent = it.texto || ''; if (!it.texto) tx.dataset.ph = it.t === 'nota' ? 'Escribe la idea, el guion o el diálogo…' : 'Título';
@@ -3250,7 +3270,29 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     };
     { let tg = 0; const t = $('pz-guion-t');
       t.addEventListener('input', () => { clearTimeout(tg); $('pz-guion-e').textContent = 'Guardando…'; const id = pzId, val = t.value; tg = setTimeout(() => { const p = pizarras.find((q) => q.id === id); if (p) p.guion = val; col('pizarras').doc(id).update({ guion: val }).then(() => { $('pz-guion-e').textContent = 'Guardado'; }).catch(() => { $('pz-guion-e').textContent = 'No se pudo guardar'; }); }, 700); });
-      t.addEventListener('keydown', (e) => e.stopPropagation()); }
+      t.addEventListener('keydown', (e) => e.stopPropagation());
+      t.addEventListener('input', pzGuionMarcas); t.addEventListener('scroll', () => { $('pz-guion-bg').scrollTop = t.scrollTop; $('pz-vbtn').hidden = true; });
+      const vb = $('pz-vbtn');
+      const verBtn = (e) => { const a = t.selectionStart, b = t.selectionEnd; if (b - a < 2 || !t.value.slice(a, b).trim()) { vb.hidden = true; return; }
+        const w = t.parentElement.getBoundingClientRect(); vb.hidden = false; const x = (e && e.clientX ? e.clientX : w.left + 40) - w.left, y = (e && e.clientY ? e.clientY : w.top + 40) - w.top;
+        vb.style.left = Math.max(6, Math.min(w.width - 190, x - 60)) + 'px'; vb.style.top = Math.min(w.height - 36, y + 14) + 'px'; };
+      t.addEventListener('mouseup', verBtn); t.addEventListener('keyup', () => verBtn());
+      vb.addEventListener('mousedown', (e) => e.preventDefault());
+      vb.addEventListener('click', (e) => {
+        const a = t.selectionStart, b = t.selectionEnd, txt = t.value.slice(a, b).trim(); if (!txt || !pz) return; const r = vb.getBoundingClientRect(); vb.hidden = true; t.setSelectionRange(b, b);
+        const usados = pz.items.filter((i) => i.vinc).map((i) => i.vinc.color), color = PZ_VCOL.find((c) => !usados.includes(c)) || PZ_VCOL[usados.length % PZ_VCOL.length];
+        pzVinc = { txt, color, x: r.left + r.width / 2, y: r.top };
+        document.body.classList.add('pz-vinculando');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'pz-vlinea'; svg.setAttribute('class', 'pz-vlinea');
+        svg.innerHTML = `<line x1="${pzVinc.x}" y1="${pzVinc.y}" x2="${e.clientX}" y2="${e.clientY}" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 8"/><circle cx="${pzVinc.x}" cy="${pzVinc.y}" r="6" fill="${color}"/>`;
+        document.body.appendChild(svg); setMsg('Ahora toca el plano que quieres vincular (Esc para cancelar).');
+      });
+      document.addEventListener('mousemove', (e) => { if (!pzVinc) return; const l = document.querySelector('#pz-vlinea line'); if (l) { l.setAttribute('x2', e.clientX); l.setAttribute('y2', e.clientY); } });
+      document.addEventListener('keydown', (e) => { if (pzVinc && e.key === 'Escape') pzVincFin(); });
+      document.addEventListener('pointerdown', (e) => { if (!pzVinc) return; if (e.target.closest('#pz-vbtn')) return;
+        const n = e.target.closest('#pz-items .pz-it.pz-img'); e.preventDefault(); e.stopPropagation();
+        if (n) { const it = pz.items.find((i) => i.id === n.dataset.id); if (it) { pz.items.forEach((i) => { if (i.vinc && i.vinc.txt === pzVinc.txt) delete i.vinc; }); it.vinc = { txt: pzVinc.txt, color: pzVinc.color }; pzGuardar(true); pzVincFin(); pzPintar(); setMsg('Escrito vinculado al plano.'); return; } }
+        pzVincFin(); }, true); }
     { const PLANOS_V = [["plano-general", "Plano general", "El sujeto con su entorno"], ["plano-medio", "Plano medio", "De la cintura hacia arriba"], ["primer-plano", "Primer plano", "El rostro y los hombros"], ["plano-americano", "Plano americano", "De las rodillas a la cabeza"], ["plano-medio-corto", "Plano medio corto", "Del pecho a la cabeza"], ["gran-plano-general", "Gran plano general", "Muestra el lugar y el entorno"], ["plano-detalle", "Plano detalle", "Una parte: ojo, mano, objeto"], ["sobre-el-hombro", "Sobre el hombro", "Desde atrás del hombro"], ["picado", "Picado", "Cámara arriba, sujeto pequeño"], ["contrapicado", "Contrapicado", "Cámara abajo, sujeto poderoso"], ["plano-entero", "Plano entero", "El cuerpo completo"], ["primerisimo-primer-plano", "Primerísimo primer plano", "Solo el rostro, mucha emoción"], ["cenital", "Cenital", "Desde arriba, totalmente vertical"], ["nadir", "Nadir", "Desde el suelo hacia arriba"], ["holandes", "Plano holandés", "Cámara inclinada, tensión"], ["normal", "Ángulo normal", "A la altura de los ojos"], ["perfil", "Perfil", "De lado, vista lateral"], ["tres-cuartos", "Tres cuartos", "Entre frente y perfil"], ["espaldas", "De espaldas", "El sujeto de espaldas"], ["ras-de-suelo", "A ras de suelo", "Cámara pegada al suelo"], ["altura-cadera", "A la altura de la cadera", "Cámara a la altura de la cadera"], ["sobre-la-cabeza", "Sobre la cabeza", "Desde atrás y arriba"]];
       const poner = (k, n, en) => { if (!pz) return; const c = en || pzCentro(), w = 240, h = 206, x = Math.round(c.x - w / 2), y = Math.round(c.y - h / 2);
         pz.items.push({ id: pzNid(), t: 'img', url: 'assets/planos/' + k + '.jpg', x, y, w, h }); pzGuardar(true); pzPintar(); };
