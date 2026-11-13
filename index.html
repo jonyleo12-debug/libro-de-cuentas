@@ -1928,7 +1928,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   try { const c = JSON.parse(localStorage.getItem('libro-negocios') || 'null'); if (c) negocios = limpiarNegs(c); } catch (e) {}
   const nombreNeg = (id) => (negocios.find((x) => x.id === id) || {}).nombre || 'Consorcio Jurídico';
   let negocio = 'juridico';
-  try { const n = localStorage.getItem('libro-negocio'); if (n && /^[a-z0-9]{2,30}$/.test(n)) negocio = n; } catch (e) {}
+  // Sin selector de negocio: la app siempre abre el Consorcio Jurídico (propiedades vienen de Inmobiliaria aparte)
+  try { localStorage.setItem('libro-negocio', 'juridico'); } catch (e) {}
   const INMO_COLS = ['lugares', 'interesados', 'visitas', 'zonas'];
   const JUR_COLS = ['casos', 'audiencias'];
   const baseNegocio = (name) => JUR_COLS.includes(name) ? libroRef : INMO_COLS.includes(name) ? libroRef.collection('negocios').doc('inmobiliaria') : (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
