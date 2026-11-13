@@ -1452,6 +1452,29 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 .pz-plano { flex: 0 0 132px; display: grid; gap: 5px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); cursor: grab; font: 600 11.5px var(--font-body, inherit); color: inherit; text-align: center; transition: transform .15s, border-color .15s; }
 .pz-plano:hover { transform: translateY(-2px); border-color: var(--accent); }
 .pz-plano img { width: 100%; aspect-ratio: 400 / 344; border-radius: 7px; pointer-events: none; }
+.esc { display: grid; gap: 10px; margin-top: 6px; } .esc[hidden], .pz-caja.pz-pantalla .esc { display: none; }
+.esc-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.esc-bar h3 { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.esc-res { font-size: 12.5px; color: var(--fg); } .esc-e { font-size: 11.5px; color: var(--muted); }
+.esc-acc { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; }
+.esc-exp { padding: 7px 16px; font-size: 13px; } .esc-acc button:disabled { opacity: .45; cursor: default; }
+.esc-vacia { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 760px; }
+.esc-l { display: flex; gap: 14px; overflow-x: auto; padding: 6px 4px 14px; scroll-snap-type: x proximity; }
+.esc-c { flex: 0 0 272px; scroll-snap-align: start; display: grid; gap: 8px; align-content: start; padding: 12px; border-radius: 18px; background: var(--panel); box-shadow: var(--raise-sm); border-top: 4px solid #e0a43a; }
+.esc-c.grabada { border-top-color: var(--accent); }
+.esc-cab { display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px; align-items: center; }
+.esc-n { font: 300 24px/1 var(--font-display, inherit); min-width: 22px; }
+.esc-c input, .esc-c select, .esc-c textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 7px 10px; border-radius: 10px; color: inherit; min-width: 0; }
+.esc-c textarea { background: var(--bg); border: 0; box-shadow: var(--press); resize: vertical; line-height: 1.45; }
+.esc-bl { font-weight: 600 !important; text-transform: uppercase; letter-spacing: .03em; }
+.esc-est, .esc-x { border: 0; background: none; cursor: pointer; font: inherit; font-size: 11.5px; color: #b07812; padding: 4px 6px; border-radius: 999px; white-space: nowrap; }
+.esc-c.grabada .esc-est { color: var(--accent); } .esc-x { color: var(--muted); font-size: 13px; } .esc-x:hover { color: var(--out, #c0392b); }
+.esc-tm { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.esc-tm input { width: 58px; text-align: center; } .esc-dur { margin-left: auto; font-size: 11.5px; }
+.esc-vis { height: 110px; border-radius: 12px; overflow: hidden; background: var(--bg); display: grid; place-items: center; font-size: 12px; color: var(--muted); }
+.esc-vis.sin { height: 34px; }
+.esc-vis img { width: 100%; height: 100%; object-fit: cover; }
+.esc-f { display: grid; gap: 3px; } .esc-f > span { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 </style>
 </head>
 <body>
@@ -1717,6 +1740,12 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
         <div class="pz-mundo" id="pz-mundo"><svg class="pz-lineas" id="pz-lineas" aria-hidden="true"></svg><div id="pz-items"></div></div>
       </div></div>
       <div class="pz-planos" id="pz-planos" hidden><span class="pz-planos-t">Planos · arrástralos a la pizarra o tócalos</span><div class="pz-planos-l" id="pz-planos-l"></div></div>
+      <section class="esc" id="esc" hidden aria-labelledby="esc-t">
+        <div class="esc-bar"><h3 id="esc-t">Escenas · línea de tiempo</h3><span class="esc-res" id="esc-res"></span><small class="esc-e" id="esc-e" role="status"></small>
+          <span class="esc-acc"><button type="button" class="ghost" id="esc-guion" title="Crea una tarjeta por cada parte del guion con su tiempo, por ejemplo: GANCHO (0-3 s, a cámara)">Crear desde el guion</button><button type="button" class="ghost" id="esc-mas">+ Escena</button><button type="button" class="btn esc-exp" id="esc-exp" title="Descarga todas las escenas en un archivo JSON para editar el video">Exportar para edición</button><button type="button" class="ghost" id="esc-csv" title="Descarga las escenas como tabla (Excel o Numbers)">CSV</button></span></div>
+        <p class="esc-vacia" id="esc-vacia">Cada escena es una tarjeta: su tiempo, lo que dices, quién aparece, el plano, qué se ve, el texto en pantalla, el sonido y el archivo de la toma. Toca <b>Crear desde el guion</b> si tu guion tiene partes como "GANCHO (0-3 s, a cámara)", o agrega escenas con <b>+ Escena</b>.</p>
+        <div class="esc-l" id="esc-l"></div>
+      </section>
       <p class="pz-ayuda">Doble clic en un espacio vacío crea una nota · Cmd+V pega imágenes · arrastra fotos aquí · arrastra el fondo para moverte · Cmd + rueda para acercar · Supr borra lo marcado</p>
     </div>
   </section>
@@ -3049,6 +3078,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   // ── Marketing: free-form board (pizarra) like Freeform: paste images, sticky notes for scripts and dialogues, text, arrows linking steps ──
   const pzTipo = () => (mkTab === 'vid' ? 'vid' : 'img'); let pzTodas = [];
+  const PLANOS_V = [["plano-general", "Plano general", "El sujeto con su entorno"], ["plano-medio", "Plano medio", "De la cintura hacia arriba"], ["primer-plano", "Primer plano", "El rostro y los hombros"], ["plano-americano", "Plano americano", "De las rodillas a la cabeza"], ["plano-medio-corto", "Plano medio corto", "Del pecho a la cabeza"], ["gran-plano-general", "Gran plano general", "Muestra el lugar y el entorno"], ["plano-detalle", "Plano detalle", "Una parte: ojo, mano, objeto"], ["sobre-el-hombro", "Sobre el hombro", "Desde atrás del hombro"], ["picado", "Picado", "Cámara arriba, sujeto pequeño"], ["contrapicado", "Contrapicado", "Cámara abajo, sujeto poderoso"], ["plano-entero", "Plano entero", "El cuerpo completo"], ["primerisimo-primer-plano", "Primerísimo primer plano", "Solo el rostro, mucha emoción"], ["cenital", "Cenital", "Desde arriba, totalmente vertical"], ["nadir", "Nadir", "Desde el suelo hacia arriba"], ["holandes", "Plano holandés", "Cámara inclinada, tensión"], ["normal", "Ángulo normal", "A la altura de los ojos"], ["perfil", "Perfil", "De lado, vista lateral"], ["tres-cuartos", "Tres cuartos", "Entre frente y perfil"], ["espaldas", "De espaldas", "El sujeto de espaldas"], ["ras-de-suelo", "A ras de suelo", "Cámara pegada al suelo"], ["altura-cadera", "A la altura de la cadera", "Cámara a la altura de la cadera"], ["sobre-la-cabeza", "Sobre la cabeza", "Desde atrás y arriba"]];
   let pizarras = [], pzId = null, pz = null, pzSel = null, pzConectar = null, pzSucio = 0, pzEditando = false, pzVista = { x: 40, y: 40, z: 1 }, pzSubiendo = 0;
   const PZ_COLORES = [['#fff3b0', 'Amarillo'], ['#d9f2d0', 'Verde claro'], ['#d6e6ff', 'Celeste'], ['#ffd9e0', 'Rosa'], ['#ececec', 'Gris'], ['#6b7f55', 'Verde oliva'], ['#2f3138', 'Gris antracita'], ['#4f4034', 'Café']];
   const pzOscuro = (c) => ['#6b7f55', '#2f3138', '#4f4034'].includes(c);
@@ -3056,7 +3086,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function suscribirMkt() {
     if (invitado) return;
     try { col('pizarras').onSnapshot((snap) => {
-      pizarras = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, nombre: String(v.nombre || 'Pizarra'), creado: String(v.creado || ''), items: Array.isArray(v.items) ? v.items : [], lineas: Array.isArray(v.lineas) ? v.lineas : [], tipo: v.tipo === 'vid' ? 'vid' : 'img', guion: String(v.guion || '') }; }).sort((a, b) => a.creado.localeCompare(b.creado)); pzTodas = pizarras; pizarras = pzTodas.filter((p) => p.tipo === pzTipo());
+      pizarras = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, nombre: String(v.nombre || 'Pizarra'), creado: String(v.creado || ''), items: Array.isArray(v.items) ? v.items : [], lineas: Array.isArray(v.lineas) ? v.lineas : [], tipo: v.tipo === 'vid' ? 'vid' : 'img', guion: String(v.guion || ''), escenas: Array.isArray(v.escenas) ? v.escenas : [] }; }).sort((a, b) => a.creado.localeCompare(b.creado)); pzTodas = pizarras; pizarras = pzTodas.filter((p) => p.tipo === pzTipo());
       if (!pzId || !pizarras.some((p) => p.id === pzId)) { let g = ''; try { g = localStorage.getItem('libro-pizarra-' + negocio) || ''; } catch (e) {} pzId = (pizarras.find((p) => p.id === g) || pizarras[0] || {}).id || null; pz = null; }
       const p = pizarras.find((q) => q.id === pzId);
       if (p && !pzSucio && !pzEditando && !pzArr) pz = JSON.parse(JSON.stringify(p));
@@ -3066,7 +3096,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pzGuionPintar() {
     const g = $('pz-guion'), t = $('pz-guion-t'); if (!g) return;
     const p = pizarras.find((q) => q.id === pzId); g.hidden = !(p && pzTipo() === 'vid'); $('pz-area').classList.toggle('con-guion', !g.hidden); if ($('pz-planos')) $('pz-planos').hidden = g.hidden;
-    if (p && document.activeElement !== t) t.value = p.guion || ''; pzGuionMarcas();
+    if (p && document.activeElement !== t) t.value = p.guion || ''; pzGuionMarcas(); escCargar();
   }
   function pzPintarMenu() { pzGuionPintar();
     const s = $('pz-sel'); if (!s) return;
@@ -3388,7 +3418,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         const n = e.target.closest('#pz-items .pz-it.pz-img'); e.preventDefault(); e.stopPropagation();
         if (n) { const it = pz.items.find((i) => i.id === n.dataset.id); if (it) { pz.items.forEach((i) => { if (i.vinc && i.vinc.txt === pzVinc.txt) delete i.vinc; }); it.vinc = { txt: pzVinc.txt, color: pzVinc.color, t: Date.now() }; pzGuardar(true); pzVincFin(); pzPintar(); setMsg('Escrito vinculado al plano.'); return; } }
         pzVincFin(); }, true); }
-    { const PLANOS_V = [["plano-general", "Plano general", "El sujeto con su entorno"], ["plano-medio", "Plano medio", "De la cintura hacia arriba"], ["primer-plano", "Primer plano", "El rostro y los hombros"], ["plano-americano", "Plano americano", "De las rodillas a la cabeza"], ["plano-medio-corto", "Plano medio corto", "Del pecho a la cabeza"], ["gran-plano-general", "Gran plano general", "Muestra el lugar y el entorno"], ["plano-detalle", "Plano detalle", "Una parte: ojo, mano, objeto"], ["sobre-el-hombro", "Sobre el hombro", "Desde atrás del hombro"], ["picado", "Picado", "Cámara arriba, sujeto pequeño"], ["contrapicado", "Contrapicado", "Cámara abajo, sujeto poderoso"], ["plano-entero", "Plano entero", "El cuerpo completo"], ["primerisimo-primer-plano", "Primerísimo primer plano", "Solo el rostro, mucha emoción"], ["cenital", "Cenital", "Desde arriba, totalmente vertical"], ["nadir", "Nadir", "Desde el suelo hacia arriba"], ["holandes", "Plano holandés", "Cámara inclinada, tensión"], ["normal", "Ángulo normal", "A la altura de los ojos"], ["perfil", "Perfil", "De lado, vista lateral"], ["tres-cuartos", "Tres cuartos", "Entre frente y perfil"], ["espaldas", "De espaldas", "El sujeto de espaldas"], ["ras-de-suelo", "A ras de suelo", "Cámara pegada al suelo"], ["altura-cadera", "A la altura de la cadera", "Cámara a la altura de la cadera"], ["sobre-la-cabeza", "Sobre la cabeza", "Desde atrás y arriba"]];
+    {
       const poner = (k, n, en) => { if (!pz) return; const c = en || pzCentro(), w = 240, h = 206, x = Math.round(c.x - w / 2), y = Math.round(c.y - h / 2);
         pz.items.push({ id: pzNid(), t: 'img', url: 'assets/planos/' + k + '.jpg', x, y, w, h }); pzGuardar(true); pzPintar(); };
       $('pz-planos-l').replaceChildren(...PLANOS_V.map(([k, n, d]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'pz-plano'; b.draggable = true; b.title = d;
@@ -3404,6 +3434,104 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (!confirm(`¿Borrar la pizarra "${p.nombre}" con todo lo que tiene?`)) return;
       col('pizarras').doc(p.id).delete(); pizarras = pizarras.filter((q) => q !== p); pzId = (pizarras[0] || {}).id || null; pz = pzId ? JSON.parse(JSON.stringify(pizarras[0])) : null; pzPintarMenu(); pzPintar(); avisoDeshacer('Se borró la pizarra · ⌘Z para deshacer');
     });
+  })();
+  // ── Marketing > Videos: scene cards (escenas) on a timeline, exported as JSON/CSV for editing ──
+  const ESC_QUIEN = ['TÚ a cámara', 'Animación', 'B-roll', 'Imagen IA', 'Pantalla / texto', 'Otra persona'];
+  const escNum = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return Number.isFinite(n) && n >= 0 ? Math.round(n * 10) / 10 : null; };
+  const escSeg = (s) => (s == null ? '' : String(s).replace('.', ','));
+  const escVacia = (ini) => ({ id: pzNid(), bloque: '', ini, fin: ini == null ? null : ini + 5, texto: '', quien: '', plano: '', visual: '', enPantalla: '', sonido: '', archivo: '', estado: 'pendiente' });
+  let esc = [], escDe = null, escSucio = 0, escTimer = 0, escEspera = false;
+  const escOrdenar = () => { esc.sort((a, b) => (a.ini == null ? 1e9 : a.ini) - (b.ini == null ? 1e9 : b.ini)); };
+  const escLimpia = (e) => ({ id: String(e.id || pzNid()), bloque: String(e.bloque || '').slice(0, 80), ini: escNum(e.ini), fin: escNum(e.fin), texto: String(e.texto || '').slice(0, 4000), quien: String(e.quien || '').slice(0, 60), plano: String(e.plano || '').slice(0, 60), visual: String(e.visual || '').slice(0, 600), enPantalla: String(e.enPantalla || '').slice(0, 300), sonido: String(e.sonido || '').slice(0, 300), archivo: String(e.archivo || '').slice(0, 200), estado: e.estado === 'grabada' ? 'grabada' : 'pendiente' });
+  function escGuardar(ya) {
+    const id = escDe, lista = esc; if (!id) return; if (!escEspera) { escEspera = true; escSucio++; } clearTimeout(escTimer);
+    const fn = () => { escEspera = false; const d = lista.map(escLimpia), p = pizarras.find((q) => q.id === id); if (p) p.escenas = d;
+      col('pizarras').doc(id).update({ escenas: d }).then(() => { $('esc-e').textContent = 'Guardado'; }).catch(() => { $('esc-e').textContent = 'No se pudo guardar'; }).finally(() => { escSucio = Math.max(0, escSucio - 1); }); };
+    $('esc-e').textContent = 'Guardando…'; if (ya) fn(); else escTimer = setTimeout(fn, 600);
+  }
+  // Called from the board's menu/snapshot: loads the current board's scenes unless the user is typing in them
+  function escCargar() {
+    const box = $('esc'); if (!box) return; const p = pizarras.find((q) => q.id === pzId), ver = !!(p && pzTipo() === 'vid');
+    box.hidden = !ver; if (!ver) { escDe = null; esc = []; return; }
+    const escribiendo = box.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if (escDe === p.id && (escSucio || escribiendo)) return;
+    escDe = p.id; esc = (p.escenas || []).map(escLimpia); escOrdenar(); escPintar();
+  }
+  const escPlanoK = (nombre) => { const x = PLANOS_V.find((v) => v[1] === nombre); return x ? x[0] : ''; };
+  const escDur = (e) => (e.ini != null && e.fin != null && e.fin > e.ini ? Math.round((e.fin - e.ini) * 10) / 10 : null);
+  const escTiempo = (s) => (s == null ? '' : Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0'));
+  function escResumen() {
+    const grab = esc.filter((e) => e.estado === 'grabada').length, fin = esc.reduce((m, e) => Math.max(m, e.fin || 0), 0);
+    $('esc-res').textContent = esc.length ? `${esc.length} ${esc.length === 1 ? 'escena' : 'escenas'} · ${escTiempo(fin)} min · ${grab} de ${esc.length} grabadas` : '';
+  }
+  function escPintar() {
+    const l = $('esc-l'); if (!l) return; escResumen();
+    $('esc-vacia').hidden = !!esc.length; $('esc-exp').disabled = $('esc-csv').disabled = !esc.length;
+    l.replaceChildren(...esc.map((e, i) => escCarta(e, i)));
+  }
+  function escCarta(e, i) {
+    const c = el('article', 'esc-c' + (e.estado === 'grabada' ? ' grabada' : '')); c.dataset.id = e.id;
+    const campo = (k, etq, tipo, ph, opts) => { const lab = el('label', 'esc-f esc-' + k); lab.append(el('span', '', etq)); let inp;
+      if (tipo === 'area') { inp = el('textarea'); inp.rows = 4; } else if (tipo === 'sel') { inp = el('select'); inp.append(new Option('—', ''), ...opts.map((o) => new Option(o, o))); if (e[k] && !opts.includes(e[k])) inp.append(new Option(e[k], e[k])); } else { inp = el('input'); inp.type = 'text'; }
+      if (ph) inp.placeholder = ph; inp.value = e[k] || ''; inp.dataset.k = k; lab.append(inp); return lab; };
+    const cab = el('div', 'esc-cab'), n = el('b', 'esc-n', String(i + 1)), bl = el('input', 'esc-bl'); bl.type = 'text'; bl.placeholder = 'Bloque (GANCHO, CASO REAL…)'; bl.value = e.bloque; bl.dataset.k = 'bloque'; bl.setAttribute('aria-label', 'Bloque de la escena ' + (i + 1));
+    const est = el('button', 'esc-est', e.estado === 'grabada' ? '✓ Grabada' : '○ Pendiente'); est.type = 'button'; est.dataset.a = 'estado'; est.title = 'Marcar como grabada o pendiente';
+    const x = el('button', 'esc-x', '✕'); x.type = 'button'; x.dataset.a = 'borrar'; x.title = 'Borrar escena'; x.setAttribute('aria-label', 'Borrar escena ' + (i + 1));
+    cab.append(n, bl, est, x);
+    const tm = el('div', 'esc-tm'), ti = el('input'), tf = el('input'); [[ti, 'ini', 'Inicio'], [tf, 'fin', 'Fin']].forEach(([t, k, a]) => { t.type = 'text'; t.inputMode = 'decimal'; t.value = escSeg(e[k]); t.dataset.k = k; t.placeholder = '0'; t.setAttribute('aria-label', a + ' en segundos'); });
+    const d = escDur(e); tm.append(ti, el('span', '', '–'), tf, el('span', 'esc-s', 's'), el('small', 'esc-dur', d != null ? `dura ${escSeg(d)} s` : ''));
+    const pk = escPlanoK(e.plano), vis = el('div', 'esc-vis' + (pk ? '' : ' sin')); if (pk) { const im = el('img'); im.src = 'assets/planos/' + pk + '.jpg'; im.alt = e.plano; im.loading = 'lazy'; vis.append(im); } else vis.append(el('span', '', e.plano || 'Sin plano'));
+    c.append(cab, tm, vis, campo('texto', 'Guion de esta escena', 'area', 'Lo que se dice en esta escena'), campo('quien', 'Quién aparece', 'sel', '', ESC_QUIEN), campo('plano', 'Plano', 'sel', '', PLANOS_V.map((v) => v[1])),
+      campo('visual', 'Descripción visual', 'txt', 'Qué se ve, en una línea'), campo('enPantalla', 'Texto en pantalla', 'txt', 'Ej.: $400 · DEUDA PAGADA'), campo('sonido', 'Sonido', 'txt', 'Música o efecto, si hace falta'), campo('archivo', 'Archivo o toma', 'txt', 'Ej.: toma2.mov'));
+    return c;
+  }
+  // Script headings like "GANCHO (0-3 s, a cámara)" become scenes; scenes with the same block name keep what was already filled in
+  function escDesdeGuion() {
+    const g = String((pizarras.find((q) => q.id === pzId) || {}).guion || $('pz-guion-t').value || ''); const re = /^\s*(?:\d+[.)]\s*)?([^()\n]{2,60}?)\s*\(\s*(\d+(?:[.,]\d+)?)\s*(?:s\s*)?[-–—]\s*(\d+(?:[.,]\d+)?)\s*s(?:eg(?:undos?)?)?\.?\s*(?:[,;]\s*([^)]*))?\)\s*:?\s*(.*)$/i;
+    const nuevas = []; let act = null;
+    g.split('\n').forEach((ln) => { const m = ln.match(re); if (m) { act = { bloque: m[1].trim().replace(/[:\-–]+$/, '').trim(), ini: escNum(m[2]), fin: escNum(m[3]), nota: (m[4] || '').trim(), lineas: m[5].trim() ? [m[5].trim()] : [] }; nuevas.push(act); } else if (act && ln.trim()) act.lineas.push(ln.trim()); });
+    if (!nuevas.length) { alert('No encontré escenas en el guion. Escribe cada parte con su tiempo, por ejemplo:\n\nGANCHO (0-3 s, a cámara)\n"¿Te deben dinero…?"\nPROBLEMA (3-15 s)\n…'); return; }
+    const quienDe = (t) => (/c[aá]mara/i.test(t) ? 'TÚ a cámara' : /anima/i.test(t) ? 'Animación' : /b.?roll/i.test(t) ? 'B-roll' : /\bia\b/i.test(t) ? 'Imagen IA' : '');
+    const limpiar = (t) => t.replace(/^[\s"“”«»']+|[\s"“”«»']+$/g, '');
+    const iguales = nuevas.filter((s) => esc.some((e) => e.bloque.toLowerCase() === s.bloque.toLowerCase())).length;
+    if (esc.length && !confirm(`Encontré ${nuevas.length} escenas en el guion.${iguales ? ` ${iguales} ya existen y se actualizará su tiempo y texto; lo demás que llenaste se conserva.` : ''} ¿Continuar?`)) return;
+    const vincs = ((pz && pz.items) || []).filter((it) => it.t === 'img' && it.vinc && it.vinc.txt);
+    nuevas.forEach((s) => { const texto = limpiar(s.lineas.join('\n')); let e = esc.find((x) => x.bloque.toLowerCase() === s.bloque.toLowerCase());
+      if (!e) { e = escVacia(s.ini); esc.push(e); e.bloque = s.bloque; e.quien = quienDe(s.nota); }
+      e.ini = s.ini; e.fin = s.fin; e.texto = texto; if (!e.quien) e.quien = quienDe(s.nota);
+      if (!e.plano) { const v = vincs.find((it) => texto.includes(it.vinc.txt.trim()) || it.vinc.txt.includes(texto.slice(0, 40))); const m = v && /assets\/planos\/([\w-]+)\.jpg/.exec(v.url || ''); const pl = m && PLANOS_V.find((p) => p[0] === m[1]); if (pl) e.plano = pl[1]; } });
+    escOrdenar(); escGuardar(true); escPintar();
+  }
+  function escDescargar(nombre, tipo, txt) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: tipo })); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+  function escDatos() {
+    const p = pizarras.find((q) => q.id === pzId) || {}, items = (pz && pz.items) || [];
+    return { app: 'libro-de-cuentas', formato: 'escenas-video', version: 1, pizarra: p.nombre || '', exportado: new Date().toISOString(), duracion_total_s: esc.reduce((m, e) => Math.max(m, e.fin || 0), 0), guion_completo: p.guion || '',
+      escenas: esc.map((e, i) => ({ n: i + 1, bloque: e.bloque, inicio_s: e.ini, fin_s: e.fin, duracion_s: escDur(e), texto_guion: e.texto, quien_aparece: e.quien, plano: e.plano, descripcion_visual: e.visual, texto_en_pantalla: e.enPantalla, sonido: e.sonido, archivo_toma: e.archivo, estado: e.estado,
+        referencias: items.filter((it) => it.t === 'img' && it.vinc && it.vinc.txt && e.texto && (e.texto.includes(it.vinc.txt.trim()) || it.vinc.txt.includes(e.texto.slice(0, 40)))).map((it) => (/^https?:/.test(it.url) ? it.url : new URL(it.url, location.href).href)) })) };
+  }
+  const escArchivo = () => ((pizarras.find((q) => q.id === pzId) || {}).nombre || 'video').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 50) || 'video';
+  (function iniciarEscenas() {
+    const l = $('esc-l'); if (!l) return;
+    const buscar = (n) => { const c = n.closest('.esc-c'); return c && esc.find((e) => e.id === c.dataset.id); };
+    l.addEventListener('input', (ev) => { const t = ev.target, e = buscar(t), k = t.dataset.k; if (!e || !k) return;
+      if (k === 'ini' || k === 'fin') { e[k] = escNum(t.value); const dd = t.closest('.esc-c').querySelector('.esc-dur'), d = escDur(e); dd.textContent = d != null ? `dura ${escSeg(d)} s` : ''; escResumen(); } else e[k] = t.value;
+      escGuardar(); });
+    // Re-sort and repaint after focus has moved, then put the cursor back where it went
+    const repintar = (siempre) => setTimeout(() => { const antes = esc.map((e) => e.id).join(); escOrdenar(); if (!siempre && antes === esc.map((e) => e.id).join()) return;
+      const a = document.activeElement, c = a && a.closest && a.closest('.esc-c'), id = c && c.dataset.id, k = a && (a.dataset.k || a.dataset.a), sel = a && 'selectionStart' in a ? [a.selectionStart, a.selectionEnd] : null; escPintar();
+      if (id && k) { const n = l.querySelector(`.esc-c[data-id="${id}"] [data-k="${k}"], .esc-c[data-id="${id}"] [data-a="${k}"]`); if (n) { n.focus({ preventScroll: true }); try { if (sel && sel[0] != null) n.setSelectionRange(sel[0], sel[1]); } catch (er) {} } } }, 0);
+    l.addEventListener('change', (ev) => { const k = ev.target.dataset.k; if (!k) return; if (k === 'ini' || k === 'fin' || k === 'plano') repintar(k === 'plano'); escGuardar(true); });
+    l.addEventListener('click', (ev) => { const b = ev.target.closest('button[data-a]'); if (!b) return; const e = buscar(b); if (!e) return;
+      if (b.dataset.a === 'estado') { e.estado = e.estado === 'grabada' ? 'pendiente' : 'grabada'; escGuardar(true); escPintar(); }
+      else if (b.dataset.a === 'borrar') { if ((e.texto || e.visual || e.archivo) && !confirm(`¿Borrar la escena ${esc.indexOf(e) + 1}${e.bloque ? ' · ' + e.bloque : ''}?`)) return; esc = esc.filter((x) => x !== e); escGuardar(true); escPintar(); } });
+    l.addEventListener('keydown', (ev) => ev.stopPropagation());
+    $('esc-mas').addEventListener('click', () => { if (!escDe) return; const ult = esc.reduce((m, e) => Math.max(m, e.fin || 0), 0); const e = escVacia(ult); esc.push(e); escOrdenar(); escGuardar(true); escPintar();
+      const n = l.querySelector(`.esc-c[data-id="${e.id}"]`); if (n) { n.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }); n.querySelector('.esc-bl').focus({ preventScroll: true }); } });
+    $('esc-guion').addEventListener('click', escDesdeGuion);
+    $('esc-exp').addEventListener('click', () => { if (!esc.length) return; escDescargar(`escenas-${escArchivo()}.json`, 'application/json', JSON.stringify(escDatos(), null, 2)); setMsg('Escenas exportadas. Envíame el archivo junto con tus tomas para armar el video.'); });
+    $('esc-csv').addEventListener('click', () => { if (!esc.length) return; const d = escDatos(), cols = ['n', 'bloque', 'inicio_s', 'fin_s', 'duracion_s', 'quien_aparece', 'plano', 'descripcion_visual', 'texto_en_pantalla', 'sonido', 'archivo_toma', 'estado', 'texto_guion'];
+      const q = (v) => { const s = v == null ? '' : String(v); return /[",;\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      escDescargar(`escenas-${escArchivo()}.csv`, 'text/csv;charset=utf-8', '﻿' + [cols.join(','), ...d.escenas.map((e) => cols.map((c) => q(e[c])).join(','))].join('\r\n')); });
   })();
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
