@@ -1416,6 +1416,17 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .pz-guion { display: grid; grid-template-rows: auto 1fr auto; gap: 6px; height: clamp(420px, 70vh, 760px); }
 .pz-guion label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .pz-guion textarea { resize: none; width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 16px; padding: 14px; font: inherit; font-size: 14.5px; line-height: 1.6; background: var(--panel); color: inherit; }
+.pz-gcab { display: flex; align-items: center; justify-content: space-between; }
+.pz-grabar { border: 0; border-radius: 999px; padding: 5px 14px; background: #d93a3a; color: #fff; font: 600 12.5px inherit; cursor: pointer; }
+.tp { position: fixed; inset: 0; z-index: 10000; background: #000; color: #fff; display: grid; }
+.tp video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.tp-txt { position: absolute; left: 0; right: 0; top: 0; height: 42%; overflow: hidden; background: linear-gradient(rgba(0,0,0,.75) 70%, rgba(0,0,0,0)); -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
+.tp-in { padding: 24px max(24px, 8vw) 40vh; font: 600 var(--tp-tam, 34px)/1.45 system-ui, sans-serif; white-space: pre-wrap; text-align: center; }
+.tp-bar { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,.55); padding: 10px 14px; border-radius: 999px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); }
+.tp-bar button { border: 0; border-radius: 999px; padding: 9px 14px; background: rgba(255,255,255,.18); color: #fff; font: 600 14px system-ui; cursor: pointer; }
+.tp-bar .tp-rec { background: #d93a3a; min-width: 110px; } .tp-bar label { font: 12px system-ui; display: grid; gap: 2px; text-align: center; color: #fff; text-transform: none; letter-spacing: 0; } .tp-bar input[type=range] { all: revert; width: 110px; accent-color: #fff; }
+.tp-cuenta { position: absolute; inset: 0; display: grid; place-items: center; font: 800 120px system-ui; text-shadow: 0 4px 20px #000; pointer-events: none; }
+.tp-time { font: 600 14px system-ui; min-width: 48px; text-align: center; }
 .pz-gwrap { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
 .pz-gwrap textarea, .pz-guion-bg { position: absolute; inset: 0; margin: 0; border: 0 !important; border-radius: 0 !important; padding: 14px; font: inherit; font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word; box-sizing: border-box; width: 100%; height: 100%; }
 .pz-gwrap textarea { background: transparent !important; overflow-y: scroll; z-index: 1; }
@@ -1698,7 +1709,7 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
       </div>
       <p class="pz-estado" id="pz-estado" role="status"></p>
       <div class="pz-vacia" id="pz-vacia">Crea tu primera pizarra para armar ideas de videos y publicaciones: pega imágenes de referencia, escribe guiones y diálogos en notas, y únelas con flechas para el orden de grabación.<br><button type="button" class="btn" id="pz-nueva2">+ Crear pizarra</button></div>
-      <div class="pz-area" id="pz-area"><aside class="pz-guion" id="pz-guion" hidden><label for="pz-guion-t">Guion</label><div class="pz-gwrap"><div class="pz-guion-bg" id="pz-guion-bg" aria-hidden="true"></div><textarea id="pz-guion-t" placeholder="Escribe aquí el guion del video: lo que se dice en cada escena, diálogos, textos en pantalla…"></textarea><button type="button" class="pz-vbtn" id="pz-vbtn" hidden>🔗 Vincular a un plano</button></div><small id="pz-guion-e"></small></aside><div class="pz-zona" id="pz-zona" tabindex="0" aria-label="Pizarra: doble clic crea una nota, Cmd+V pega imágenes" hidden>
+      <div class="pz-area" id="pz-area"><aside class="pz-guion" id="pz-guion" hidden><div class="pz-gcab"><label for="pz-guion-t">Guion</label><button type="button" class="pz-grabar" id="pz-grabar">● Grabar</button></div><div class="pz-gwrap"><div class="pz-guion-bg" id="pz-guion-bg" aria-hidden="true"></div><textarea id="pz-guion-t" placeholder="Escribe aquí el guion del video: lo que se dice en cada escena, diálogos, textos en pantalla…"></textarea><button type="button" class="pz-vbtn" id="pz-vbtn" hidden>🔗 Vincular a un plano</button></div><small id="pz-guion-e"></small></aside><div class="pz-zona" id="pz-zona" tabindex="0" aria-label="Pizarra: doble clic crea una nota, Cmd+V pega imágenes" hidden>
         <div class="pz-mundo" id="pz-mundo"><svg class="pz-lineas" id="pz-lineas" aria-hidden="true"></svg><div id="pz-items"></div></div>
       </div></div>
       <div class="pz-planos" id="pz-planos" hidden><span class="pz-planos-t">Planos · arrástralos a la pizarra o tócalos</span><div class="pz-planos-l" id="pz-planos-l"></div></div>
@@ -3094,6 +3105,42 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     out.push(document.createTextNode('\n')); bg.replaceChildren(...out); pzGuionSync();
   }
   function pzGuionSync() { const bg = $('pz-guion-bg'), t = $('pz-guion-t'); if (!bg || !t) return; bg.style.width = t.clientWidth + 'px'; bg.style.transform = `translateY(${-t.scrollTop}px)`; }
+  async function pzTeleprompter() {
+    const texto = $('pz-guion-t').value.trim(); if (!texto) { alert('Primero escribe el guion.'); return; }
+    let vel = 30, tam = 34, cam = 'user', stream = null, rec = null, partes = [], anim = 0, t0 = 0, reloj = 0, pos = 0, last = 0, corriendo = false;
+    const o = document.createElement('div'); o.className = 'tp';
+    o.innerHTML = `<video playsinline muted autoplay></video><div class="tp-txt"><div class="tp-in"></div></div><div class="tp-cuenta"></div>
+      <div class="tp-bar"><button type="button" data-a="cerrar">✕</button><button type="button" data-a="cam">⟲ Cámara</button>
+      <label>Velocidad<input type="range" min="5" max="120" value="30" data-a="vel"></label><label>Letra<input type="range" min="20" max="70" value="34" data-a="tam"></label>
+      <button type="button" data-a="pausa">⏸ Texto</button><span class="tp-time">0:00</span><button type="button" class="tp-rec" data-a="rec">● Grabar</button></div>`;
+    document.body.appendChild(o); const v = o.querySelector('video'), box = o.querySelector('.tp-txt'), inn = o.querySelector('.tp-in'), q = (a) => o.querySelector(`[data-a="${a}"]`);
+    inn.textContent = texto;
+    const abrir = async () => { if (stream) stream.getTracks().forEach((t) => t.stop());
+      try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cam, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true }); v.srcObject = stream; v.style.transform = cam === 'user' ? 'scaleX(-1)' : 'none'; }
+      catch (e) { alert('No se pudo abrir la cámara o el micrófono. Revisa los permisos del navegador.'); } };
+    await abrir();
+    const paso = (ts) => { if (last) pos += vel * (ts - last) / 1000; last = ts; box.scrollTop = pos; if (pos >= box.scrollHeight - box.clientHeight) corriendo = false; if (corriendo) anim = requestAnimationFrame(paso); else last = 0; };
+    const correr = (si) => { corriendo = si; q('pausa').textContent = si ? '⏸ Texto' : '▶ Texto'; if (si) { last = 0; anim = requestAnimationFrame(paso); } else cancelAnimationFrame(anim); };
+    box.addEventListener('wheel', () => { pos = box.scrollTop; }, { passive: true }); box.style.overflowY = 'auto'; box.addEventListener('scroll', () => { if (!corriendo) pos = box.scrollTop; });
+    q('vel').addEventListener('input', (e) => { vel = +e.target.value; }); q('tam').addEventListener('input', (e) => { inn.style.setProperty('--tp-tam', e.target.value + 'px'); });
+    q('pausa').addEventListener('click', () => correr(!corriendo)); q('pausa').textContent = '▶ Texto';
+    q('cam').addEventListener('click', () => { if (rec) return; cam = cam === 'user' ? 'environment' : 'user'; abrir(); });
+    const detener = () => { if (rec && rec.state !== 'inactive') rec.stop(); clearInterval(reloj); correr(false); };
+    q('rec').addEventListener('click', async () => {
+      if (rec) { detener(); return; } if (!stream) return;
+      const c = o.querySelector('.tp-cuenta'); for (const n of [3, 2, 1]) { c.textContent = n; await new Promise((r) => setTimeout(r, 800)); } c.textContent = '';
+      const tipos = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm']; const mime = tipos.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+      partes = []; rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {}); rec.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
+      rec.onstop = () => { const tipo = rec.mimeType || mime || 'video/webm', bl = new Blob(partes, { type: tipo }), a = document.createElement('a'); a.href = URL.createObjectURL(bl);
+        a.download = 'toma-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + (tipo.includes('mp4') ? '.mp4' : '.webm'); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+        rec = null; q('rec').textContent = '● Grabar'; };
+      rec.start(1000); t0 = Date.now(); q('rec').textContent = '■ Detener'; pos = 0; box.scrollTop = 0; correr(true);
+      reloj = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); q('rec').previousElementSibling.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 500);
+    });
+    const cerrar = () => { detener(); setTimeout(() => { if (stream) stream.getTracks().forEach((t) => t.stop()); o.remove(); document.removeEventListener('keydown', tecla, true); }, 300); };
+    const tecla = (e) => { if (e.key === 'Escape') cerrar(); else if (e.key === ' ') { e.preventDefault(); correr(!corriendo); } e.stopPropagation(); };
+    document.addEventListener('keydown', tecla, true); q('cerrar').addEventListener('click', cerrar);
+  }
   function pzVincFin() { pzVinc = null; document.body.classList.remove('pz-vinculando'); const l = document.getElementById('pz-vlinea'); if (l) l.remove(); }
 
   function pzItemEl(it) {
@@ -3300,6 +3347,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           const n = document.elementsFromPoint(ev.clientX, ev.clientY).map((x) => x.closest && x.closest('#pz-items .pz-it')).find((x) => x && x.dataset.id !== de);
           if (n && !pz.lineas.some((l) => (l.de === de && l.a === n.dataset.id) || (l.a === de && l.de === n.dataset.id))) { pz.lineas.push({ id: pzNid(), de, a: n.dataset.id }); pzGuardar(true); pzPintar(); } };
         document.addEventListener('pointermove', mv, true); document.addEventListener('pointerup', up, true); }, true);
+      $('pz-grabar').addEventListener('click', pzTeleprompter);
       document.addEventListener('mousemove', (e) => { if (!pzVinc) return; const l = document.querySelector('#pz-vlinea line'); if (l) { l.setAttribute('x2', e.clientX); l.setAttribute('y2', e.clientY); } });
       document.addEventListener('keydown', (e) => { if (pzVinc && e.key === 'Escape') pzVincFin(); });
       document.addEventListener('pointerdown', (e) => { if (!pzVinc) return; if (e.target.closest('#pz-vbtn')) return;
