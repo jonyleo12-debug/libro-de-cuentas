@@ -1426,6 +1426,10 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .tp-bar button { border: 0; border-radius: 999px; padding: 9px 14px; background: rgba(255,255,255,.18); color: #fff; font: 600 14px system-ui; cursor: pointer; }
 .tp-bar .tp-rec { background: #d93a3a; min-width: 110px; } .tp-bar label { font: 12px system-ui; display: grid; gap: 2px; text-align: center; color: #fff; text-transform: none; letter-spacing: 0; } .tp-bar input[type=range] { all: revert; width: 110px; accent-color: #fff; }
 .tp-cuenta { position: absolute; inset: 0; display: grid; place-items: center; font: 800 120px system-ui; text-shadow: 0 4px 20px #000; pointer-events: none; }
+.tp-guia { position: absolute; left: 0; right: 0; top: calc(42% * .3 + 6px); height: 0; border-top: 2px solid rgba(255,214,10,.55); pointer-events: none; }
+.tp-guia::before { content: '▶'; position: absolute; left: 8px; top: -14px; color: #ffd60a; font-size: 18px; }
+.tp .tp-in span.leida { opacity: .45; } .tp-bar button.on { background: #fff; color: #000; }
+.tp.sin-cam .tp-txt { height: 100%; background: #000; -webkit-mask-image: none; mask-image: none; } .tp.sin-cam .tp-guia { top: calc(30% + 6px); }
 .tp-time { font: 600 14px system-ui; min-width: 48px; text-align: center; }
 .pz-gwrap { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
 .pz-gwrap textarea, .pz-guion-bg { position: absolute; inset: 0; margin: 0; border: 0 !important; border-radius: 0 !important; padding: 14px; font: inherit; font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word; box-sizing: border-box; width: 100%; height: 100%; }
@@ -3107,38 +3111,65 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pzGuionSync() { const bg = $('pz-guion-bg'), t = $('pz-guion-t'); if (!bg || !t) return; bg.style.width = t.clientWidth + 'px'; bg.style.transform = `translateY(${-t.scrollTop}px)`; }
   async function pzTeleprompter() {
     const texto = $('pz-guion-t').value.trim(); if (!texto) { alert('Primero escribe el guion.'); return; }
-    let vel = 30, tam = 34, cam = 'user', stream = null, rec = null, partes = [], anim = 0, t0 = 0, reloj = 0, pos = 0, last = 0, corriendo = false;
+    let cfg = { vel: 30, tam: 34, ancho: 80, espejo: false, voz: false, cam: true }; try { Object.assign(cfg, JSON.parse(localStorage.getItem('libro-tp') || '{}')); } catch (e) {}
+    const guardarCfg = () => { try { localStorage.setItem('libro-tp', JSON.stringify(cfg)); } catch (e) {} };
+    let cam = 'user', stream = null, rec = null, partes = [], anim = 0, t0 = 0, reloj = 0, pos = 0, last = 0, corriendo = false, reco = null, palIdx = 0;
     const o = document.createElement('div'); o.className = 'tp';
-    o.innerHTML = `<video playsinline muted autoplay></video><div class="tp-txt"><div class="tp-in"></div></div><div class="tp-cuenta"></div>
-      <div class="tp-bar"><button type="button" data-a="cerrar">✕</button><button type="button" data-a="cam">⟲ Cámara</button>
-      <label>Velocidad<input type="range" min="5" max="120" value="30" data-a="vel"></label><label>Letra<input type="range" min="20" max="70" value="34" data-a="tam"></label>
-      <button type="button" data-a="pausa">⏸ Texto</button><span class="tp-time">0:00</span><button type="button" class="tp-rec" data-a="rec">● Grabar</button></div>`;
+    o.innerHTML = `<video playsinline muted autoplay></video><div class="tp-txt"><div class="tp-in"></div></div><div class="tp-guia"></div><div class="tp-cuenta"></div>
+      <div class="tp-bar"><button type="button" data-a="cerrar" title="Cerrar (Esc)">✕</button><button type="button" data-a="cam">⟲ Cámara</button><button type="button" data-a="solo">Solo texto</button>
+      <label>Velocidad<input type="range" min="5" max="150" data-a="vel"></label><label>Letra<input type="range" min="20" max="80" data-a="tam"></label><label>Ancho<input type="range" min="40" max="100" data-a="ancho"></label>
+      <button type="button" data-a="espejo" title="Texto invertido para teleprompter con espejo">⇋ Espejo</button><button type="button" data-a="voz" title="El texto avanza al ritmo de tu voz">🎙 Sigue mi voz</button>
+      <button type="button" data-a="mimo">DJI Mimo</button><button type="button" data-a="ini">⤒ Inicio</button><button type="button" data-a="pausa">▶ Texto</button><span class="tp-time">0:00</span><button type="button" class="tp-rec" data-a="rec">● Grabar</button></div>`;
     document.body.appendChild(o); const v = o.querySelector('video'), box = o.querySelector('.tp-txt'), inn = o.querySelector('.tp-in'), q = (a) => o.querySelector(`[data-a="${a}"]`);
-    inn.textContent = texto;
-    const abrir = async () => { if (stream) stream.getTracks().forEach((t) => t.stop());
+    const pals = []; texto.split(/(\s+)/).forEach((w) => { if (!w) return; if (/^\s+$/.test(w)) { inn.appendChild(document.createTextNode(w)); return; } const sp = document.createElement('span'); sp.textContent = w; inn.appendChild(sp); pals.push({ el: sp, n: w.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ]/g, '') }); });
+    const aplicar = () => { inn.style.setProperty('--tp-tam', cfg.tam + 'px'); inn.style.paddingLeft = inn.style.paddingRight = ((100 - cfg.ancho) / 2) + 'vw'; inn.style.transform = cfg.espejo ? 'scaleX(-1)' : ''; o.classList.toggle('sin-cam', !cfg.cam);
+      q('vel').value = cfg.vel; q('tam').value = cfg.tam; q('ancho').value = cfg.ancho; q('espejo').classList.toggle('on', cfg.espejo); q('voz').classList.toggle('on', cfg.voz); q('solo').classList.toggle('on', !cfg.cam); guardarCfg(); };
+    const abrir = async () => { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; if (!cfg.cam) { v.srcObject = null; return; }
       try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cam, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true }); v.srcObject = stream; v.style.transform = cam === 'user' ? 'scaleX(-1)' : 'none'; }
       catch (e) { alert('No se pudo abrir la cámara o el micrófono. Revisa los permisos del navegador.'); } };
-    await abrir();
-    const paso = (ts) => { if (last) pos += vel * (ts - last) / 1000; last = ts; box.scrollTop = pos; if (pos >= box.scrollHeight - box.clientHeight) corriendo = false; if (corriendo) anim = requestAnimationFrame(paso); else last = 0; };
-    const correr = (si) => { corriendo = si; q('pausa').textContent = si ? '⏸ Texto' : '▶ Texto'; if (si) { last = 0; anim = requestAnimationFrame(paso); } else cancelAnimationFrame(anim); };
-    box.addEventListener('wheel', () => { pos = box.scrollTop; }, { passive: true }); box.style.overflowY = 'auto'; box.addEventListener('scroll', () => { if (!corriendo) pos = box.scrollTop; });
-    q('vel').addEventListener('input', (e) => { vel = +e.target.value; }); q('tam').addEventListener('input', (e) => { inn.style.setProperty('--tp-tam', e.target.value + 'px'); });
-    q('pausa').addEventListener('click', () => correr(!corriendo)); q('pausa').textContent = '▶ Texto';
+    aplicar(); await abrir();
+    const paso = (ts) => { if (last) pos += cfg.vel * (ts - last) / 1000; last = ts; box.scrollTop = pos; if (pos >= box.scrollHeight - box.clientHeight) corriendo = false; if (corriendo) anim = requestAnimationFrame(paso); else last = 0; };
+    const correr = (si) => { if (cfg.voz && si) { vozIni(); return; } corriendo = si; q('pausa').textContent = si ? '⏸ Texto' : '▶ Texto'; cancelAnimationFrame(anim); if (si) { last = 0; anim = requestAnimationFrame(paso); } };
+    // Voice follow: listen, match the last spoken words a little ahead of where we are, and scroll that word to the reading line
+    const irPal = (i) => { palIdx = i; pals.forEach((p, k) => p.el.classList.toggle('leida', k < i)); const el = pals[Math.min(i, pals.length - 1)].el; const y = el.offsetTop - box.clientHeight * 0.3; box.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); pos = Math.max(0, y); };
+    const vozIni = () => { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) { alert('Este navegador no permite seguir la voz. Usa Chrome o Safari actualizado.'); cfg.voz = false; aplicar(); return; }
+      if (reco) return; reco = new SR(); reco.lang = 'es-EC'; reco.continuous = true; reco.interimResults = true;
+      reco.onresult = (e) => { let t = ''; for (let i = e.resultIndex; i < e.results.length; i++) t += ' ' + e.results[i][0].transcript; const dichas = t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ\s]/g, '').split(/\s+/).filter(Boolean).slice(-3); if (!dichas.length) return;
+        for (let i = palIdx; i < Math.min(pals.length, palIdx + 30); i++) { let ok = true; for (let k = 0; k < dichas.length; k++) if (!pals[i + k] || pals[i + k].n !== dichas[k]) { ok = false; break; } if (ok) { irPal(i + dichas.length); break; } } };
+      reco.onend = () => { if (reco) try { reco.start(); } catch (e) {} }; try { reco.start(); } catch (e) {} q('pausa').textContent = '⏸ Voz'; };
+    const vozFin = () => { if (!reco) return; const r = reco; reco = null; try { r.stop(); } catch (e) {} q('pausa').textContent = '▶ Texto'; };
+    box.style.overflowY = 'auto'; box.addEventListener('scroll', () => { if (!corriendo) pos = box.scrollTop; });
+    box.addEventListener('click', () => { if (cfg.voz) { reco ? vozFin() : vozIni(); } else correr(!corriendo); });
+    q('vel').addEventListener('input', (e) => { cfg.vel = +e.target.value; guardarCfg(); }); q('tam').addEventListener('input', (e) => { cfg.tam = +e.target.value; aplicar(); }); q('ancho').addEventListener('input', (e) => { cfg.ancho = +e.target.value; aplicar(); });
+    q('espejo').addEventListener('click', () => { cfg.espejo = !cfg.espejo; aplicar(); });
+    q('voz').addEventListener('click', () => { cfg.voz = !cfg.voz; if (!cfg.voz) vozFin(); else correr(false); aplicar(); });
+    q('solo').addEventListener('click', () => { if (rec) return; cfg.cam = !cfg.cam; aplicar(); abrir(); });
+    q('ini').addEventListener('click', () => { pos = 0; box.scrollTop = 0; irPal(0); box.scrollTop = 0; });
+    q('pausa').addEventListener('click', () => { if (cfg.voz) { reco ? vozFin() : vozIni(); } else correr(!corriendo); });
     q('cam').addEventListener('click', () => { if (rec) return; cam = cam === 'user' ? 'environment' : 'user'; abrir(); });
-    const detener = () => { if (rec && rec.state !== 'inactive') rec.stop(); clearInterval(reloj); correr(false); };
+    q('mimo').addEventListener('click', async () => { try { await navigator.clipboard.writeText(texto); } catch (e) {}
+      if (navigator.share) { try { await navigator.share({ text: texto }); return; } catch (e) {} }
+      alert('Guion copiado. En DJI Mimo abre la cámara, toca "Teleprompter" (Prompter), crea un texto nuevo y pégalo.'); });
+    const detener = () => { if (rec && rec.state !== 'inactive') rec.stop(); clearInterval(reloj); correr(false); vozFin(); };
     q('rec').addEventListener('click', async () => {
-      if (rec) { detener(); return; } if (!stream) return;
+      if (rec) { detener(); return; } if (!stream) { alert('Activa la cámara (quita "Solo texto") para grabar.'); return; }
       const c = o.querySelector('.tp-cuenta'); for (const n of [3, 2, 1]) { c.textContent = n; await new Promise((r) => setTimeout(r, 800)); } c.textContent = '';
       const tipos = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm']; const mime = tipos.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
       partes = []; rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {}); rec.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
       rec.onstop = () => { const tipo = rec.mimeType || mime || 'video/webm', bl = new Blob(partes, { type: tipo }), a = document.createElement('a'); a.href = URL.createObjectURL(bl);
         a.download = 'toma-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + (tipo.includes('mp4') ? '.mp4' : '.webm'); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
         rec = null; q('rec').textContent = '● Grabar'; };
-      rec.start(1000); t0 = Date.now(); q('rec').textContent = '■ Detener'; pos = 0; box.scrollTop = 0; correr(true);
+      rec.start(1000); t0 = Date.now(); q('rec').textContent = '■ Detener'; pos = 0; box.scrollTop = 0; irPal(0); correr(true);
       reloj = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); q('rec').previousElementSibling.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 500);
     });
     const cerrar = () => { detener(); setTimeout(() => { if (stream) stream.getTracks().forEach((t) => t.stop()); o.remove(); document.removeEventListener('keydown', tecla, true); }, 300); };
-    const tecla = (e) => { if (e.key === 'Escape') cerrar(); else if (e.key === ' ') { e.preventDefault(); correr(!corriendo); } e.stopPropagation(); };
+    // Keyboard and Bluetooth remotes (they send arrows / space / page keys)
+    const tecla = (e) => { const k = e.key;
+      if (k === 'Escape') cerrar(); else if (k === ' ' || k === 'Enter') { e.preventDefault(); q('pausa').click(); }
+      else if (k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); if (corriendo) { cfg.vel = Math.min(150, cfg.vel + 5); aplicar(); } else { pos = Math.max(0, pos - 80); box.scrollTop = pos; } }
+      else if (k === 'ArrowDown' || k === 'PageDown') { e.preventDefault(); if (corriendo) { cfg.vel = Math.max(5, cfg.vel - 5); aplicar(); } else { pos += 80; box.scrollTop = pos; } }
+      else if (k === 'r' || k === 'R') q('rec').click();
+      e.stopPropagation(); };
     document.addEventListener('keydown', tecla, true); q('cerrar').addEventListener('click', cerrar);
   }
   function pzVincFin() { pzVinc = null; document.body.classList.remove('pz-vinculando'); const l = document.getElementById('pz-vlinea'); if (l) l.remove(); }
