@@ -1334,7 +1334,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 .fecha-edit { cursor: pointer; } .fecha-edit:hover { color: var(--accent); } .fecha-in { font: inherit; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--accent); }
 
 /* ===== Barra lateral ===== */
-.barra { position: fixed; z-index: 60; left: 0; top: 0; bottom: 0; width: 232px; display: flex; flex-direction: column; gap: 6px; padding: 22px 14px 16px; background: var(--panel); border-right: 1px solid var(--line); box-shadow: 4px 0 24px -18px rgba(0,0,0,.25); }
+.barra { position: fixed; z-index: 60; left: 0; top: 0; bottom: 0; width: 264px; display: flex; flex-direction: column; gap: 6px; padding: 22px 14px 16px; background: var(--panel); border-right: 1px solid var(--line); box-shadow: 4px 0 24px -18px rgba(0,0,0,.25); }
 .barra-logo { display: flex; align-items: center; gap: 10px; padding: 2px 10px 18px; font-size: 17px; }
 .barra-marca { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; }
 .barra-nav { display: grid; gap: 4px; }
@@ -1346,7 +1346,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 .barra-pie { margin-top: auto; display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
 .barra-pie .usr { background: none; box-shadow: none; padding: 4px 6px; justify-content: space-between; flex-wrap: wrap; }
 .barra-pie .ajustes-btn { justify-self: start; }
-@media (min-width: 901px) { body:has(#app:not([hidden])) { padding-left: 232px; } }
+@media (min-width: 901px) { body:has(#app:not([hidden])) { padding-left: 264px; } }
 body[data-vista] [data-v] { display: none !important; }
 body[data-vista="usuario"] [data-v="usuario"]:not([hidden]), body[data-vista="finanzas"] [data-v="finanzas"]:not([hidden]), body[data-vista="casos"] [data-v="casos"]:not([hidden]), body[data-vista="inmo"] [data-v="inmo"]:not([hidden]), body[data-vista="mkt"] [data-v="mkt"]:not([hidden]) { display: revert !important; }
 body[data-vista="finanzas"] .totals[data-v], body[data-vista="finanzas"] .grid2[data-v] { display: grid !important; } body[data-vista="finanzas"] .aviso-resp[data-v]:not([hidden]) { display: flex !important; }
@@ -1354,7 +1354,9 @@ body[data-vista="usuario"] #sec-notas { display: block !important; }
 body:not([data-vista="usuario"]):not([data-vista="finanzas"]) #fila-nuevo { display: none; }
 body[data-vista] .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
 body[data-vista] .fila-nuevo > #sec-notas { border-left: 0; }
-#hero-color { display: none; }
+#hero-color { display: none; } .hero::after { content: none !important; }
+.barra-logo { flex-wrap: nowrap; gap: 8px; } .barra-logo .hero-fecha { display: flex; align-items: center; gap: 0; margin-left: auto; }
+.barra-logo .hero-fecha .hero-nav, .barra-logo .hero-mes-btn { color: var(--muted); background: none; } .barra-logo .hero-mes-btn { font-size: 12.5px; padding: 4px 2px; color: var(--ink, #1c1c1e); } .barra-logo .hero-nav { font-size: 16px; padding: 2px 4px; }
 .usu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px; }
 .usu-grid > div { display: grid; gap: 8px; align-content: start; }
 @media (max-width: 900px) {
@@ -6447,7 +6449,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const cajaC = document.createElement('div'); cajaC.innerHTML = '<span class="usr-l">Color</span>'; cajaC.appendChild($('colores')); grid.appendChild(cajaC);
     const cajaUs = document.createElement('div'); cajaUs.append($('usuarios-l'), $('usuarios')); grid.appendChild(cajaUs);
     const pie = $('barra-pie'), mq = matchMedia('(max-width: 900px)');
-    const ubicarPie = () => { if (mq.matches) cajaU.appendChild(pie); else $('barra').appendChild(pie); cajaU.hidden = !mq.matches; };
+    const fecha = document.querySelector('.hero-fecha'), fechaCasa = fecha.parentNode, fechaSig = fecha.nextSibling;
+    const ubicarPie = () => { if (mq.matches) { cajaU.appendChild(pie); fechaCasa.insertBefore(fecha, fechaSig); } else { $('barra').appendChild(pie); document.querySelector('.barra-logo').appendChild(fecha); } cajaU.hidden = !mq.matches; };
     mq.addEventListener('change', ubicarPie); ubicarPie();
     const VISTAS = ['usuario', 'finanzas', 'casos', 'inmo', 'mkt'];
     let v = 'finanzas'; try { const g = localStorage.getItem('libro-vista'); if (VISTAS.includes(g)) v = g; } catch (e) {}
