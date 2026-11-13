@@ -3084,10 +3084,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function pzGuionMarcas() {
     const bg = $('pz-guion-bg'), t = $('pz-guion-t'); if (!bg || !t) return;
     const txt = t.value, rs = [];
-    ((pz && pz.items) || []).forEach((it) => { if (it.t !== 'img' || !it.vinc || !it.vinc.txt) return; let i = txt.indexOf(it.vinc.txt); if (i < 0) return; rs.push([i, i + it.vinc.txt.length, it.vinc.color]); });
-    rs.sort((a, b) => a[0] - b[0]); const out = []; let k = 0;
-    rs.forEach(([a, b, c]) => { if (a < k) return; out.push(document.createTextNode(txt.slice(k, a))); const m = el('mark'); m.style.background = c; m.textContent = txt.slice(a, b); out.push(m); k = b; });
-    out.push(document.createTextNode(txt.slice(k) + '\n')); bg.replaceChildren(...out); pzGuionSync();
+    ((pz && pz.items) || []).forEach((it) => { if (it.t !== 'img' || !it.vinc || !it.vinc.txt) return; let i = txt.indexOf(it.vinc.txt); if (i < 0) return; rs.push([i, i + it.vinc.txt.length, it.vinc.color, it.vinc.t || 0]); }); rs.sort((a, b) => a[3] - b[3]);
+    const cs = new Array(txt.length).fill(''); rs.forEach(([a, b, c]) => { for (let i = a; i < b; i++) cs[i] = c; });
+    const out = []; let k = 0;
+    while (k < txt.length) { let j = k; while (j < txt.length && cs[j] === cs[k]) j++; if (cs[k]) { const m = el('mark'); m.style.background = cs[k]; m.textContent = txt.slice(k, j); out.push(m); } else out.push(document.createTextNode(txt.slice(k, j))); k = j; }
+    out.push(document.createTextNode('\n')); bg.replaceChildren(...out); pzGuionSync();
   }
   function pzGuionSync() { const bg = $('pz-guion-bg'), t = $('pz-guion-t'); if (!bg || !t) return; bg.style.width = t.clientWidth + 'px'; bg.style.transform = `translateY(${-t.scrollTop}px)`; }
   function pzVincFin() { pzVinc = null; document.body.classList.remove('pz-vinculando'); const l = document.getElementById('pz-vlinea'); if (l) l.remove(); }
@@ -3280,7 +3281,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       t.addEventListener('mouseup', verBtn); t.addEventListener('keyup', () => verBtn());
       vb.addEventListener('mousedown', (e) => e.preventDefault());
       vb.addEventListener('click', (e) => {
-        const a = t.selectionStart, b = t.selectionEnd, txt = t.value.slice(a, b).trim(); if (!txt || !pz) return; const r = vb.getBoundingClientRect(); vb.hidden = true; t.setSelectionRange(b, b);
+        const a = t.selectionStart, b = t.selectionEnd, txt = t.value.slice(a, b); if (!txt || !pz) return; const r = vb.getBoundingClientRect(); vb.hidden = true; t.setSelectionRange(b, b);
         const usados = pz.items.filter((i) => i.vinc).map((i) => i.vinc.color), color = PZ_VCOL.find((c) => !usados.includes(c)) || PZ_VCOL[usados.length % PZ_VCOL.length];
         pzVinc = { txt, color, x: r.left + r.width / 2, y: r.top };
         document.body.classList.add('pz-vinculando');
@@ -3292,7 +3293,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       document.addEventListener('keydown', (e) => { if (pzVinc && e.key === 'Escape') pzVincFin(); });
       document.addEventListener('pointerdown', (e) => { if (!pzVinc) return; if (e.target.closest('#pz-vbtn')) return;
         const n = e.target.closest('#pz-items .pz-it.pz-img'); e.preventDefault(); e.stopPropagation();
-        if (n) { const it = pz.items.find((i) => i.id === n.dataset.id); if (it) { pz.items.forEach((i) => { if (i.vinc && i.vinc.txt === pzVinc.txt) delete i.vinc; }); it.vinc = { txt: pzVinc.txt, color: pzVinc.color }; pzGuardar(true); pzVincFin(); pzPintar(); setMsg('Escrito vinculado al plano.'); return; } }
+        if (n) { const it = pz.items.find((i) => i.id === n.dataset.id); if (it) { pz.items.forEach((i) => { if (i.vinc && i.vinc.txt === pzVinc.txt) delete i.vinc; }); it.vinc = { txt: pzVinc.txt, color: pzVinc.color, t: Date.now() }; pzGuardar(true); pzVincFin(); pzPintar(); setMsg('Escrito vinculado al plano.'); return; } }
         pzVincFin(); }, true); }
     { const PLANOS_V = [["plano-general", "Plano general", "El sujeto con su entorno"], ["plano-medio", "Plano medio", "De la cintura hacia arriba"], ["primer-plano", "Primer plano", "El rostro y los hombros"], ["plano-americano", "Plano americano", "De las rodillas a la cabeza"], ["plano-medio-corto", "Plano medio corto", "Del pecho a la cabeza"], ["gran-plano-general", "Gran plano general", "Muestra el lugar y el entorno"], ["plano-detalle", "Plano detalle", "Una parte: ojo, mano, objeto"], ["sobre-el-hombro", "Sobre el hombro", "Desde atrás del hombro"], ["picado", "Picado", "Cámara arriba, sujeto pequeño"], ["contrapicado", "Contrapicado", "Cámara abajo, sujeto poderoso"], ["plano-entero", "Plano entero", "El cuerpo completo"], ["primerisimo-primer-plano", "Primerísimo primer plano", "Solo el rostro, mucha emoción"], ["cenital", "Cenital", "Desde arriba, totalmente vertical"], ["nadir", "Nadir", "Desde el suelo hacia arriba"], ["holandes", "Plano holandés", "Cámara inclinada, tensión"], ["normal", "Ángulo normal", "A la altura de los ojos"], ["perfil", "Perfil", "De lado, vista lateral"], ["tres-cuartos", "Tres cuartos", "Entre frente y perfil"], ["espaldas", "De espaldas", "El sujeto de espaldas"], ["ras-de-suelo", "A ras de suelo", "Cámara pegada al suelo"], ["altura-cadera", "A la altura de la cadera", "Cámara a la altura de la cadera"], ["sobre-la-cabeza", "Sobre la cabeza", "Desde atrás y arriba"]];
       const poner = (k, n, en) => { if (!pz) return; const c = en || pzCentro(), w = 240, h = 206, x = Math.round(c.x - w / 2), y = Math.round(c.y - h / 2);
