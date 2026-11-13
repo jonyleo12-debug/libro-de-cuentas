@@ -1428,7 +1428,7 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .tp-cuenta { position: absolute; inset: 0; display: grid; place-items: center; font: 800 120px system-ui; text-shadow: 0 4px 20px #000; pointer-events: none; }
 .tp-guia { position: absolute; left: 0; right: 0; top: calc(42% * .3 + 6px); height: 0; border-top: 2px solid rgba(255,214,10,.55); pointer-events: none; }
 .tp-guia::before { content: '▶'; position: absolute; left: 8px; top: -14px; color: #ffd60a; font-size: 18px; }
-.tp .tp-in span.leida { opacity: .45; } .tp-bar button.on { background: #fff; color: #000; }
+.tp .tp-in span.leida { opacity: .45; } .tp .tp-in span.ahora { color: #ffd60a; } .tp-bar button.on { background: #fff; color: #000; }
 .tp.sin-cam .tp-txt { height: 100%; background: #000; -webkit-mask-image: none; mask-image: none; } .tp.sin-cam .tp-guia { top: calc(30% + 6px); }
 .tp-time { font: 600 14px system-ui; min-width: 48px; text-align: center; }
 .pz-gwrap { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
@@ -3131,18 +3131,21 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const paso = (ts) => { if (last) pos += cfg.vel * (ts - last) / 1000; last = ts; box.scrollTop = pos; if (pos >= box.scrollHeight - box.clientHeight) corriendo = false; if (corriendo) anim = requestAnimationFrame(paso); else last = 0; };
     const correr = (si) => { if (cfg.voz && si) { vozIni(); return; } corriendo = si; q('pausa').textContent = si ? '⏸ Texto' : '▶ Texto'; cancelAnimationFrame(anim); if (si) { last = 0; anim = requestAnimationFrame(paso); } };
     // Voice follow: listen, match the last spoken words a little ahead of where we are, and scroll that word to the reading line
-    const irPal = (i) => { palIdx = i; pals.forEach((p, k) => p.el.classList.toggle('leida', k < i)); const el = pals[Math.min(i, pals.length - 1)].el; const y = el.offsetTop - box.clientHeight * 0.3; box.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); pos = Math.max(0, y); };
-    const vozIni = () => { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) { alert('Este navegador no permite seguir la voz. Usa Chrome o Safari actualizado.'); cfg.voz = false; aplicar(); return; }
+    const irPal = (i) => { palIdx = i; pals.forEach((p, k) => p.el.classList.toggle('leida', k < i)); const el = pals[Math.min(i, pals.length - 1)].el; const y = el.offsetTop - box.clientHeight * 0.3; box.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); pals.forEach((p, k) => p.el.classList.toggle('ahora', k === i)); pos = Math.max(0, y); };
+    const vozIni = () => { cancelAnimationFrame(anim); corriendo = false; const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) { alert('Este navegador no permite seguir la voz. Usa Chrome o Safari actualizado.'); cfg.voz = false; aplicar(); return; }
       if (reco) return; reco = new SR(); reco.lang = 'es-EC'; reco.continuous = true; reco.interimResults = true;
       reco.onresult = (e) => { let t = ''; for (let i = e.resultIndex; i < e.results.length; i++) t += ' ' + e.results[i][0].transcript; const dichas = t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ\s]/g, '').split(/\s+/).filter(Boolean).slice(-3); if (!dichas.length) return;
-        for (let i = palIdx; i < Math.min(pals.length, palIdx + 30); i++) { let ok = true; for (let k = 0; k < dichas.length; k++) if (!pals[i + k] || pals[i + k].n !== dichas[k]) { ok = false; break; } if (ok) { irPal(i + dichas.length); break; } } };
-      reco.onend = () => { if (reco) try { reco.start(); } catch (e) {} }; try { reco.start(); } catch (e) {} q('pausa').textContent = '⏸ Voz'; };
+        const fin = Math.min(pals.length, palIdx + 25), parecido = (a, b) => a === b || (a.length > 3 && b.length > 3 && (a.startsWith(b.slice(0, 4)) || b.startsWith(a.slice(0, 4))));
+        for (let n = Math.min(2, dichas.length); n >= 1; n--) { const ult = dichas.slice(-n); if (n === 1 && ult[0].length < 4) continue;
+          for (let i = Math.max(0, palIdx - 2); i < fin; i++) { if (ult.every((w, k) => pals[i + k] && parecido(pals[i + k].n, w))) { if (i + n > palIdx) irPal(i + n); return; } } } };
+      reco.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { alert('El navegador no dio permiso para escuchar el micrófono. Revisa los permisos (en iPhone: Ajustes > Safari > Micrófono y Reconocimiento de voz).'); vozFin(); } };
+      reco.onend = () => { if (reco) setTimeout(() => { if (reco) try { reco.start(); } catch (e) {} }, 150); }; try { reco.start(); } catch (e) {} q('pausa').textContent = '⏸ Escuchando…'; };
     const vozFin = () => { if (!reco) return; const r = reco; reco = null; try { r.stop(); } catch (e) {} q('pausa').textContent = '▶ Texto'; };
     box.style.overflowY = 'auto'; box.addEventListener('scroll', () => { if (!corriendo) pos = box.scrollTop; });
     box.addEventListener('click', () => { if (cfg.voz) { reco ? vozFin() : vozIni(); } else correr(!corriendo); });
     q('vel').addEventListener('input', (e) => { cfg.vel = +e.target.value; guardarCfg(); }); q('tam').addEventListener('input', (e) => { cfg.tam = +e.target.value; aplicar(); }); q('ancho').addEventListener('input', (e) => { cfg.ancho = +e.target.value; aplicar(); });
     q('espejo').addEventListener('click', () => { cfg.espejo = !cfg.espejo; aplicar(); });
-    q('voz').addEventListener('click', () => { cfg.voz = !cfg.voz; if (!cfg.voz) vozFin(); else correr(false); aplicar(); });
+    q('voz').addEventListener('click', () => { cfg.voz = !cfg.voz; aplicar(); if (!cfg.voz) vozFin(); else vozIni(); });
     q('solo').addEventListener('click', () => { if (rec) return; cfg.cam = !cfg.cam; aplicar(); abrir(); });
     q('ini').addEventListener('click', () => { pos = 0; box.scrollTop = 0; irPal(0); box.scrollTop = 0; });
     q('pausa').addEventListener('click', () => { if (cfg.voz) { reco ? vozFin() : vozIni(); } else correr(!corriendo); });
