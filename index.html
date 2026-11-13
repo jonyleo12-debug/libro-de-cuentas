@@ -1422,6 +1422,9 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .pz-guion-bg { color: transparent; overflow: visible; pointer-events: none; height: auto !important; bottom: auto !important; right: auto !important; will-change: transform; }
 .pz-guion-bg mark { color: transparent; border-radius: 3px; padding: 0; }
 .pz-vbtn { position: absolute; z-index: 3; border: 0; border-radius: 999px; padding: 6px 12px; background: #1f2328; color: #fff; font: 600 12.5px inherit; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.pz-enl { position: absolute; right: -11px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border-radius: 50%; background: #fff; border: 2px solid #1f2328; cursor: crosshair; z-index: 2; opacity: 0; transition: opacity .15s, transform .15s; }
+.pz-enl::after { content: '+'; position: absolute; inset: 0; display: grid; place-items: center; font: 700 14px/1 sans-serif; color: #1f2328; }
+.pz-it:hover .pz-enl, .pz-it.sel .pz-enl { opacity: 1; } .pz-enl:hover { transform: scale(1.2); }
 .pz-vlinea { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
 body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; }
 .pz-guion small { font-size: 11.5px; color: var(--muted); min-height: 1em; }
@@ -3097,7 +3100,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const d = el('div', 'pz-it pz-' + it.t + (pzSel === it.id ? ' sel' : '') + (pzConectar && pzConectar.de === it.id ? ' origen' : ''));
     d.dataset.id = it.id; Object.assign(d.style, { left: it.x + 'px', top: it.y + 'px', width: it.w + 'px' });
     if (it.t !== 'texto') d.style.height = it.h + 'px';
-    if (it.t === 'img') { if (it.vinc && it.vinc.color) { d.style.outline = `4px solid ${it.vinc.color}`; d.style.outlineOffset = '2px'; d.style.borderRadius = '8px'; } const im = el('img'); im.src = it.url; im.alt = ''; im.draggable = false; d.appendChild(im); }
+    if (it.t === 'img') { if (it.vinc && it.vinc.color) { d.style.outline = `4px solid ${it.vinc.color}`; d.style.outlineOffset = '2px'; d.style.borderRadius = '8px'; } const im = el('img'); im.src = it.url; im.alt = ''; im.draggable = false; d.appendChild(im); if (pzTipo() === 'vid') { const en = el('span', 'pz-enl'); en.title = 'Arrastra hasta otro plano para unirlos'; d.appendChild(en); } }
     else {
       if (it.t === 'nota') { d.style.background = it.color || '#fff3b0'; if (pzOscuro(it.color)) d.classList.add('oscura'); }
       const tx = el('div', 'pz-tx'); tx.textContent = it.texto || ''; if (!it.texto) tx.dataset.ph = it.t === 'nota' ? 'Escribe la idea, el guion o el diálogo…' : 'Título';
@@ -3289,6 +3292,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         svg.innerHTML = `<line x1="${pzVinc.x}" y1="${pzVinc.y}" x2="${e.clientX}" y2="${e.clientY}" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 8"/><circle cx="${pzVinc.x}" cy="${pzVinc.y}" r="6" fill="${color}"/>`;
         document.body.appendChild(svg); setMsg('Ahora toca el plano que quieres vincular (Esc para cancelar).');
       });
+      document.addEventListener('pointerdown', (e) => { const en = e.target.closest && e.target.closest('.pz-enl'); if (!en || !pz || pzVinc) return; e.preventDefault(); e.stopPropagation();
+        const de = en.parentElement.dataset.id, r = en.getBoundingClientRect(), x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'pz-vlinea'); svg.innerHTML = `<line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y0}" stroke="#1f2328" stroke-width="3" stroke-linecap="round"/>`; document.body.appendChild(svg);
+        const mv = (ev) => { const l = svg.firstChild; l.setAttribute('x2', ev.clientX); l.setAttribute('y2', ev.clientY); };
+        const up = (ev) => { document.removeEventListener('pointermove', mv, true); document.removeEventListener('pointerup', up, true); svg.remove();
+          const n = document.elementsFromPoint(ev.clientX, ev.clientY).map((x) => x.closest && x.closest('#pz-items .pz-it')).find((x) => x && x.dataset.id !== de);
+          if (n && !pz.lineas.some((l) => (l.de === de && l.a === n.dataset.id) || (l.a === de && l.de === n.dataset.id))) { pz.lineas.push({ id: pzNid(), de, a: n.dataset.id }); pzGuardar(true); pzPintar(); } };
+        document.addEventListener('pointermove', mv, true); document.addEventListener('pointerup', up, true); }, true);
       document.addEventListener('mousemove', (e) => { if (!pzVinc) return; const l = document.querySelector('#pz-vlinea line'); if (l) { l.setAttribute('x2', e.clientX); l.setAttribute('y2', e.clientY); } });
       document.addEventListener('keydown', (e) => { if (pzVinc && e.key === 'Escape') pzVincFin(); });
       document.addEventListener('pointerdown', (e) => { if (!pzVinc) return; if (e.target.closest('#pz-vbtn')) return;
