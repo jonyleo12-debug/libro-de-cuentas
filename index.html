@@ -6458,7 +6458,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     document.querySelectorAll('.barra-it').forEach((b) => b.addEventListener('click', () => ir(b.dataset.vista)));
     const vacio = document.createElement('section'); vacio.className = 'panel vista-vacia'; vacio.innerHTML = '<p class="sub" style="margin:0"></p>';
     $('sec-usuario').before(vacio);
-    const TAB = { casos: 'casos', inmo: 'mapa', mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
+    const TAB = { casos: 'casos', mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
     const revisar = () => {
       const bc = document.body.classList;
       document.querySelectorAll('.barra-it').forEach((b) => { const t = TAB[b.dataset.vista]; b.hidden = !!t && bc.contains('sin-t-' + t) && !bc.contains('invitado'); });
