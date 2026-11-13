@@ -1354,7 +1354,7 @@ body[data-vista="usuario"] #sec-notas { display: block !important; }
 body:not([data-vista="usuario"]):not([data-vista="finanzas"]) #fila-nuevo { display: none; }
 body[data-vista] .fila-nuevo { grid-template-columns: minmax(0, 1fr); }
 body[data-vista] .fila-nuevo > #sec-notas { border-left: 0; }
-#hero-color { display: none; } .neg-h1, #neg-pop { display: none !important; } @media (min-width: 901px) { header.top { display: none !important; } } .hero::after { content: none !important; }
+#hero-color { display: none; } body[data-vista="inmo"] #sec-mapa:not([hidden]), body[data-vista="casos"] #sec-casos:not([hidden]), body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: block !important; } body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: grid !important; } .neg-h1, #neg-pop { display: none !important; } @media (min-width: 901px) { header.top { display: none !important; } } .hero::after { content: none !important; }
 .barra-logo { flex-wrap: nowrap; gap: 8px; } .barra-logo .hero-fecha { display: flex; align-items: center; gap: 0; margin-left: auto; }
 .barra-logo .hero-fecha .hero-nav, .barra-logo .hero-mes-btn { color: var(--muted); background: none; } .barra-logo .hero-mes-btn { font-size: 12.5px; padding: 4px 2px; color: var(--ink, #1c1c1e); } .barra-logo .hero-nav { font-size: 16px; padding: 2px 4px; }
 .usu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px; }
@@ -1929,7 +1929,21 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const nombreNeg = (id) => (negocios.find((x) => x.id === id) || {}).nombre || 'Consorcio Jurídico';
   let negocio = 'juridico';
   try { const n = localStorage.getItem('libro-negocio'); if (n && /^[a-z0-9]{2,30}$/.test(n)) negocio = n; } catch (e) {}
-  const baseNegocio = (name) => (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
+  const INMO_COLS = ['lugares', 'interesados', 'visitas', 'zonas'];
+  const baseNegocio = (name) => INMO_COLS.includes(name) ? libroRef.collection('negocios').doc('inmobiliaria') : (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
+  // Las propiedades viven siempre en el negocio Inmobiliaria; copia una vez las que se crearon en otro negocio
+  const unirInmo = async () => {
+    if (invitado) return; let k = 'libro-inmo-unido-' + negocio; try { if (localStorage.getItem(k)) return; } catch (e) {}
+    const origen = negocio === 'juridico' ? libroRef : libroRef.collection('negocios').doc(negocio);
+    if (negocio === 'inmobiliaria') { try { localStorage.setItem(k, '1'); } catch (e) {} return; }
+    try {
+      for (const c of INMO_COLS) {
+        const snap = await origen.collection(c).get(); const dest = libroRef.collection('negocios').doc('inmobiliaria').collection(c);
+        for (const d of snap.docs) { const ya = await dest.doc(d.id).get(); if (!ya.exists) await dest.doc(d.id).set(d.data()); }
+      }
+      try { localStorage.setItem(k, '1'); } catch (e) {}
+    } catch (e) { console.warn('unirInmo', e); }
+  };
   const col = (name) => {
     const c = baseNegocio(name).collection(name);
     if (!invitado || !FIRMADAS.includes(name)) return c;
@@ -3176,6 +3190,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   })();
   function suscribirLugares() {
     if (lugaresUnsub || invitado) return;
+    if (!window.__inmoUnido) { window.__inmoUnido = true; unirInmo(); }
     try { lugaresUnsub = col('lugares').onSnapshot((snap) => {
       try { raw['lugares'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
       lugares = snap.docs.map(leerProp).sort(ordenProps); try { sincronizarWeb(); } catch (e) {}
