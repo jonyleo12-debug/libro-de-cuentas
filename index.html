@@ -1059,9 +1059,9 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-ed { position: absolute; top: 8px; right: 8px; border: 0; background: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
 .prop-ed:hover { color: var(--accent); background: var(--accent-soft); }
 .prop-acc { position: absolute; top: 0; right: 0; bottom: 0; width: 40px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; box-sizing: border-box; z-index: 1;
-  border-radius: 0 15px 15px 0; background: #e6e8eb; /* light gray strip inside the card border */ }
-:root[data-theme="dark"] .prop-acc { background: #2a302e; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .prop-acc { background: #2a302e; } }
+  border-radius: 0 15px 15px 0; background: transparent; }
+:root[data-theme="dark"] .prop-acc { background: transparent; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .prop-acc { background: transparent; } }
 .prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
 .prop-acc .prop-ed svg { width: 17px; height: 17px; }
 .prop-acc .prop-web.activo { color: var(--accent); background: var(--accent-soft); }
@@ -1363,7 +1363,13 @@ body[data-vista] .fila-nuevo > #sec-notas { border-left: 0; }
 body[data-vista="usuario"] #sec-notas .notas { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)) !important; grid-auto-flow: row; overflow: visible; max-height: none; } body[data-vista="usuario"] #sec-notas, body[data-vista="usuario"] #fila-nuevo { min-width: 0; }
 body[data-vista="usuario"] #nota-form textarea, body[data-vista="usuario"] .nota-form textarea { height: 120px !important; min-height: 0; }
 #app.wrap { max-width: 1680px !important; margin-inline: auto; }
-#hero-color { display: none; } #casos-ayuda { display: none !important; } #sec-casos .cob-grupo { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; } .casos-pie { display: flex; justify-content: flex-end; padding: 4px 6px 0; font-size: 15px; } .casos-pie .cob-it { display: inline-flex; align-items: baseline; gap: 6px; } .casos-pie b { font-size: 26px; font-weight: 500; } @media (min-width: 901px) { #app.wrap { max-width: none; padding-left: 32px; padding-right: 32px; } } body[data-vista="inmo"] #sec-mapa:not([hidden]), body[data-vista="casos"] #sec-casos:not([hidden]), body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: block !important; } body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: grid !important; } .neg-h1, #neg-pop { display: none !important; } @media (min-width: 901px) { header.top { display: none !important; } } .hero::after { content: none !important; }
+#hero-color { display: none; }
+#sec-mapa { position: relative; padding-bottom: 58px; }
+.mapa-tog { position: absolute; right: 18px; bottom: 14px; z-index: 5; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 8px 14px; background: var(--panel); box-shadow: var(--raise-sm); color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; }
+.mapa-tog svg { width: 18px; height: 18px; }
+#sec-mapa.sin-mapa .mapa-box { display: none; }
+#sec-mapa.sin-mapa .prop-cuerpo { grid-template-columns: minmax(0, 1fr); }
+#sec-mapa.sin-mapa .prop-lista { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); max-height: none; overflow: visible; } #casos-ayuda { display: none !important; } #sec-casos .cob-grupo { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; } .casos-pie { display: flex; justify-content: flex-end; padding: 4px 6px 0; font-size: 15px; } .casos-pie .cob-it { display: inline-flex; align-items: baseline; gap: 6px; } .casos-pie b { font-size: 26px; font-weight: 500; } @media (min-width: 901px) { #app.wrap { max-width: none; padding-left: 32px; padding-right: 32px; } } body[data-vista="inmo"] #sec-mapa:not([hidden]), body[data-vista="casos"] #sec-casos:not([hidden]), body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: block !important; } body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: grid !important; } .neg-h1, #neg-pop { display: none !important; } @media (min-width: 901px) { header.top { display: none !important; } } .hero::after { content: none !important; }
 .barra-logo { flex-wrap: nowrap; gap: 8px; } .barra-logo .hero-fecha { display: flex; align-items: center; gap: 0; margin-left: auto; }
 .barra-logo .hero-fecha .hero-nav, .barra-logo .hero-mes-btn { color: var(--muted); background: none; } .barra-logo .hero-mes-btn { font-size: 12.5px; padding: 4px 2px; color: var(--ink, #1c1c1e); } .barra-logo .hero-nav { font-size: 16px; padding: 2px 4px; }
 .usu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px; }
@@ -6474,6 +6480,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const cajaU = document.createElement('div'); cajaU.innerHTML = '<span class="usr-l">Tu cuenta</span>'; grid.appendChild(cajaU);
     const cajaC = document.createElement('div'); cajaC.innerHTML = '<span class="usr-l">Color</span>'; cajaC.appendChild($('colores')); grid.appendChild(cajaC);
     const cajaUs = document.createElement('div'); cajaUs.append($('usuarios-l'), $('usuarios')); grid.appendChild(cajaUs);
+    { const sm = $('sec-mapa'), tb = document.createElement('button'); tb.type = 'button'; tb.className = 'mapa-tog';
+      const pon = (o) => { sm.classList.toggle('sin-mapa', o); tb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3.5 6.5 9 4l6 2.5 5.5-2.5v13.5L15 20l-6-2.5-5.5 2.5zM9 4v13.5M15 6.5V20"/></svg>' + (o ? 'Mostrar mapa' : 'Ocultar mapa'); tb.setAttribute('aria-pressed', String(o)); try { localStorage.setItem('libro-sin-mapa', o ? '1' : ''); } catch (e) {} setTimeout(() => window.dispatchEvent(new Event('resize')), 60); };
+      let o0 = false; try { o0 = !!localStorage.getItem('libro-sin-mapa'); } catch (e) {} pon(o0);
+      tb.addEventListener('click', () => pon(!sm.classList.contains('sin-mapa'))); sm.appendChild(tb); }
     const pie = $('barra-pie'), mq = matchMedia('(max-width: 900px)');
     const fecha = document.querySelector('.hero-fecha'), fechaCasa = fecha.parentNode, fechaSig = fecha.nextSibling;
     const ubicarPie = () => { if (mq.matches) { cajaU.appendChild(pie); fechaCasa.insertBefore(fecha, fechaSig); } else { $('barra').appendChild(pie); document.querySelector('.barra-logo').appendChild(fecha); } cajaU.hidden = !mq.matches; };
