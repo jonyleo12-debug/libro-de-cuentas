@@ -1410,6 +1410,15 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .vp-campo { display: grid; gap: 4px; }
 .vp-etq { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 @media (max-width: 700px) { .vp-pasos { grid-template-columns: repeat(5, auto); overflow-x: auto; } .vp-paso span { display: none; } .vp-escenas { grid-template-columns: 1fr; } .vp-esc { grid-template-columns: 1fr; } .vp-foto { width: 100%; } }
+
+.pz-area { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.pz-area.con-guion { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); }
+.pz-guion { display: grid; grid-template-rows: auto 1fr auto; gap: 6px; height: clamp(420px, 70vh, 760px); }
+.pz-guion label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pz-guion textarea { resize: none; width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 16px; padding: 14px; font: inherit; font-size: 14.5px; line-height: 1.6; background: var(--panel); color: inherit; }
+.pz-guion small { font-size: 11.5px; color: var(--muted); min-height: 1em; }
+.pz-caja.pz-pantalla .pz-area { min-height: 0; } .pz-caja.pz-pantalla .pz-guion { height: auto; }
+@media (max-width: 800px) { .pz-area.con-guion { grid-template-columns: 1fr; } .pz-guion { height: 260px; } }
 </style>
 </head>
 <body>
@@ -1670,9 +1679,9 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
       </div>
       <p class="pz-estado" id="pz-estado" role="status"></p>
       <div class="pz-vacia" id="pz-vacia">Crea tu primera pizarra para armar ideas de videos y publicaciones: pega imágenes de referencia, escribe guiones y diálogos en notas, y únelas con flechas para el orden de grabación.<br><button type="button" class="btn" id="pz-nueva2">+ Crear pizarra</button></div>
-      <div class="pz-zona" id="pz-zona" tabindex="0" aria-label="Pizarra: doble clic crea una nota, Cmd+V pega imágenes" hidden>
+      <div class="pz-area" id="pz-area"><aside class="pz-guion" id="pz-guion" hidden><label for="pz-guion-t">Guion</label><textarea id="pz-guion-t" placeholder="Escribe aquí el guion del video: lo que se dice en cada escena, diálogos, textos en pantalla…"></textarea><small id="pz-guion-e"></small></aside><div class="pz-zona" id="pz-zona" tabindex="0" aria-label="Pizarra: doble clic crea una nota, Cmd+V pega imágenes" hidden>
         <div class="pz-mundo" id="pz-mundo"><svg class="pz-lineas" id="pz-lineas" aria-hidden="true"></svg><div id="pz-items"></div></div>
-      </div>
+      </div></div>
       <p class="pz-ayuda">Doble clic en un espacio vacío crea una nota · Cmd+V pega imágenes · arrastra fotos aquí · arrastra el fondo para moverte · Cmd + rueda para acercar · Supr borra lo marcado</p>
     </div>
   </section>
@@ -3012,14 +3021,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function suscribirMkt() {
     if (invitado) return;
     try { col('pizarras').onSnapshot((snap) => {
-      pizarras = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, nombre: String(v.nombre || 'Pizarra'), creado: String(v.creado || ''), items: Array.isArray(v.items) ? v.items : [], lineas: Array.isArray(v.lineas) ? v.lineas : [], tipo: v.tipo === 'vid' ? 'vid' : 'img' }; }).sort((a, b) => a.creado.localeCompare(b.creado)); pzTodas = pizarras; pizarras = pzTodas.filter((p) => p.tipo === pzTipo());
+      pizarras = snap.docs.map((d) => { const v = d.data() || {}; return { id: d.id, nombre: String(v.nombre || 'Pizarra'), creado: String(v.creado || ''), items: Array.isArray(v.items) ? v.items : [], lineas: Array.isArray(v.lineas) ? v.lineas : [], tipo: v.tipo === 'vid' ? 'vid' : 'img', guion: String(v.guion || '') }; }).sort((a, b) => a.creado.localeCompare(b.creado)); pzTodas = pizarras; pizarras = pzTodas.filter((p) => p.tipo === pzTipo());
       if (!pzId || !pizarras.some((p) => p.id === pzId)) { let g = ''; try { g = localStorage.getItem('libro-pizarra-' + negocio) || ''; } catch (e) {} pzId = (pizarras.find((p) => p.id === g) || pizarras[0] || {}).id || null; pz = null; }
       const p = pizarras.find((q) => q.id === pzId);
       if (p && !pzSucio && !pzEditando && !pzArr) pz = JSON.parse(JSON.stringify(p));
       pzPintarMenu(); pzPintar();
     }, () => {}); } catch (e) {}
   }
-  function pzPintarMenu() {
+  function pzGuionPintar() {
+    const g = $('pz-guion'), t = $('pz-guion-t'); if (!g) return;
+    const p = pizarras.find((q) => q.id === pzId); g.hidden = !(p && pzTipo() === 'vid'); $('pz-area').classList.toggle('con-guion', !g.hidden);
+    if (p && document.activeElement !== t) t.value = p.guion || '';
+  }
+  function pzPintarMenu() { pzGuionPintar();
     const s = $('pz-sel'); if (!s) return;
     s.replaceChildren(...pizarras.map((p) => new Option(p.nombre, p.id))); s.value = pzId || '';
     $('pz-vacia').hidden = !!pizarras.length; $('pz-zona').hidden = !pizarras.length; s.hidden = !pizarras.length;
@@ -3225,6 +3239,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const r = col('pizarras').doc(); const d = { nombre: n.slice(0, 60), creado: new Date().toISOString(), items: [], lineas: [], tipo: pzTipo() };
       r.set(d); pizarras.push({ id: r.id, ...d }); pzId = r.id; pz = JSON.parse(JSON.stringify({ id: r.id, ...d })); try { localStorage.setItem('libro-pizarra-' + negocio, pzId); } catch (er) {} pzVista = { x: 40, y: 40, z: 1 }; pzPintarMenu(); pzPintar();
     };
+    { let tg = 0; const t = $('pz-guion-t');
+      t.addEventListener('input', () => { clearTimeout(tg); $('pz-guion-e').textContent = 'Guardando…'; const id = pzId, val = t.value; tg = setTimeout(() => { const p = pizarras.find((q) => q.id === id); if (p) p.guion = val; col('pizarras').doc(id).update({ guion: val }).then(() => { $('pz-guion-e').textContent = 'Guardado'; }).catch(() => { $('pz-guion-e').textContent = 'No se pudo guardar'; }); }, 700); });
+      t.addEventListener('keydown', (e) => e.stopPropagation()); }
     $('pz-nueva').addEventListener('click', nueva); $('pz-nueva2').addEventListener('click', nueva);
     $('pz-ren').addEventListener('click', () => { const p = pizarras.find((q) => q.id === pzId); if (!p) return; const n = (prompt('Nuevo nombre de la pizarra', p.nombre) || '').trim(); if (!n || n === p.nombre) return; p.nombre = n.slice(0, 60); col('pizarras').doc(p.id).update({ nombre: p.nombre }); pzPintarMenu(); });
     $('pz-del').addEventListener('click', () => {
