@@ -1419,8 +1419,8 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .pz-gwrap { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
 .pz-gwrap textarea, .pz-guion-bg { position: absolute; inset: 0; margin: 0; border: 0 !important; border-radius: 0 !important; padding: 14px; font: inherit; font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word; box-sizing: border-box; width: 100%; height: 100%; }
 .pz-gwrap textarea { background: transparent !important; overflow-y: scroll; z-index: 1; }
-.pz-guion-bg { color: transparent; overflow-y: scroll; pointer-events: none; scrollbar-color: transparent transparent; }
-.pz-guion-bg mark { color: transparent; border-radius: 4px; padding: 1px 0; }
+.pz-guion-bg { color: transparent; overflow: visible; pointer-events: none; height: auto !important; bottom: auto !important; right: auto !important; will-change: transform; }
+.pz-guion-bg mark { color: transparent; border-radius: 3px; padding: 0; }
 .pz-vbtn { position: absolute; z-index: 3; border: 0; border-radius: 999px; padding: 6px 12px; background: #1f2328; color: #fff; font: 600 12.5px inherit; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
 .pz-vlinea { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
 body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; }
@@ -3087,8 +3087,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     ((pz && pz.items) || []).forEach((it) => { if (it.t !== 'img' || !it.vinc || !it.vinc.txt) return; let i = txt.indexOf(it.vinc.txt); if (i < 0) return; rs.push([i, i + it.vinc.txt.length, it.vinc.color]); });
     rs.sort((a, b) => a[0] - b[0]); const out = []; let k = 0;
     rs.forEach(([a, b, c]) => { if (a < k) return; out.push(document.createTextNode(txt.slice(k, a))); const m = el('mark'); m.style.background = c; m.textContent = txt.slice(a, b); out.push(m); k = b; });
-    out.push(document.createTextNode(txt.slice(k) + '\n')); bg.replaceChildren(...out); bg.scrollTop = t.scrollTop;
+    out.push(document.createTextNode(txt.slice(k) + '\n')); bg.replaceChildren(...out); pzGuionSync();
   }
+  function pzGuionSync() { const bg = $('pz-guion-bg'), t = $('pz-guion-t'); if (!bg || !t) return; bg.style.width = t.clientWidth + 'px'; bg.style.transform = `translateY(${-t.scrollTop}px)`; }
   function pzVincFin() { pzVinc = null; document.body.classList.remove('pz-vinculando'); const l = document.getElementById('pz-vlinea'); if (l) l.remove(); }
 
   function pzItemEl(it) {
@@ -3271,7 +3272,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     { let tg = 0; const t = $('pz-guion-t');
       t.addEventListener('input', () => { clearTimeout(tg); $('pz-guion-e').textContent = 'Guardando…'; const id = pzId, val = t.value; tg = setTimeout(() => { const p = pizarras.find((q) => q.id === id); if (p) p.guion = val; col('pizarras').doc(id).update({ guion: val }).then(() => { $('pz-guion-e').textContent = 'Guardado'; }).catch(() => { $('pz-guion-e').textContent = 'No se pudo guardar'; }); }, 700); });
       t.addEventListener('keydown', (e) => e.stopPropagation());
-      t.addEventListener('input', pzGuionMarcas); t.addEventListener('scroll', () => { $('pz-guion-bg').scrollTop = t.scrollTop; $('pz-vbtn').hidden = true; });
+      t.addEventListener('input', pzGuionMarcas); window.addEventListener('resize', pzGuionSync); new ResizeObserver(pzGuionSync).observe(t); t.addEventListener('scroll', () => { pzGuionSync(); $('pz-vbtn').hidden = true; });
       const vb = $('pz-vbtn');
       const verBtn = (e) => { const a = t.selectionStart, b = t.selectionEnd; if (b - a < 2 || !t.value.slice(a, b).trim()) { vb.hidden = true; return; }
         const w = t.parentElement.getBoundingClientRect(); vb.hidden = false; const x = (e && e.clientX ? e.clientX : w.left + 40) - w.left, y = (e && e.clientY ? e.clientY : w.top + 40) - w.top;
