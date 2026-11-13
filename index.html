@@ -1419,7 +1419,7 @@ textarea.vp-in { resize: vertical; line-height: 1.5; }
 .pz-gcab { display: flex; align-items: center; justify-content: space-between; }
 .pz-grabar { border: 0; border-radius: 999px; padding: 5px 14px; background: #d93a3a; color: #fff; font: 600 12.5px inherit; cursor: pointer; }
 .tp { position: fixed; inset: 0; z-index: 10000; background: #000; color: #fff; display: grid; }
-.tp video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.tp video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; transform: scaleX(-1); }
 .tp-txt { position: absolute; left: 0; right: 0; top: 0; height: 42%; overflow: hidden; background: linear-gradient(rgba(0,0,0,.75) 70%, rgba(0,0,0,0)); -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
 .tp-in { padding: 24px max(24px, 8vw) 40vh; font: 600 var(--tp-tam, 34px)/1.45 system-ui, sans-serif; white-space: pre-wrap; text-align: center; }
 .tp-bar { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,.55); padding: 10px 14px; border-radius: 999px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); }
@@ -3125,7 +3125,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const aplicar = () => { inn.style.setProperty('--tp-tam', cfg.tam + 'px'); inn.style.paddingLeft = inn.style.paddingRight = ((100 - cfg.ancho) / 2) + 'vw'; inn.style.transform = cfg.espejo ? 'scaleX(-1)' : ''; o.classList.toggle('sin-cam', !cfg.cam);
       q('vel').value = cfg.vel; q('tam').value = cfg.tam; q('ancho').value = cfg.ancho; q('espejo').classList.toggle('on', cfg.espejo); q('voz').classList.toggle('on', cfg.voz); q('solo').classList.toggle('on', !cfg.cam); guardarCfg(); };
     const abrir = async () => { if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; if (!cfg.cam) { v.srcObject = null; return; }
-      try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cam, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true }); v.srcObject = stream; v.style.transform = cam === 'user' ? 'scaleX(-1)' : 'none'; }
+      try { const vert = innerHeight > innerWidth; stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cam, width: { ideal: vert ? 1080 : 1920 }, height: { ideal: vert ? 1920 : 1080 }, aspectRatio: { ideal: vert ? 9 / 16 : 16 / 9 }, frameRate: { ideal: 30 } }, audio: { echoCancellation: false, noiseSuppression: true } }); v.srcObject = stream; v.style.transform = cam === 'user' ? 'scaleX(-1)' : 'none'; }
       catch (e) { alert('No se pudo abrir la cámara o el micrófono. Revisa los permisos del navegador.'); } };
     aplicar(); await abrir();
     const paso = (ts) => { if (last) pos += cfg.vel * (ts - last) / 1000; last = ts; box.scrollTop = pos; if (pos >= box.scrollHeight - box.clientHeight) corriendo = false; if (corriendo) anim = requestAnimationFrame(paso); else last = 0; };
@@ -3158,7 +3158,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (rec) { detener(); return; } if (!stream) { alert('Activa la cámara (quita "Solo texto") para grabar.'); return; }
       const c = o.querySelector('.tp-cuenta'); for (const n of [3, 2, 1]) { c.textContent = n; await new Promise((r) => setTimeout(r, 800)); } c.textContent = '';
       const tipos = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm']; const mime = tipos.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
-      partes = []; rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {}); rec.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
+      partes = []; rec = new MediaRecorder(stream, Object.assign({ videoBitsPerSecond: 8000000 }, mime ? { mimeType: mime } : {})); rec.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
       rec.onstop = () => { const tipo = rec.mimeType || mime || 'video/webm', bl = new Blob(partes, { type: tipo }), a = document.createElement('a'); a.href = URL.createObjectURL(bl);
         a.download = 'toma-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + (tipo.includes('mp4') ? '.mp4' : '.webm'); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
         rec = null; q('rec').textContent = '● Grabar'; };
