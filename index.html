@@ -1487,6 +1487,8 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 .barra-marca { cursor: pointer; transition: transform .15s; } .barra-marca:hover { transform: scale(1.08); }
 .marca-pop { position: fixed; z-index: 9999; display: flex; gap: 8px; padding: 10px; background: var(--panel, #fff); border: 1px solid var(--line, #ddd); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
 .marca-pop button { width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer; padding: 0; } .marca-pop button.on { box-shadow: 0 0 0 2px var(--panel, #fff), 0 0 0 4px #1c1c1e; }
+.swatch-propio { position: relative; display: inline-grid; place-items: center; background: var(--panel, #f3f3f3) !important; border: 1.5px dashed #aab; color: #667; font: 600 18px/1 sans-serif; cursor: pointer; overflow: hidden; }
+.swatch-propio input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
 </style>
 </head>
 <body>
@@ -2098,14 +2100,19 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
 
   // Color del libro: each choice has a light and a dark version
-  const COLORS = {
+  const mkColor = (k) => { const h = '#' + k.slice(2), n = parseInt(k.slice(2), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    const mix = (t, w) => '#' + [r, g, b].map((v) => Math.round(v * (1 - w) + t * w).toString(16).padStart(2, '0')).join('');
+    return { name: 'Personalizado', light: [h, mix(255, .88)], dark: [mix(255, .35), mix(20, .8)] }; };
+  const COLORS = new Proxy({
     azul:    { name: 'Azul',    light: ['#2456a6', '#e4ebf7'], dark: ['#7aa7ef', '#1c2638'] },
     rojo:     { name: 'Rojo',     light: ['#c0262d', '#fbe4e4'], dark: ['#f2777b', '#3a1f21'] },
     morado:  { name: 'Morado',  light: ['#6a3fa0', '#eee6f6'], dark: ['#b592e6', '#2a2236'] },
     rosado:   { name: 'Rosado',   light: ['#c2367e', '#fbe4f0'], dark: ['#f08cc0', '#3a2030'] },
     verde:   { name: 'Verde',   light: ['#1f6b57', '#e3efea'], dark: ['#5cbf9f', '#1d3029'] },
     tomate:   { name: 'Tomate',   light: ['#e0561f', '#fde8de'], dark: ['#ff8a5c', '#3a2419'] },
-  };
+  }, { get(t, k) { if (typeof k === 'string' && !t[k] && /^c-[0-9a-f]{6}$/.test(k)) t[k] = mkColor(k); return t[k]; },
+       has(t, k) { return (typeof k === 'string' && /^c-[0-9a-f]{6}$/.test(k)) || k in t; } });
+  const BASE_COLORS = ['azul', 'rojo', 'morado', 'rosado', 'verde', 'tomate'];
   let colorKey = 'azul';
   try { let k = localStorage.getItem('libro-color'); if (k === 'amarillo') k = 'tomate'; if (k && COLORS[k]) colorKey = k; } catch (e) {}
   const isDark = () => { const t = document.documentElement.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
@@ -2117,7 +2124,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     try { localStorage.setItem('libro-color', colorKey); } catch (e) {}
   }
   const sw = document.getElementById('colores');
-  Object.entries(COLORS).forEach(([k, c]) => {
+  BASE_COLORS.map((k) => [k, COLORS[k]]).forEach(([k, c]) => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'swatch'; b.dataset.color = k; b.title = c.name; b.setAttribute('aria-label', 'Color ' + c.name);
     b.style.background = c.light[0];
@@ -2131,7 +2138,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   { const lg = document.querySelector('.barra-marca'); if (lg) { lg.removeAttribute('aria-hidden'); lg.setAttribute('role', 'button'); lg.tabIndex = 0; lg.title = 'Cambiar color';
     const abrir = (e) => { e.stopPropagation(); if (invitado) return; let pop = document.querySelector('.marca-pop'); if (pop) { pop.remove(); return; }
       pop = document.createElement('div'); pop.className = 'marca-pop';
-      Object.entries(COLORS).forEach(([k, c]) => { const b = document.createElement('button'); b.type = 'button'; b.title = c.name; b.style.background = c.light[0]; if (k === colorKey) b.classList.add('on');
+      BASE_COLORS.map((k) => [k, COLORS[k]]).forEach(([k, c]) => { const b = document.createElement('button'); b.type = 'button'; b.title = c.name; b.style.background = c.light[0]; if (k === colorKey) b.classList.add('on');
         b.addEventListener('click', () => { const o = sw.querySelector(`[data-color="${k}"]`); if (o) o.click(); pop.remove(); }); pop.appendChild(b); });
       document.body.appendChild(pop); const r = lg.getBoundingClientRect(); pop.style.left = r.left + 'px'; pop.style.top = (r.bottom + 8) + 'px';
       setTimeout(() => document.addEventListener('click', function f(ev) { if (!pop.contains(ev.target)) { pop.remove(); document.removeEventListener('click', f); } }), 0); };
@@ -5846,11 +5853,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       mas.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(null, null); });
       $('colores').appendChild(mas);
     }
-    mas.hidden = !!invitado || miembros.length >= Object.keys(COLORS).length;
+    mas.hidden = !!invitado;
   }
   function pintarColoresUsr() {
     const box = $('usr-colores');
-    box.replaceChildren(...Object.entries(COLORS).map(([k, c]) => {
+    const ks = [...BASE_COLORS, ...(usrColor && !BASE_COLORS.includes(usrColor) ? [usrColor] : [])];
+    box.replaceChildren(...ks.map((k) => [k, COLORS[k]]).map(([k, c]) => {
       const ocupado = miembros.find((m) => m.color === k);
       const b = document.createElement('button'); b.type = 'button'; b.className = 'swatch' + (k === usrColor ? ' sel' : '');
       b.style.background = c.light[0]; b.disabled = !!ocupado; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(k === usrColor));
@@ -5858,12 +5866,15 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       b.addEventListener('click', () => { usrColor = k; pintarColoresUsr(); });
       return b;
     }));
+    const mas = document.createElement('label'); mas.className = 'swatch swatch-propio'; mas.title = 'Crear un color propio'; mas.textContent = '+';
+    const inp = document.createElement('input'); inp.type = 'color'; inp.value = COLORS[usrColor] ? COLORS[usrColor].light[0] : '#888888';
+    inp.addEventListener('change', () => { usrColor = 'c-' + inp.value.slice(1).toLowerCase(); pintarColoresUsr(); }); mas.appendChild(inp); box.appendChild(mas);
   }
   let usrColor = null, usrActual = null;
   const dlg = $('dlg-usr');
   function abrirUsuario(k, m) {
     usrActual = m || null;
-    usrColor = k || (Object.keys(COLORS).find((x) => !miembros.some((mm) => mm.color === x)) || 'azul');
+    usrColor = k || (BASE_COLORS.find((x) => !miembros.some((mm) => mm.color === x)) || 'azul');
     $('usr-msg').textContent = ''; $('usr-msg').className = 'msg';
     $('usr-tit').textContent = m ? (m.nombre || usuarioDe(m.email)) : 'Añadir usuario';
     $('usr-col-l').hidden = !!m; if (!m) pintarColoresUsr();
