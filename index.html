@@ -1480,7 +1480,7 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 .caso-usr.tiene { border: 0; background: var(--uc); color: #fff; }
 .usr-menu { position: absolute; z-index: 9999; min-width: 180px; background: var(--panel, #fff); border: 1px solid var(--line, #ddd); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.15); display: grid; }
 .usr-menu button { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 8px 10px; border-radius: 8px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
-.usr-menu button:hover, .usr-menu button.on { background: rgba(0,0,0,.06); } .usr-menu i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.usr-menu button:hover, .usr-menu button.on { background: rgba(0,0,0,.06); } .usr-ext { margin: 6px 4px 2px; padding: 8px 10px; border: 1px solid var(--line, #ddd); border-radius: 8px; font: inherit; font-size: 13.5px; background: transparent; color: inherit; } .usr-menu i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
 </style>
 </head>
 <body>
@@ -2789,11 +2789,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function menuResponsable(btn, c) {
     document.querySelectorAll('.usr-menu').forEach((x) => x.remove());
     const m = document.createElement('div'); m.className = 'usr-menu';
-    const ops = [['dueno', invitado ? nombreDueno() : 'Yo'], ...miembros.map((mm) => [mm.id, mm.nombre || usuarioDe(mm.email)]), ['', 'Quitar usuario']];
+    const exts = [...new Set(casos.map((x) => x.responsable).filter((x) => x && x.startsWith('ext:')))].sort();
+    const ops = [['dueno', invitado ? nombreDueno() : 'Yo'], ...miembros.map((mm) => [mm.id, mm.nombre || usuarioDe(mm.email)]), ...exts.map((x) => [x, x.slice(4) + ' (externo)']), ['', 'Quitar usuario']];
+    const poner = (id) => { m.remove(); c.responsable = id; col('casos').doc(c.id).update({ responsable: id }).catch(() => setMsg('No se pudo asignar el usuario.', true)); };
     ops.forEach(([id, nom]) => { if (id === '' && !c.responsable) return; const b = document.createElement('button'); b.type = 'button';
-      const k = id === 'dueno' ? colorKey : ((miembros.find((mm) => mm.id === id) || {}).color || ''); const dot = document.createElement('i'); dot.style.background = id ? (COLORS[k] || COLORS.azul).light[0] : 'transparent';
+      const k = id === 'dueno' ? colorKey : ((miembros.find((mm) => mm.id === id) || {}).color || ''); const dot = document.createElement('i'); dot.style.background = id.startsWith('ext:') ? '#6b7079' : id ? (COLORS[k] || COLORS.azul).light[0] : 'transparent';
       b.append(dot, document.createTextNode(nom)); if (id === c.responsable) b.classList.add('on');
-      b.addEventListener('click', () => { m.remove(); c.responsable = id; col('casos').doc(c.id).update({ responsable: id }).catch(() => setMsg('No se pudo asignar el usuario.', true)); }); m.appendChild(b); });
+      b.addEventListener('click', () => poner(id)); m.appendChild(b); });
+    const inp = document.createElement('input'); inp.type = 'text'; inp.className = 'usr-ext'; inp.placeholder = 'Otro abogado… (Enter)';
+    inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') { const v = inp.value.trim().slice(0, 60); if (v) poner('ext:' + v); } else if (e.key === 'Escape') m.remove(); });
+    m.appendChild(inp); setTimeout(() => inp.focus(), 0);
     document.body.appendChild(m); const r = btn.getBoundingClientRect(); m.style.left = Math.min(innerWidth - 200, r.left) + 'px'; m.style.top = (r.bottom + 6 + scrollY) + 'px';
     setTimeout(() => document.addEventListener('click', function f(ev) { if (!m.contains(ev.target)) { m.remove(); document.removeEventListener('click', f); } }), 0);
   }
@@ -4789,8 +4794,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       ar.appendChild(ai); tr.appendChild(ar);
       const n = document.createElement('td'); n.textContent = c.nombre;
       { const ub = document.createElement('button'); ub.type = 'button'; ub.className = 'caso-usr' + (c.responsable ? ' tiene' : ''); const u = c.responsable;
-        const col_ = u ? ((COLORS[u === 'dueno' ? colorKey : ((miembros.find((m) => m.id === u) || {}).color || '')] || COLORS.azul).light[0]) : '';
-        if (col_) ub.style.setProperty('--uc', col_); ub.title = u ? 'Responsable: ' + nombreUsuario(u) : 'Asignar usuario';
+        const col_ = u && u.startsWith('ext:') ? '#6b7079' : u ? ((COLORS[u === 'dueno' ? colorKey : ((miembros.find((m) => m.id === u) || {}).color || '')] || COLORS.azul).light[0]) : '';
+        if (col_) ub.style.setProperty('--uc', col_); ub.title = u ? 'Responsable: ' + (u.startsWith('ext:') ? u.slice(4) : nombreUsuario(u)) : 'Asignar usuario';
         ub.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5z"/></svg>';
         ub.addEventListener('click', (e) => { e.stopPropagation(); menuResponsable(ub, c); }); n.prepend(ub); }
       const est = document.createElement('div'); est.className = 'estados';
