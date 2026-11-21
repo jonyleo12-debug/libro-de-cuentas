@@ -1489,6 +1489,10 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 .marca-pop button { width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer; padding: 0; } .marca-pop button.on { box-shadow: 0 0 0 2px var(--panel, #fff), 0 0 0 4px #1c1c1e; }
 .swatch-propio { position: relative; display: inline-grid; place-items: center; background: var(--panel, #f3f3f3) !important; border: 1.5px dashed #aab; color: #667; font: 600 18px/1 sans-serif; cursor: pointer; overflow: hidden; }
 .swatch-propio input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
+.barra-add { margin: 6px 10px 0; padding: 9px 12px; border: 1.5px dashed var(--line, #d5d7dc); border-radius: 12px; background: none; color: var(--muted); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.barra-add:hover { border-color: var(--accent); color: var(--accent); } body.invitado .barra-add { display: none; }
+.area-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; } .area-cab h2 { margin: 0; }
+@media (max-width: 900px) { .barra-add { display: none; } }
 </style>
 </head>
 <body>
@@ -1532,6 +1536,7 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
   <aside class="barra" id="barra" aria-label="Secciones">
     <div class="barra-logo"><span class="barra-marca" aria-hidden="true">L</span><b>Libro</b></div>
     <nav class="barra-nav"><button type="button" class="barra-it" data-vista="usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>Usuario</span></button><button type="button" class="barra-it" data-vista="finanzas"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m5.3 10V4m5.4 16v-7m5.3 7V8"/></svg><span>Finanzas</span></button><button type="button" class="barra-it" data-vista="casos"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 8h16v11H4zM9 8V5.5h6V8M4 13h16"/></svg><span>Casos</span></button><button type="button" class="barra-it" data-vista="inmo"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>Inmobiliaria</span></button><button type="button" class="barra-it" data-vista="mkt"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/></svg><span>Marketing</span></button></nav>
+    <button type="button" class="barra-add" id="barra-add">+ Añadir área</button>
     <div class="barra-pie" id="barra-pie">
     <button type="button" class="ajustes-btn" id="ajustes-btn" aria-label="Opciones" title="Opciones"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4c.6.2 1.2.6 1.7 1l2.3-.8 1.7 3-1.8 1.6c.1.6.1 1.3 0 1.9l1.8 1.6-1.7 3-2.3-.8c-.5.4-1.1.8-1.7 1l-.5 2.4h-3.4l-.5-2.4c-.6-.2-1.2-.6-1.7-1l-2.3.8-1.7-3 1.8-1.6a6 6 0 0 1 0-1.9L3.9 8.6l1.7-3 2.3.8c.5-.4 1.1-.8 1.7-1z"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
     <div class="usr">
@@ -4459,6 +4464,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   try { aplicarOrden(JSON.parse(localStorage.getItem('libro-orden') || '[]')); } catch (e) {}
   const guardarVista = (campo, valor) => { if (libroRef && !invitado) libroRef.set({ [campo]: valor }).catch(() => {}); };
+  window.__guardarAreas = (a) => guardarVista('areas', a);
   function iniciarArrastre(e, sec, btn) {
     if (e.button !== 0) return;
     const x0 = e.clientX, y0 = e.clientY; let activo = false, raf = 0, py = y0;
@@ -6597,6 +6603,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         if (typeof dv.gmapsKey === 'string') { try { ponerClaveGmaps(dv.gmapsKey); } catch (e) {} }
         if (Array.isArray(dv.negocios)) { const nv = limpiarNegs(dv.negocios); if (JSON.stringify(nv) !== JSON.stringify(negocios)) { negocios = nv; try { localStorage.setItem('libro-negocios', JSON.stringify(negocios)); } catch (e) {} if (editNeg == null) pintarNegocio(); } }
         else { try { if (localStorage.getItem('libro-negocios')) guardarNegs(); } catch (e) {} }
+        if (Array.isArray(dv.areas) && window.__pintarAreas) window.__pintarAreas(dv.areas.filter((a) => a && a.id && a.nombre).map((a) => ({ id: String(a.id), nombre: String(a.nombre) })));
         if (Array.isArray(dv.orden) && !document.body.classList.contains('moviendo')) { aplicarOrden(dv.orden.map(String)); try { localStorage.setItem('libro-orden', JSON.stringify(dv.orden)); } catch (e) {} }
         if (!Array.isArray(dv.orden)) { try { const lo = JSON.parse(localStorage.getItem('libro-orden') || 'null'); if (Array.isArray(lo) && lo.length) guardarVista('orden', lo); } catch (e) {} }
         if (!dv.plegadas && Object.keys(plegadas).length) guardarVista('plegadas', { ...plegadas });
@@ -6991,9 +6998,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const ubicarPie = () => { if (mq.matches) { cajaU.appendChild(pie); fechaCasa.insertBefore(fecha, fechaSig); } else { $('barra').appendChild(pie); document.querySelector('.barra-logo').appendChild(fecha); } cajaU.hidden = !mq.matches; };
     mq.addEventListener('change', ubicarPie); ubicarPie();
     const VISTAS = ['usuario', 'finanzas', 'casos', 'inmo', 'mkt'];
-    let v = 'finanzas'; try { const g = localStorage.getItem('libro-vista'); if (VISTAS.includes(g)) v = g; } catch (e) {}
-    const ir = (k) => { document.body.dataset.vista = k; document.querySelectorAll('.barra-it').forEach((b) => { if (b.dataset.vista === k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); try { localStorage.setItem('libro-vista', k); } catch (e) {} window.scrollTo(0, 0); setTimeout(() => window.dispatchEvent(new Event('resize')), 60); };
+    let v = 'finanzas'; try { const g = localStorage.getItem('libro-vista'); if (VISTAS.includes(g) || /^a-/.test(g || '')) v = g; } catch (e) {}
+    let areas = []; try { areas = JSON.parse(localStorage.getItem('libro-areas') || '[]'); } catch (e) {}
+    const secA = document.createElement('section'); secA.className = 'panel area-vacia'; secA.hidden = true;
+    secA.innerHTML = '<div class="area-cab"><h2></h2><button type="button" class="ghost area-del">Eliminar área</button></div><p class="sub">Esta área está vacía. Dime qué quieres tener aquí y lo armamos.</p>';
+    $('sec-usuario').before(secA);
+    const ICO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>';
+    const pintarAreas = () => { document.querySelectorAll('.barra-it[data-area]').forEach((x) => x.remove()); const nav = document.querySelector('.barra-nav');
+      areas.forEach((a) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'barra-it'; b.dataset.vista = 'a-' + a.id; b.dataset.area = '1'; b.innerHTML = ICO; const t = document.createElement('span'); t.textContent = a.nombre; b.appendChild(t); b.addEventListener('click', () => ir(b.dataset.vista)); nav.appendChild(b); });
+      const k = document.body.dataset.vista; if (k) ir(k); };
+    const guardarAreas = () => { try { localStorage.setItem('libro-areas', JSON.stringify(areas)); } catch (e) {} if (window.__guardarAreas) window.__guardarAreas(areas); };
+    window.__pintarAreas = (lista) => { if (JSON.stringify(lista) === JSON.stringify(areas)) return; areas = lista; try { localStorage.setItem('libro-areas', JSON.stringify(areas)); } catch (e) {} pintarAreas(); };
+    const ir = (k) => { if (/^a-/.test(k) && !areas.some((a) => 'a-' + a.id === k)) k = 'finanzas';
+      const ar = areas.find((a) => 'a-' + a.id === k); secA.hidden = !ar; if (ar) secA.querySelector('h2').textContent = ar.nombre;
+      document.body.dataset.vista = k; document.querySelectorAll('.barra-it').forEach((b) => { if (b.dataset.vista === k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); try { localStorage.setItem('libro-vista', k); } catch (e) {} window.scrollTo(0, 0); setTimeout(() => window.dispatchEvent(new Event('resize')), 60); };
     document.querySelectorAll('.barra-it').forEach((b) => b.addEventListener('click', () => ir(b.dataset.vista)));
+    $('barra-add').addEventListener('click', () => { const n = (prompt('Nombre de la nueva área') || '').trim().slice(0, 30); if (!n) return; const a = { id: Date.now().toString(36), nombre: n }; areas.push(a); guardarAreas(); pintarAreas(); ir('a-' + a.id); });
+    secA.querySelector('.area-del').addEventListener('click', () => { const k = document.body.dataset.vista, a = areas.find((x) => 'a-' + x.id === k); if (!a || !confirm(`¿Eliminar el área "${a.nombre}"?`)) return; areas = areas.filter((x) => x !== a); guardarAreas(); pintarAreas(); ir('finanzas'); });
     const vacio = document.createElement('section'); vacio.className = 'panel vista-vacia'; vacio.innerHTML = '<p class="sub" style="margin:0"></p>';
     $('sec-usuario').before(vacio);
     const TAB = { mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
@@ -7003,11 +7024,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const k = document.body.dataset.vista, b = document.querySelector(`.barra-it[data-vista="${k}"]`);
       if (b && b.hidden) { const pr = [...document.querySelectorAll('.barra-it')].find((x) => !x.hidden && x.dataset.vista !== 'usuario'); ir(pr ? pr.dataset.vista : 'usuario'); return; }
       const hay = [...document.querySelectorAll(`[data-v="${k}"]`)].some((x) => x.offsetHeight > 0);
-      vacio.hidden = hay; vacio.querySelector('p').textContent = k === 'casos' ? 'Aún no hay casos en este negocio. Anota un honorario con el nombre del caso en Finanzas o usa + Nuevo caso.' : `No hay nada para mostrar en ${NOM[k] || 'esta sección'} todavía.`;
+      vacio.hidden = hay || /^a-/.test(k); vacio.querySelector('p').textContent = k === 'casos' ? 'Aún no hay casos en este negocio. Anota un honorario con el nombre del caso en Finanzas o usa + Nuevo caso.' : `No hay nada para mostrar en ${NOM[k] || 'esta sección'} todavía.`;
       if (k === 'casos' && !hay && $('sec-casos').hidden) { $('sec-casos').hidden = false; vacio.hidden = true; }
     };
     new MutationObserver(() => requestAnimationFrame(revisar)).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-vista'] });
-    ir(v); setTimeout(revisar, 300); setTimeout(revisar, 2000);
+    pintarAreas(); ir(v); setTimeout(revisar, 300); setTimeout(revisar, 2000);
   })();
 </script>
 <dialog class="dlg-usr dlg-flujo" id="dlg-flujo" aria-labelledby="fl-tit">
