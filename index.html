@@ -428,7 +428,7 @@ body.sin-dinero #sec-casos table th:nth-child(n+3):nth-child(-n+5), body.sin-din
 .nuevo-caso-btn { margin-left: 0; font-size: 13px; padding: 6px 12px; vertical-align: middle; font-family: var(--font-body); }
 .nuevo-caso { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 10px; align-items: end; }
 .nuevo-caso label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-body.invitado .totals, body.invitado section[aria-labelledby="h-nuevo"], body.invitado .grid2, body.invitado #prom, body.invitado #sec-inv, body.invitado #sec-fijos, body.invitado section[aria-labelledby="h-resp"], body.invitado #aviso-resp, body.invitado #hero-color, body.invitado .hero-nav, body.invitado .hero-caret { display: none !important; }
+body.invitado:not(.acc-finanzas) .totals, body.invitado:not(.acc-finanzas) section[aria-labelledby="h-nuevo"], body.invitado:not(.acc-finanzas) .grid2, body.invitado #prom, body.invitado:not(.acc-finanzas) #sec-inv, body.invitado:not(.acc-finanzas) #sec-fijos, body.invitado section[aria-labelledby="h-resp"], body.invitado #aviso-resp, body.invitado #hero-color, body.invitado:not(.acc-finanzas) .hero-nav, body.invitado .hero-caret { display: none !important; }
 body.invitado #sec-casos { display: grid !important; }
 .fila-nuevo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0; align-items: stretch; background: var(--panel); border-radius: var(--r); box-shadow: var(--raise); min-width: 0; }
 .fila-nuevo > .panel { background: transparent; box-shadow: none; border: 0; border-radius: 0; }
@@ -595,7 +595,7 @@ body.invitado #sec-notas .notas { grid-template-columns: repeat(auto-fill, minma
 .nota-resps small { font-size: 11px; color: var(--muted); }
 .nota-resp-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; padding: 9px 12px; border-radius: 12px; resize: none; }
 .nota-pie .ghost { padding: 4px 10px; font-size: 12px; }
-body.invitado .hero-mes-btn { pointer-events: none; }
+body.invitado:not(.acc-finanzas) .hero-mes-btn { pointer-events: none; }
 tr.por-cambio > td, .tone .tbox tbody tr.por-cambio:not(.det-row) > td { background: color-mix(in srgb, var(--pc) 9%, transparent) !important; }
 tr.por-cambio > td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--pc) 70%, transparent); }
 .det-list li.por-cambio { background: color-mix(in srgb, var(--pc) 9%, transparent); border-radius: 10px; padding-left: 8px; padding-right: 8px; }
@@ -826,7 +826,7 @@ body.invitado .neg-mas { display: none; }
 .neg-pop button:hover { background: var(--accent-soft); }
 .neg-pop button[aria-checked="true"] { font-weight: 600; color: var(--accent); }
 body.invitado .hero-neg-btn { pointer-events: none; } body.invitado .hero-neg-btn .hero-caret { display: none; }
-body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[aria-labelledby="h-mov"], body.sin-t-inv #sec-inv, body.sin-t-fijos #sec-fijos, body.sin-t-mapa #sec-mapa, body.sin-t-mkt #sec-mkt, body.invitado #sec-mkt { display: none !important; }
+body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[aria-labelledby="h-mov"], body.sin-t-inv #sec-inv, body.sin-t-fijos #sec-fijos, body.sin-t-mapa #sec-mapa, body.sin-t-mkt #sec-mkt, body.invitado:not(.acc-mkt) #sec-mkt, body.invitado:not(.acc-inmo) #sec-mapa, body.invitado:not(.acc-casos) #sec-casos { display: none !important; }
 .mk-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--accent-soft); justify-self: start; flex-wrap: wrap; }
 .mk-tabs button { border: 0; background: none; box-shadow: none; padding: 7px 14px; border-radius: 999px; font: 600 13px var(--font-body); color: var(--muted); cursor: pointer; }
 .mk-tabs button[aria-selected="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
@@ -906,7 +906,7 @@ body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[ar
 .pz-caja.pz-pantalla .pz-zona { height: auto; }
 body.pz-bloq { overflow: hidden; }
 body.sin-t-mov #app > .grid2 { grid-template-columns: minmax(0, 1fr); }
-body.invitado.sin-t-casos #sec-casos { display: grid !important; }
+body.invitado.acc-casos.sin-t-casos #sec-casos { display: grid !important; } body.invitado.acc-mkt.sin-t-mkt #sec-mkt, body.invitado.acc-inmo.sin-t-mapa #sec-mapa { display: block !important; }
 .cats-sec { font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 6px 0 0; }
 .tablas-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .dlg-cats { max-height: calc(100dvh - 32px); overflow-y: auto; }
@@ -1482,6 +1482,8 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 .usr-menu button { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 8px 10px; border-radius: 8px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
 .usr-menu button:hover, .usr-menu button.on { background: rgba(0,0,0,.06); } .usr-ext { margin: 6px 4px 2px; padding: 8px 10px; border: 1px solid var(--line, #ddd); border-radius: 8px; font: inherit; font-size: 13.5px; background: transparent; color: inherit; } .usr-menu i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
 .det-top-acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.usr-acc { border: 1px solid var(--line, #ddd); border-radius: 12px; padding: 8px 12px 10px; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.usr-acc legend { font-size: 12px; letter-spacing: .04em; color: var(--muted); padding: 0 4px; } .usr-acc label { text-transform: none; letter-spacing: 0; color: inherit; display: flex; align-items: center; gap: 6px; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -5811,7 +5813,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   });
 
   // Users: each color can hold one person with a role (for now: asistente = only the Casos table)
-  const ROLES = { asistente: 'Asistente · solo Casos' };
+  const ROLES = { asistente: 'Asistente' };
   function renderUsuarios() {
     const box = $('usuarios'); if (!box) return;
     $('usuarios-l').hidden = !miembros.length;
@@ -5821,7 +5823,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const d = document.createElement('span'); d.className = 'dot'; d.style.background = c.light[0];
       const t = document.createElement('span'); t.className = 'usr-t';
       const n = document.createElement('b'); n.textContent = m.nombre || usuarioDe(m.email);
-      const sm = document.createElement('small'); sm.textContent = (ROLES[m.rol] || m.rol) + ' · usuario: ' + usuarioDe(m.email);
+      const sm = document.createElement('small'); sm.textContent = (m.cargo || ROLES[m.rol] || m.rol) + ' · usuario: ' + usuarioDe(m.email);
       t.append(n, sm); b.append(d, t);
       b.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(m.color, m); });
       return b;
@@ -5854,9 +5856,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     $('usr-msg').textContent = ''; $('usr-msg').className = 'msg';
     $('usr-tit').textContent = m ? (m.nombre || usuarioDe(m.email)) : 'Añadir usuario';
     $('usr-col-l').hidden = !!m; if (!m) pintarColoresUsr();
-    $('usr-sub').textContent = m ? `Rol: ${ROLES[m.rol] || m.rol}. Entra con el usuario "${usuarioDe(m.email)}".` : 'Esta persona entrará con el usuario y la contraseña que pongas aquí, y solo verá lo que permite su rol.';
+    $('usr-sub').textContent = m ? `Rol: ${m.cargo || ROLES[m.rol] || m.rol}. Entra con el usuario "${usuarioDe(m.email)}".` : 'Esta persona entrará con el usuario y la contraseña que pongas aquí, y solo verá lo que permite su rol.';
     ['usr-nombre', 'usr-email', 'usr-pass'].forEach((id) => { const el = $(id); el.value = ''; el.closest('label').hidden = !!m; el.required = !m; });
-    $('usr-rol').closest('label').hidden = !!m;
+    $('usr-cargo').value = m ? (m.cargo || '') : ''; const acc_ = m ? m.acceso : ['casos']; document.querySelectorAll('#usr-acc input').forEach((x) => { x.checked = acc_.includes(x.value); });
     $('usr-oculta').checked = !!(m && m.ocultarDinero);
     $('usr-ok').textContent = m ? 'Quitar acceso' : 'Crear usuario';
     $('usr-ok').classList.toggle('peligro', !!m);
@@ -5872,6 +5874,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     m.ocultarDinero = v;
     setMsg(v ? `${m.nombre || 'Ese usuario'} ya no verá los datos contables.` : `${m.nombre || 'Ese usuario'} vuelve a ver los datos contables.`);
   });
+  const accesoSel = () => [...document.querySelectorAll('#usr-acc input:checked')].map((x) => x.value);
+  const guardarPerm = () => { const m = usrActual; if (!m) return; const cargo = $('usr-cargo').value.trim().slice(0, 40), acceso = accesoSel();
+    if (!acceso.length) { setMsg('Deja al menos una tabla marcada.', true); return; }
+    libroRef.collection('miembros').doc(m.id).update({ cargo, acceso }); db.doc('accesos/' + m.id).update({ cargo, acceso }); m.cargo = cargo; m.acceso = acceso; setMsg('Permisos de ' + (m.nombre || 'ese usuario') + ' guardados. Los verá al recargar la app.'); };
+  $('usr-cargo').addEventListener('change', guardarPerm); document.querySelectorAll('#usr-acc input').forEach((x) => x.addEventListener('change', guardarPerm));
   $('usr-cancel').addEventListener('click', cerrarDlg);
   $('usr-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -5907,10 +5914,10 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     } catch (er) { if (app2) deleteApp(app2).catch(() => {}); return fallo(er.message); }
     deleteApp(app2).catch(() => {});
     if (guid === auth.currentUser.uid) return fallo('Ese es tu propio usuario.');
-    const ocultarDinero = $('usr-oculta').checked;
-    const datos = { nombre, email, usuario, rol, color: usrColor, ocultarDinero, creado: new Date().toISOString() };
+    const ocultarDinero = $('usr-oculta').checked, cargo = $('usr-cargo').value.trim().slice(0, 40), acceso = accesoSel().length ? accesoSel() : ['casos'];
+    const datos = { nombre, email, usuario, rol, cargo, acceso, color: usrColor, ocultarDinero, creado: new Date().toISOString() };
     libroRef.collection('miembros').doc(guid).set(datos);
-    db.doc('accesos/' + guid).set({ owner: auth.currentUser.uid, ownerEmail: auth.currentUser.email || '', rol, color: usrColor, nombre, ocultarDinero });
+    db.doc('accesos/' + guid).set({ owner: auth.currentUser.uid, ownerEmail: auth.currentUser.email || '', rol, cargo, acceso, color: usrColor, nombre, ocultarDinero });
     ok.disabled = false; cerrarDlg();
     setMsg(`Listo: ${nombre} ya puede entrar con el usuario "${usuario}" y la contraseña que pusiste.`);
   });
@@ -6494,12 +6501,36 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   const mapMov = (d) => { const x = d.data() || {}; return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, accHecho: !!x.accHecho, por: leerPor(x) }; };
 
+  function suscribirFin(lost, pickMonth) {
+    col('movimientos').onSnapshot((snap) => {
+      raw['movimientos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      rows = snap.docs.map((d) => {
+        const x = d.data() || {};
+        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, accHecho: !!x.accHecho, por: leerPor(x) };
+      }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
+      pickMonth(); renderPronto();
+    }, lost);
+    col('fijos').onSnapshot((snap) => {
+      raw['fijos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      fijos = snap.docs.map((d) => {
+        const x = d.data() || {};
+        return { registro: !!x.registro, accHecho: (x.accHecho && typeof x.accHecho === 'object') ? x.accHecho : {}, id: d.id, tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, dia: Math.max(1, Math.min(31, Number(x.dia) || 1)), desde: String(x.desde || ''), hasta: x.hasta ? String(x.hasta) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
+      }).filter((f) => /^\d{4}-\d{2}$/.test(f.desde));
+      pickMonth(); renderPronto();
+    }, lost);
+    col('inversiones').onSnapshot((snap) => {
+      raw['inversiones'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+      invs = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), categoria: String(x.categoria || ''), tasa: Number(x.tasa) || 0 }; });
+      renderPronto();
+    }, lost);
+  }
   function startInvitado(u, acc) {
     yoUid = u.uid;
     invitado = acc;
     document.body.classList.add('invitado');
-    $('u-name').textContent = `${usuarioDe(u.email) || 'Tu cuenta'} · ${ROLES[acc.rol] || acc.rol}`;
-    { const sb = document.querySelector('.top .sub'); if (sb) sb.textContent = `Hola ${acc.nombre || ''}. Estás en el libro de ${acc.ownerEmail || 'tu equipo'} como asistente: puedes trabajar en la tabla de Casos, su Detalle y su Agenda.`; }
+    const accs = Array.isArray(acc.acceso) && acc.acceso.length ? acc.acceso : ['casos']; ['casos', 'finanzas', 'inmo', 'mkt'].forEach((t) => document.body.classList.toggle('acc-' + t, accs.includes(t)));
+    $('u-name').textContent = `${usuarioDe(u.email) || 'Tu cuenta'} · ${acc.cargo || ROLES[acc.rol] || acc.rol}`;
+    { const sb = document.querySelector('.top .sub'); if (sb) sb.textContent = `Hola ${acc.nombre || ''}. Estás en el libro de ${acc.ownerEmail || 'tu equipo'} como ${acc.cargo || 'asistente'}.`; }
     if (acc.color && COLORS[acc.color]) { colorKey = acc.color; applyColor(); }
     try { gcalOn = localStorage.getItem('libro-gcal-inv') === '1'; } catch (e) {}
     db = fireDb;
@@ -6510,6 +6541,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const ponerDinero = () => {
       document.body.classList.toggle('sin-dinero', sinDinero());
       if (sinDinero()) { if (paraMov) { paraMov(); paraMov = null; } rows = []; }
+      else if (accs.includes('finanzas')) { if (!paraMov) { paraMov = () => {}; suscribirFin(lost, () => {}); } }
       else if (!paraMov) paraMov = baseNegocio('movimientos').collection('movimientos').onSnapshotDeCasos((snap) => {
         rows = snap.docs.map(mapMov).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
         render();
@@ -6522,8 +6554,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const v = x.ocultarDinero === true;
       if (v !== !!invitado.ocultarDinero) { invitado.ocultarDinero = v; ponerDinero(); render(); }
     }, () => {});
-    suscribirCasos(lost);
+    if (accs.includes('casos')) suscribirCasos(lost);
     suscribirNotas(lost); suscribirBiblio();
+    if (accs.includes('finanzas')) suscribirCats();
+    if (accs.includes('inmo')) suscribirLugares();
+    if (accs.includes('mkt')) { suscribirMkt(); suscribirMkt2(); }
     render();
   }
 
@@ -6561,31 +6596,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       drawRespaldos();
     }, () => {});
     setTimeout(() => { autoRespaldo(); drawAviso(); }, 8000);
-    col('movimientos').onSnapshot((snap) => {
-      raw['movimientos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      rows = snap.docs.map((d) => {
-        const x = d.data() || {};
-        return { id: d.id, fecha: String(x.fecha || ''), tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, bruto: Number(x.monto) || 0, parte: 100, casoId: x.casoId ? String(x.casoId) : '', inversionId: x.inversionId ? String(x.inversionId) : '', registro: !!x.registro, accHecho: !!x.accHecho, por: leerPor(x) };
-      }).filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.fecha));
-      pickMonth(); renderPronto();
-    }, lost);
-    col('fijos').onSnapshot((snap) => {
-      raw['fijos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      fijos = snap.docs.map((d) => {
-        const x = d.data() || {};
-        return { registro: !!x.registro, accHecho: (x.accHecho && typeof x.accHecho === 'object') ? x.accHecho : {}, id: d.id, tipo: String(x.tipo || ''), categoria: String(x.categoria || ''), descripcion: String(x.descripcion || ''), monto: Number(x.monto) || 0, dia: Math.max(1, Math.min(31, Number(x.dia) || 1)), desde: String(x.desde || ''), hasta: x.hasta ? String(x.hasta) : '', inversionId: x.inversionId ? String(x.inversionId) : '' };
-      }).filter((f) => /^\d{4}-\d{2}$/.test(f.desde));
-      pickMonth(); renderPronto();
-    }, lost);
-    col('inversiones').onSnapshot((snap) => {
-      raw['inversiones'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
-      invs = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || 'Sin nombre'), categoria: String(x.categoria || ''), tasa: Number(x.tasa) || 0 }; });
-      renderPronto();
-    }, lost);
+    suscribirFin(lost, pickMonth);
     suscribirCasos(lost);
     suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares(); suscribirMkt(); suscribirMkt2(); suscribirMensajes();
     col('miembros').onSnapshot((snap) => {
-      miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
+      miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), cargo: String(x.cargo || ''), acceso: Array.isArray(x.acceso) && x.acceso.length ? x.acceso : ['casos'], color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
     }, () => {});
   }
@@ -6962,9 +6977,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const TAB = { mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
     const revisar = () => {
       const bc = document.body.classList;
-      document.querySelectorAll('.barra-it').forEach((b) => { const t = TAB[b.dataset.vista]; b.hidden = !!t && bc.contains('sin-t-' + t) && !bc.contains('invitado'); });
+      document.querySelectorAll('.barra-it').forEach((b) => { const t = TAB[b.dataset.vista]; const vk = b.dataset.vista; b.hidden = bc.contains('invitado') ? (vk !== 'usuario' && !bc.contains('acc-' + vk)) : (!!t && bc.contains('sin-t-' + t)); });
       const k = document.body.dataset.vista, b = document.querySelector(`.barra-it[data-vista="${k}"]`);
-      if (b && b.hidden) { ir('finanzas'); return; }
+      if (b && b.hidden) { const pr = [...document.querySelectorAll('.barra-it')].find((x) => !x.hidden && x.dataset.vista !== 'usuario'); ir(pr ? pr.dataset.vista : 'usuario'); return; }
       const hay = [...document.querySelectorAll(`[data-v="${k}"]`)].some((x) => x.offsetHeight > 0);
       vacio.hidden = hay; vacio.querySelector('p').textContent = k === 'casos' ? 'Aún no hay casos en este negocio. Anota un honorario con el nombre del caso en Finanzas o usa + Nuevo caso.' : `No hay nada para mostrar en ${NOM[k] || 'esta sección'} todavía.`;
       if (k === 'casos' && !hay && $('sec-casos').hidden) { $('sec-casos').hidden = false; vacio.hidden = true; }
@@ -7088,7 +7103,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <label>Usuario<input type="text" id="usr-email" maxlength="30" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ej.: maria"></label>
     <label>Contraseña<input type="text" id="usr-pass" minlength="6" maxlength="60" required autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>
     <div class="usr-col-l" id="usr-col-l"><span>Color</span><div class="swatches" id="usr-colores" role="radiogroup" aria-label="Color del usuario"></div></div>
-    <label>Rol<select id="usr-rol"><option value="asistente">Asistente: solo la tabla de Casos</option></select></label>
+    <input type="hidden" id="usr-rol" value="asistente"><label>Rol<input type="text" id="usr-cargo" maxlength="40" placeholder="Ej.: Abogado asociado, Secretaria, Pasante"></label><fieldset class="usr-acc" id="usr-acc"><legend>Tablas a las que tiene acceso</legend><label><input type="checkbox" value="casos" checked> Casos</label><label><input type="checkbox" value="finanzas"> Finanzas</label><label><input type="checkbox" value="inmo"> Inmobiliaria</label><label><input type="checkbox" value="mkt"> Marketing</label></fieldset>
     <label class="usr-check"><input type="checkbox" id="usr-oculta"><span>Ocultar datos contables<small>No verá el total, lo pagado, lo que falta ni los pagos de cada caso, y no podrá cambiarlos.</small></span></label>
     <p class="msg" id="usr-msg" role="status"></p>
     <div class="det-acts"><button type="button" class="ghost" id="usr-cancel">Cancelar</button><button type="submit" class="btn" id="usr-ok">Crear usuario</button></div>

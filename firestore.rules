@@ -9,14 +9,19 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid))
         && get(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.rol == 'asistente';
     }
+    // Tablas que el dueño le dio a ese usuario (si no hay lista, solo Casos).
+    function puede(uid, t) {
+      return esAsistente(uid) && t in get(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.get('acceso', ['casos']);
+    }
     // "Ocultar datos contables": ese usuario no ve ni cambia montos.
     function veDinero(uid) {
       return get(/databases/$(database)/documents/users/$(uid)/miembros/$(request.auth.uid)).data.get('ocultarDinero', false) != true;
     }
 
     match /users/{uid} {
-      // El dueño lee y escribe todo su libro.
+      // El dueño lee y escribe todo su libro. Quien tiene Finanzas lee las categorías.
       allow read, write: if esDueno(uid);
+      allow read: if puede(uid, 'finanzas');
       match /{document=**} {
         allow read, write: if esDueno(uid);
       }
@@ -47,7 +52,18 @@ service cloud.firestore {
           || (resource.data.para == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respuestas'])));
         allow delete: if esAsistente(uid) && resource.data.autor == request.auth.uid;
       }
+      // Finanzas: solo si el dueño le dio esa tabla.
+      match /fijos/{id} { allow read, write: if puede(uid, 'finanzas') && veDinero(uid); }
+      match /inversiones/{id} { allow read, write: if puede(uid, 'finanzas') && veDinero(uid); }
+      // Inmobiliaria (todo lo del negocio inmobiliaria)
+      match /negocios/inmobiliaria/{document=**} { allow read, write: if puede(uid, 'inmo'); }
+      // Marketing
+      match /pizarras/{id} { allow read, write: if puede(uid, 'mkt'); }
+      match /campanas/{id} { allow read, write: if puede(uid, 'mkt'); }
+      match /publicaciones/{id} { allow read, write: if puede(uid, 'mkt'); }
+      match /videos/{id} { allow read, write: if puede(uid, 'mkt'); }
       match /movimientos/{id} {
+        allow read, write: if puede(uid, 'finanzas') && veDinero(uid);
         allow read, delete: if esAsistente(uid) && veDinero(uid) && resource.data.casoId > '';
         allow create: if esAsistente(uid) && veDinero(uid) && request.resource.data.casoId > ''
           && request.resource.data.tipo == 'Ingreso' && request.resource.data.categoria == 'Honorarios por casos';
