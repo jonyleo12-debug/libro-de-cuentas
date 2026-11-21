@@ -1481,6 +1481,7 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 .usr-menu { position: absolute; z-index: 9999; min-width: 180px; background: var(--panel, #fff); border: 1px solid var(--line, #ddd); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.15); display: grid; }
 .usr-menu button { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 8px 10px; border-radius: 8px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
 .usr-menu button:hover, .usr-menu button.on { background: rgba(0,0,0,.06); } .usr-ext { margin: 6px 4px 2px; padding: 8px 10px; border: 1px solid var(--line, #ddd); border-radius: 8px; font: inherit; font-size: 13.5px; background: transparent; color: inherit; } .usr-menu i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.det-top-acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -5248,7 +5249,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           try { await col('casos').doc(c.id).update({ archivado: !c.archivado }); openCaso = null; setMsg(c.archivado ? `${c.nombre} volvió a la lista de casos.` : `${c.nombre} pasó a Procesos archivados.`); render(); }
           catch (e) { setMsg('No se pudo archivar. Intenta de nuevo.', true); }
         });
-        const top = document.createElement('div'); top.className = 'det-top'; cCli.insertBefore(top, cCli.firstChild); top.append(cCli.querySelector('.det-h'), ab); }
+        const top = document.createElement('div'); top.className = 'det-top'; cCli.insertBefore(top, cCli.firstChild); const ib = document.createElement('button'); ib.type = 'button'; ib.className = 'ghost arch-btn id-btn';
+          const pintaId = () => { ib.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="11" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 16c.6-1.5 1.7-2 3-2s2.4.5 3 2M14 10h4M14 13h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'; const t = document.createElement('span'); t.textContent = c.idCliente ? c.idCliente : 'ID de cliente'; ib.appendChild(t); ib.title = c.idCliente ? 'Toca para copiar el ID' : 'Crear un ID de identificación para este caso'; };
+          pintaId();
+          ib.addEventListener('click', async () => {
+            if (c.idCliente) { try { await navigator.clipboard.writeText(c.idCliente); setMsg('ID ' + c.idCliente + ' copiado.'); } catch (e) {} return; }
+            const max = casos.reduce((m, x) => { const k = /^ID-(\d+)$/.exec(x.idCliente || ''); return k ? Math.max(m, +k[1]) : m; }, 0);
+            const nuevo = 'ID-' + String(max + 1).padStart(4, '0');
+            try { await col('casos').doc(c.id).update({ idCliente: nuevo }); c.idCliente = nuevo; pintaId(); setMsg('Se creó el ' + nuevo + ' para ' + c.nombre + '.'); } catch (e) { setMsg('No se pudo crear el ID.', true); } });
+          const bx = document.createElement('div'); bx.className = 'det-top-acc'; bx.append(ib, ab);
+          top.append(cCli.querySelector('.det-h'), bx); }
       if (ed.children.length) wrap.appendChild(ed);
       if (c.pagado > c.total && !sinDinero()) { const w = document.createElement('p'); w.className = 'msg err'; w.textContent = `Los pagos (${usd.format(c.pagado)}) superan el total. Revisa si el total es correcto.`; wrap.appendChild(w); }
       cell.appendChild(wrap); dr.appendChild(cell);
@@ -6480,7 +6490,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     col('casos').onSnapshot((snap) => {
       raw['casos'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
       casosListos = true;
-      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, responsable: String(x.responsable || ''), nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, totales: Array.isArray(x.totales) && x.totales.length > 1 ? x.totales.map((v) => Math.max(0, Number(v) || 0)) : null, pagadosExtra: Array.isArray(x.pagadosExtra) ? x.pagadosExtra.map((v) => Math.max(0, Number(v) || 0)) : [], archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.ruta && a.url) : [], ultActuacion: String(x.ultActuacion || ''), origen: String(x.origen || ''), ultActFecha: String(x.ultActFecha || ''), revisado: String(x.revisado || ''), calc: x.calc === true, creado: String(x.creado || ''), por: leerPor(x) }; });
+      casos = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, responsable: String(x.responsable || ''), idCliente: String(x.idCliente || ''), nombre: String(x.nombre || 'Sin nombre'), total: Number(x.total) || 0, totales: Array.isArray(x.totales) && x.totales.length > 1 ? x.totales.map((v) => Math.max(0, Number(v) || 0)) : null, pagadosExtra: Array.isArray(x.pagadosExtra) ? x.pagadosExtra.map((v) => Math.max(0, Number(v) || 0)) : [], archivo: String(x.archivo || ''), causa: String(x.causa || ''), cedula: String(x.cedula || ''), telefono: String(x.telefono || ''), correo: String(x.correo || ''), observacion: String(x.observacion || ''), ajuste: Number(x.ajuste) || 0, etiqueta: String(x.etiqueta || ''), parte: x.parte == null || isNaN(Number(x.parte)) ? 100 : Math.min(100, Math.max(0, Number(x.parte))), archivado: x.archivado === true, archivos: Array.isArray(x.archivos) ? x.archivos.filter((a) => a && a.ruta && a.url) : [], ultActuacion: String(x.ultActuacion || ''), origen: String(x.origen || ''), ultActFecha: String(x.ultActFecha || ''), revisado: String(x.revisado || ''), calc: x.calc === true, creado: String(x.creado || ''), por: leerPor(x) }; });
       ligarAudiencias();
       renderPronto();
     }, lost);
