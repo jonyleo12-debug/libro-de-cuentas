@@ -1484,6 +1484,9 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 .det-top-acc { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .usr-acc { border: 1px solid var(--line, #ddd); border-radius: 12px; padding: 8px 12px 10px; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .usr-acc legend { font-size: 12px; letter-spacing: .04em; color: var(--muted); padding: 0 4px; } .usr-acc label { text-transform: none; letter-spacing: 0; color: inherit; display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.barra-marca { cursor: pointer; transition: transform .15s; } .barra-marca:hover { transform: scale(1.08); }
+.marca-pop { position: fixed; z-index: 9999; display: flex; gap: 8px; padding: 10px; background: var(--panel, #fff); border: 1px solid var(--line, #ddd); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
+.marca-pop button { width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer; padding: 0; } .marca-pop button.on { box-shadow: 0 0 0 2px var(--panel, #fff), 0 0 0 4px #1c1c1e; }
 </style>
 </head>
 <body>
@@ -2125,6 +2128,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     });
     sw.appendChild(b);
   });
+  { const lg = document.querySelector('.barra-marca'); if (lg) { lg.removeAttribute('aria-hidden'); lg.setAttribute('role', 'button'); lg.tabIndex = 0; lg.title = 'Cambiar color';
+    const abrir = (e) => { e.stopPropagation(); if (invitado) return; let pop = document.querySelector('.marca-pop'); if (pop) { pop.remove(); return; }
+      pop = document.createElement('div'); pop.className = 'marca-pop';
+      Object.entries(COLORS).forEach(([k, c]) => { const b = document.createElement('button'); b.type = 'button'; b.title = c.name; b.style.background = c.light[0]; if (k === colorKey) b.classList.add('on');
+        b.addEventListener('click', () => { const o = sw.querySelector(`[data-color="${k}"]`); if (o) o.click(); pop.remove(); }); pop.appendChild(b); });
+      document.body.appendChild(pop); const r = lg.getBoundingClientRect(); pop.style.left = r.left + 'px'; pop.style.top = (r.bottom + 8) + 'px';
+      setTimeout(() => document.addEventListener('click', function f(ev) { if (!pop.contains(ev.target)) { pop.remove(); document.removeEventListener('click', f); } }), 0); };
+    lg.addEventListener('click', abrir); lg.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') abrir(e); }); } }
   applyColor();
   setTimeout(() => { try { renderUsuarios(); } catch (e) {} }, 0);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyColor);
