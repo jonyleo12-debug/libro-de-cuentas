@@ -389,7 +389,10 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 .ola5 { transform-origin: 8% 92%; animation: ola1 13s ease-in-out infinite reverse; }
 @media (prefers-reduced-motion: reduce) { .ola { animation: none !important; } }
 .panel.plegable { position: relative; }
-.plegar { touch-action: none; }
+.plegar { display: none !important; }
+.barra-it.arrastrando { opacity: .55; transform: scale(1.03); box-shadow: 0 6px 18px -6px rgba(0,0,0,.3); }
+.barra-nav.moviendo, .barra-nav.moviendo * { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.barra-it { -webkit-touch-callout: none; touch-action: pan-y; }
 .arrastrando { position: relative; z-index: 5; transform: scale(1.01); box-shadow: 0 24px 50px -20px rgba(0,0,0,.35); opacity: .96; transition: transform .15s, box-shadow .15s; border-radius: var(--r); }
 body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none !important; }
 .panel.plegable > :first-child { padding-right: 44px; }
@@ -4680,7 +4683,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   }
   try { aplicarOrden(JSON.parse(localStorage.getItem('libro-orden') || '[]')); } catch (e) {}
   const guardarVista = (campo, valor) => { if (libroRef && !invitado) libroRef.set({ [campo]: valor }).catch(() => {}); };
-  window.__guardarAreas = (a) => guardarVista('areas', a);
+  window.__guardarAreas = (a) => guardarVista('areas', a); window.__guardarBarra = (o) => guardarVista('barra', o);
   function iniciarArrastre(e, sec, btn) {
     if (e.button !== 0) return;
     const x0 = e.clientX, y0 = e.clientY; let activo = false, raf = 0, py = y0;
@@ -4724,7 +4727,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       poner(!!plegadas[key]); ponerPlegada[key] = poner;
       b.addEventListener('pointerdown', (e) => iniciarArrastre(e, sec, b));
       b.addEventListener('click', (e) => { if (b.dataset.movido) { delete b.dataset.movido; e.preventDefault(); return; } const on = !sec.classList.contains('plegada'); poner(on); plegadas[key] = on; try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} guardarVista('plegadas', { ...plegadas }); });
-      sec.appendChild(b);
+      poner(false);
     });
   }
   $('mes').addEventListener('change', () => { userPickedMonth = true; fechaAlMes(); render(); });
@@ -6820,11 +6823,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         if (typeof dv.gmapsKey === 'string') { try { ponerClaveGmaps(dv.gmapsKey); } catch (e) {} }
         if (Array.isArray(dv.negocios)) { const nv = limpiarNegs(dv.negocios); if (JSON.stringify(nv) !== JSON.stringify(negocios)) { negocios = nv; try { localStorage.setItem('libro-negocios', JSON.stringify(negocios)); } catch (e) {} if (editNeg == null) pintarNegocio(); } }
         else { try { if (localStorage.getItem('libro-negocios')) guardarNegs(); } catch (e) {} }
+        if (Array.isArray(dv.barra) && window.__ordenBarra) window.__ordenBarra(dv.barra.map(String));
         if (Array.isArray(dv.areas) && window.__pintarAreas) window.__pintarAreas(dv.areas.filter((a) => a && a.id && a.nombre).map((a) => ({ id: String(a.id), nombre: String(a.nombre) })));
         if (Array.isArray(dv.orden) && !document.body.classList.contains('moviendo')) { aplicarOrden(dv.orden.map(String)); try { localStorage.setItem('libro-orden', JSON.stringify(dv.orden)); } catch (e) {} }
         if (!Array.isArray(dv.orden)) { try { const lo = JSON.parse(localStorage.getItem('libro-orden') || 'null'); if (Array.isArray(lo) && lo.length) guardarVista('orden', lo); } catch (e) {} }
         if (!dv.plegadas && Object.keys(plegadas).length) guardarVista('plegadas', { ...plegadas });
-        if (dv.plegadas && typeof dv.plegadas === 'object') { plegadas = { ...dv.plegadas }; Object.entries(ponerPlegada).forEach(([k, f]) => f(!!plegadas[k])); try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} } }
+        if (dv.plegadas && typeof dv.plegadas === 'object') { plegadas = { ...dv.plegadas };  try { localStorage.setItem('libro-plegadas', JSON.stringify(plegadas)); } catch (e) {} } }
       ultimaDescarga = snap.exists ? String((snap.data() || {}).ultimaDescarga || '') : '';
       { const g = snap.exists && (snap.data() || {}).gcal === true; if (g !== gcalOn) { gcalOn = g; render(); } }
       drawAviso();
@@ -7223,7 +7227,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const ICO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>';
     const pintarAreas = () => { document.querySelectorAll('.barra-it[data-area]').forEach((x) => x.remove()); const nav = document.querySelector('.barra-nav');
       areas.forEach((a) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'barra-it'; b.dataset.vista = 'a-' + a.id; b.dataset.area = '1'; b.innerHTML = ICO; const t = document.createElement('span'); t.textContent = a.nombre; b.appendChild(t); b.addEventListener('click', () => ir(b.dataset.vista)); nav.appendChild(b); });
-      const k = document.body.dataset.vista; if (k) ir(k); };
+      if (window.__pintarAreasOrden) window.__pintarAreasOrden(); const k = document.body.dataset.vista; if (k) ir(k); };
     const guardarAreas = () => { try { localStorage.setItem('libro-areas', JSON.stringify(areas)); } catch (e) {} if (window.__guardarAreas) window.__guardarAreas(areas); };
     window.__pintarAreas = (lista) => { if (JSON.stringify(lista) === JSON.stringify(areas)) return; areas = lista; try { localStorage.setItem('libro-areas', JSON.stringify(areas)); } catch (e) {} pintarAreas(); };
     const ir = (k) => { if (/^a-/.test(k) && !areas.some((a) => 'a-' + a.id === k)) k = 'finanzas';
@@ -7245,7 +7249,33 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       if (k === 'casos' && !hay && $('sec-casos').hidden) { $('sec-casos').hidden = false; vacio.hidden = true; }
     };
     new MutationObserver(() => requestAnimationFrame(revisar)).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-vista'] });
-    pintarAreas(); ir(v); setTimeout(revisar, 300); setTimeout(revisar, 2000);
+    // Long press on a sidebar item to drag it to another place; the order is saved.
+    { const nav = document.querySelector('.barra-nav'), K = 'libro-orden-barra';
+      const ordenar = (o) => { if (!Array.isArray(o)) return; const its = [...nav.querySelectorAll('.barra-it')]; o.forEach((k) => { const b = its.find((x) => x.dataset.vista === k); if (b) nav.appendChild(b); }); its.filter((b) => !o.includes(b.dataset.vista)).forEach((b) => nav.appendChild(b)); };
+      const guardar = () => { const o = [...nav.querySelectorAll('.barra-it')].map((b) => b.dataset.vista); try { localStorage.setItem(K, JSON.stringify(o)); } catch (e) {} if (window.__guardarBarra) window.__guardarBarra(o); };
+      window.__ordenBarra = (o) => { try { localStorage.setItem(K, JSON.stringify(o)); } catch (e) {} ordenar(o); };
+      try { ordenar(JSON.parse(localStorage.getItem(K) || 'null')); } catch (e) {}
+      window.__pintarAreasOrden = () => { try { ordenar(JSON.parse(localStorage.getItem(K) || 'null')); } catch (e) {} };
+      let sinClic = false;
+      nav.addEventListener('click', (e) => { if (sinClic) { e.stopPropagation(); e.preventDefault(); sinClic = false; } }, true);
+      nav.addEventListener('contextmenu', (e) => { if (nav.classList.contains('moviendo')) e.preventDefault(); });
+      nav.addEventListener('pointerdown', (e) => {
+        const b = e.target.closest('.barra-it'); if (!b || e.button !== 0) return;
+        const x0 = e.clientX, y0 = e.clientY; let activo = false;
+        const t = setTimeout(() => { activo = true; sinClic = true; b.classList.add('arrastrando'); nav.classList.add('moviendo'); try { b.setPointerCapture(e.pointerId); } catch (er) {} if (navigator.vibrate) navigator.vibrate(15); }, 400);
+        const mover = (ev) => {
+          if (!activo) { if (Math.abs(ev.clientX - x0) > 6 || Math.abs(ev.clientY - y0) > 6) fin(); return; }
+          ev.preventDefault();
+          const otros = [...nav.querySelectorAll('.barra-it')].filter((x) => x !== b && !x.hidden), horiz = getComputedStyle(nav).flexDirection === 'row';
+          let antes = null; for (const x of otros) { const r = x.getBoundingClientRect(); if (horiz ? ev.clientX < r.left + r.width / 2 : ev.clientY < r.top + r.height / 2) { antes = x; break; } }
+          if (antes) { if (b.nextElementSibling !== antes) antes.before(b); } else if (otros.length && otros[otros.length - 1].nextElementSibling !== b) otros[otros.length - 1].after(b);
+        };
+        const fin = () => { clearTimeout(t); window.removeEventListener('pointermove', mover); window.removeEventListener('pointerup', fin); window.removeEventListener('pointercancel', fin);
+          if (activo) { b.classList.remove('arrastrando'); nav.classList.remove('moviendo'); guardar(); setTimeout(() => { sinClic = false; }, 300); } };
+        window.addEventListener('pointermove', mover, { passive: false }); window.addEventListener('pointerup', fin); window.addEventListener('pointercancel', fin);
+      });
+    }
+    pintarAreas(); window.__pintarAreasOrden(); ir(v); setTimeout(revisar, 300); setTimeout(revisar, 2000);
   })();
 </script>
 <dialog class="dlg-usr dlg-crm" id="dlg-crm" aria-label="Contacto">
