@@ -826,7 +826,7 @@ body.invitado .neg-mas { display: none; }
 .neg-pop button:hover { background: var(--accent-soft); }
 .neg-pop button[aria-checked="true"] { font-weight: 600; color: var(--accent); }
 body.invitado .hero-neg-btn { pointer-events: none; } body.invitado .hero-neg-btn .hero-caret { display: none; }
-body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[aria-labelledby="h-mov"], body.sin-t-inv #sec-inv, body.sin-t-fijos #sec-fijos, body.sin-t-mapa #sec-mapa, body.sin-t-mkt #sec-mkt, body.invitado:not(.acc-mkt) #sec-mkt, body.invitado:not(.acc-inmo) #sec-mapa, body.invitado:not(.acc-casos) #sec-casos { display: none !important; }
+body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[aria-labelledby="h-mov"], body.sin-t-inv #sec-inv, body.sin-t-fijos #sec-fijos, body.sin-t-mapa #sec-mapa, body.sin-t-mkt #sec-mkt, body.invitado:not(.acc-mkt) #sec-mkt, body.sin-t-crm #sec-crm, body.invitado:not(.acc-crm) #sec-crm, body.invitado:not(.acc-inmo) #sec-mapa, body.invitado:not(.acc-casos) #sec-casos { display: none !important; }
 .mk-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--accent-soft); justify-self: start; flex-wrap: wrap; }
 .mk-tabs button { border: 0; background: none; box-shadow: none; padding: 7px 14px; border-radius: 999px; font: 600 13px var(--font-body); color: var(--muted); cursor: pointer; }
 .mk-tabs button[aria-selected="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
@@ -860,6 +860,86 @@ body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[ar
 .mk-origen { max-width: 220px; }
 .mk-pub .fl-sel { max-width: 170px; }
 #sec-mkt { display: grid; gap: 12px; }
+/* CRM */
+#sec-crm { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+#sec-crm > * { min-width: 0; }
+.crm-bar { display: flex; gap: 8px; align-items: center; }
+.crm-bar input { flex: 1; min-width: 0; max-width: 360px; }
+.crm-bar .btn { margin-left: auto; white-space: nowrap; }
+.crm-hoy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, #e8a33d 14%, var(--panel)); }
+.crm-hoy > b { font-size: 13px; margin-right: 4px; }
+.crm-chip { display: inline-grid; gap: 1px; text-align: left; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 10px; padding: 6px 10px; cursor: pointer; box-shadow: none; font: 600 13px var(--font-body); }
+.crm-chip small { font-weight: 400; font-size: 11.5px; color: var(--muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-chip.atras { border-color: #e5a29a; }
+.crm-tablero { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(175px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
+.crm-col { display: flex; flex-direction: column; gap: 8px; min-height: 260px; padding: 10px; border-radius: 16px; background: color-mix(in srgb, var(--fg) 4%, transparent); scroll-snap-align: start; transition: background .15s, box-shadow .15s; }
+.crm-col.sobre { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+.crm-ccab { display: flex; align-items: center; gap: 7px; padding: 2px 4px; font-size: 13px; }
+.crm-ccab::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--et, #9aa5a1); flex: none; }
+.crm-n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.crm-tot { margin-left: auto; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.crm-col[data-et="contactado"] { --et: #4a7fd4; } .crm-col[data-et="cita"] { --et: #e0a030; } .crm-col[data-et="propuesta"] { --et: #8e6ad8; } .crm-col[data-et="ganado"] { --et: #2e9e5b; }
+.crm-lista { display: grid; gap: 8px; align-content: start; flex: 1; }
+.crm-vacia { margin: 0; padding: 14px 6px; text-align: center; font-size: 12.5px; color: var(--muted); }
+.crm-card { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); cursor: grab; transition: box-shadow .15s, transform .15s; }
+.crm-card:hover, .crm-card:focus-visible { box-shadow: 0 4px 14px -6px rgba(0,0,0,.25); outline: none; }
+.crm-card.arr { opacity: .45; }
+.crm-f1 { display: flex; align-items: center; gap: 6px; }
+.crm-f1 b { font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-wa { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: #1f9d55; flex: none; }
+.crm-wa:hover { background: color-mix(in srgb, #1f9d55 14%, transparent); }
+.crm-wa svg { width: 16px; height: 16px; }
+.crm-int { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crm-f2 { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.crm-fecha { white-space: nowrap; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 7%, transparent); color: var(--muted); }
+.crm-fecha.hoy { background: color-mix(in srgb, #e0a030 20%, transparent); color: #9a6a10; }
+.crm-fecha.atras { background: color-mix(in srgb, #c62828 13%, transparent); color: #c62828; }
+.crm-val { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.crm-perd { justify-self: start; font-size: 13px; }
+.crm-perdl { display: flex; flex-wrap: wrap; gap: 8px; }
+.crm-perdl .crm-chip { opacity: .7; }
+.dlg-crm { width: min(540px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.crm-d { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.crm-d > *, .crm-campos > *, .crm-pf > * { min-width: 0; }
+.crm-d input, .crm-d select { width: 100%; box-sizing: border-box; }
+.crm-dcab { display: flex; gap: 8px; align-items: center; }
+.crm-dcab .crm-nom { flex: 1; min-width: 0; font: 600 19px var(--font-body); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 6px 2px; background: none; box-shadow: none; }
+.crm-dcab .crm-nom:focus { outline: none; border-bottom-color: var(--accent); }
+.crm-etapas { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 14px; background: color-mix(in srgb, var(--fg) 5%, transparent); }
+.crm-etapas button { flex: 1 1 auto; border: 0; background: none; box-shadow: none; padding: 7px 10px; border-radius: 10px; font: 600 12.5px var(--font-body); color: var(--muted); cursor: pointer; }
+.crm-etapas button[aria-checked="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.crm-etapas button.perd[aria-checked="true"] { color: #c62828; }
+.crm-acc { display: flex; flex-wrap: wrap; gap: 8px; }
+.crm-acc a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--fg); text-decoration: none; }
+.crm-acc a svg { width: 15px; height: 15px; }
+.crm-acc a.wa { color: #1f9d55; }
+.crm-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.crm-campos label, .crm-prox label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); text-transform: none; letter-spacing: 0; margin: 0; }
+.crm-campos .w { grid-column: 1 / -1; }
+.crm-campos select { width: 100%; max-width: none; }
+.crm-prox { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--fg) 4%, transparent); }
+.crm-prox > b { font-size: 13px; }
+.crm-pf { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
+.crm-rap { display: flex; flex-wrap: wrap; gap: 6px; }
+.crm-rap button { border: 1px solid var(--line); background: var(--panel); box-shadow: none; padding: 4px 10px; border-radius: 999px; font: 500 12px var(--font-body); color: var(--fg); cursor: pointer; }
+.crm-rap button:hover { border-color: var(--accent); }
+.crm-notas { display: grid; gap: 8px; }
+.crm-notas > b { font-size: 13px; }
+.dlg-crm form.crm-nf { display: flex; gap: 8px; align-items: center; }
+.crm-nf input { flex: 1; min-width: 0; }
+.dlg-crm .crm-nf .btn { width: auto; flex: none; margin: 0; padding: 10px 16px; }
+.dlg-crm .crm-campos input, .dlg-crm .crm-campos select, .dlg-crm .crm-pf input, .dlg-crm .crm-nf input { font-size: 14px; }
+.crm-nl { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.crm-nl li { display: flex; align-items: flex-start; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.crm-nl li small { flex: none; width: 72px; color: var(--muted); font-size: 11.5px; padding-top: 2px; }
+.crm-nl li span { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.crm-nl li.auto span { color: var(--muted); font-style: italic; }
+.crm-nl .fl-del { width: 24px; height: 24px; margin: -2px 0 0; }
+.crm-nl .fl-del svg { width: 14px; height: 14px; }
+.crm-pie { display: flex; align-items: center; gap: 8px; }
+.crm-pie small { color: var(--muted); font-size: 12px; }
+@media (max-width: 700px) { .crm-tablero { grid-auto-columns: 82%; } .crm-etapas button { flex: 1 1 30%; padding: 7px 4px; } .dlg-crm .crm-campos input, .dlg-crm .crm-campos select, .dlg-crm .crm-pf input, .dlg-crm .crm-nf input { font-size: 16px; } .crm-campos, .crm-pf { grid-template-columns: minmax(0, 1fr); } .crm-bar input { max-width: none; } }
+
 /* Marketing board (pizarra) */
 .pz-caja { display: grid; gap: 8px; }
 .pz-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -906,7 +986,7 @@ body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[ar
 .pz-caja.pz-pantalla .pz-zona { height: auto; }
 body.pz-bloq { overflow: hidden; }
 body.sin-t-mov #app > .grid2 { grid-template-columns: minmax(0, 1fr); }
-body.invitado.acc-casos.sin-t-casos #sec-casos { display: grid !important; } body.invitado.acc-mkt.sin-t-mkt #sec-mkt, body.invitado.acc-inmo.sin-t-mapa #sec-mapa { display: block !important; }
+body.invitado.acc-casos.sin-t-casos #sec-casos, body.invitado.acc-crm.sin-t-crm #sec-crm { display: grid !important; } body.invitado.acc-mkt.sin-t-mkt #sec-mkt, body.invitado.acc-inmo.sin-t-mapa #sec-mapa { display: block !important; }
 .cats-sec { font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 6px 0 0; }
 .tablas-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .dlg-cats { max-height: calc(100dvh - 32px); overflow-y: auto; }
@@ -1348,7 +1428,7 @@ tr.sel-borrar > td { background: color-mix(in srgb, var(--accent) 8%, transparen
 .barra-pie .ajustes-btn { justify-self: start; }
 @media (min-width: 901px) { body:has(#app:not([hidden])) { padding-left: 264px; } }
 body[data-vista] [data-v] { display: none !important; }
-body[data-vista="usuario"] [data-v="usuario"]:not([hidden]), body[data-vista="finanzas"] [data-v="finanzas"]:not([hidden]), body[data-vista="casos"] [data-v="casos"]:not([hidden]), body[data-vista="inmo"] [data-v="inmo"]:not([hidden]), body[data-vista="mkt"] [data-v="mkt"]:not([hidden]) { display: revert !important; }
+body[data-vista="usuario"] [data-v="usuario"]:not([hidden]), body[data-vista="finanzas"] [data-v="finanzas"]:not([hidden]), body[data-vista="casos"] [data-v="casos"]:not([hidden]), body[data-vista="inmo"] [data-v="inmo"]:not([hidden]), body[data-vista="mkt"] [data-v="mkt"]:not([hidden]), body[data-vista="crm"] [data-v="crm"]:not([hidden]) { display: revert !important; }
 body[data-vista="finanzas"] .totals[data-v], body[data-vista="finanzas"] .grid2[data-v] { display: grid !important; } body[data-vista="finanzas"] .aviso-resp[data-v]:not([hidden]) { display: flex !important; }
 body[data-vista="usuario"] #sec-notas { display: block !important; }
 body:not([data-vista="usuario"]):not([data-vista="finanzas"]) #fila-nuevo { display: none; }
@@ -1369,7 +1449,7 @@ body[data-vista="usuario"] #nota-form textarea, body[data-vista="usuario"] .nota
 .mapa-tog svg { width: 18px; height: 18px; }
 #sec-mapa.sin-mapa .mapa-box { display: none; }
 #sec-mapa.sin-mapa .prop-cuerpo { grid-template-columns: minmax(0, 1fr); }
-#sec-mapa.sin-mapa .prop-lista { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); max-height: none; overflow: visible; } #casos-ayuda { display: none !important; } #sec-casos .cob-grupo { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; } .casos-pie { display: flex; justify-content: flex-end; padding: 4px 6px 0; font-size: 15px; } .casos-pie .cob-it { display: inline-flex; align-items: baseline; gap: 6px; } .casos-pie b { font-size: 26px; font-weight: 500; } @media (min-width: 901px) { #app.wrap { max-width: none; padding-left: 32px; padding-right: 32px; } } body[data-vista="inmo"] #sec-mapa:not([hidden]), body[data-vista="casos"] #sec-casos:not([hidden]), body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: block !important; } body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: grid !important; } .neg-h1, #neg-pop { display: none !important; } @media (min-width: 901px) { header.top { display: none !important; } } .hero::after { content: none !important; }
+#sec-mapa.sin-mapa .prop-lista { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); max-height: none; overflow: visible; } #casos-ayuda { display: none !important; } #sec-casos .cob-grupo { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; } .casos-pie { display: flex; justify-content: flex-end; padding: 4px 6px 0; font-size: 15px; } .casos-pie .cob-it { display: inline-flex; align-items: baseline; gap: 6px; } .casos-pie b { font-size: 26px; font-weight: 500; } @media (min-width: 901px) { #app.wrap { max-width: none; padding-left: 32px; padding-right: 32px; } } body[data-vista="inmo"] #sec-mapa:not([hidden]), body[data-vista="casos"] #sec-casos:not([hidden]), body[data-vista="mkt"] #sec-mkt:not([hidden]) { display: block !important; } body[data-vista="mkt"] #sec-mkt:not([hidden]), body[data-vista="crm"] #sec-crm:not([hidden]) { display: grid !important; } .neg-h1, #neg-pop { display: none !important; } @media (min-width: 901px) { header.top { display: none !important; } } .hero::after { content: none !important; }
 .barra-logo { flex-wrap: nowrap; gap: 8px; } .barra-logo .hero-fecha { display: flex; align-items: center; gap: 0; margin-left: auto; }
 .barra-logo .hero-fecha .hero-nav, .barra-logo .hero-mes-btn { color: var(--muted); background: none; } .barra-logo .hero-mes-btn { font-size: 12.5px; padding: 4px 2px; color: var(--ink, #1c1c1e); } .barra-logo .hero-nav { font-size: 16px; padding: 2px 4px; }
 .usu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 28px; }
@@ -1535,7 +1615,7 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
 <div class="wrap" id="app" hidden>
   <aside class="barra" id="barra" aria-label="Secciones">
     <div class="barra-logo"><span class="barra-marca" aria-hidden="true">L</span><b>Libro</b></div>
-    <nav class="barra-nav"><button type="button" class="barra-it" data-vista="usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>Usuario</span></button><button type="button" class="barra-it" data-vista="finanzas"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m5.3 10V4m5.4 16v-7m5.3 7V8"/></svg><span>Finanzas</span></button><button type="button" class="barra-it" data-vista="casos"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 8h16v11H4zM9 8V5.5h6V8M4 13h16"/></svg><span>Casos</span></button><button type="button" class="barra-it" data-vista="inmo"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>Inmobiliaria</span></button><button type="button" class="barra-it" data-vista="mkt"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/></svg><span>Marketing</span></button></nav>
+    <nav class="barra-nav"><button type="button" class="barra-it" data-vista="usuario"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>Usuario</span></button><button type="button" class="barra-it" data-vista="finanzas"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m5.3 10V4m5.4 16v-7m5.3 7V8"/></svg><span>Finanzas</span></button><button type="button" class="barra-it" data-vista="casos"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 8h16v11H4zM9 8V5.5h6V8M4 13h16"/></svg><span>Casos</span></button><button type="button" class="barra-it" data-vista="inmo"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>Inmobiliaria</span></button><button type="button" class="barra-it" data-vista="mkt"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/></svg><span>Marketing</span></button><button type="button" class="barra-it" data-vista="crm"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M16 7h4.5M16 11h4.5M18 15h2.5"/></svg><span>CRM</span></button></nav>
     <button type="button" class="barra-add" id="barra-add">+ Añadir área</button>
     <div class="barra-pie" id="barra-pie">
     <button type="button" class="ajustes-btn" id="ajustes-btn" aria-label="Opciones" title="Opciones"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4c.6.2 1.2.6 1.7 1l2.3-.8 1.7 3-1.8 1.6c.1.6.1 1.3 0 1.9l1.8 1.6-1.7 3-2.3-.8c-.5.4-1.1.8-1.7 1l-.5 2.4h-3.4l-.5-2.4c-.6-.2-1.2-.6-1.7-1l-2.3.8-1.7-3 1.8-1.6a6 6 0 0 1 0-1.9L3.9 8.6l1.7-3 2.3.8c.5-.4 1.1-.8 1.7-1z"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
@@ -1767,6 +1847,18 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
       </section>
       <p class="pz-ayuda">Doble clic en un espacio vacío crea una nota · Cmd+V pega imágenes · arrastra fotos aquí · arrastra el fondo para moverte · Cmd + rueda para acercar · Supr borra lo marcado</p>
     </div>
+  </section>
+
+  <section class="panel tone" id="sec-crm" aria-labelledby="h-crm" data-v="crm">
+    <div class="budget-row">
+      <h2 id="h-crm">CRM</h2>
+      <span class="sub" style="display:inline">Tus clientes y su seguimiento</span>
+    </div>
+    <div class="crm-bar"><input type="search" id="crm-buscar" placeholder="Buscar por nombre, teléfono o interés" aria-label="Buscar contacto"><button type="button" class="btn" id="crm-nuevo">+ Contacto</button></div>
+    <div class="crm-hoy" id="crm-hoy" hidden></div>
+    <div class="crm-tablero" id="crm-tablero"></div>
+    <button type="button" class="ghost crm-perd" id="crm-perd" hidden></button>
+    <div class="crm-perdl" id="crm-perdl" hidden></div>
   </section>
 
   <section class="panel tone" id="sec-inv" aria-labelledby="h-inv" data-v="finanzas">
@@ -2065,7 +2157,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Sin selector de negocio: la app siempre abre el Consorcio Jurídico (propiedades vienen de Inmobiliaria aparte)
   try { localStorage.setItem('libro-negocio', 'juridico'); } catch (e) {}
   const INMO_COLS = ['lugares', 'interesados', 'visitas', 'zonas'];
-  const JUR_COLS = ['casos', 'audiencias'];
+  const JUR_COLS = ['casos', 'audiencias', 'crm'];
   const baseNegocio = (name) => JUR_COLS.includes(name) ? libroRef : INMO_COLS.includes(name) ? libroRef.collection('negocios').doc('inmobiliaria') : (negocio !== 'juridico' && name !== 'miembros') ? libroRef.collection('negocios').doc(negocio) : libroRef;
   // Las propiedades viven siempre en el negocio Inmobiliaria; copia una vez las que se crearon en otro negocio
   const unirInmo = async () => {
@@ -2202,7 +2294,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   let catsTab = 'Ingreso';
   const limpiarLista = (xs) => [...new Set((Array.isArray(xs) ? xs : []).map((x) => String(x || '').trim().slice(0, 40)).filter(Boolean))];
   // Which tables this business shows. The law firm starts with all of them; other businesses start without Casos.
-  const TABLAS = [['mov', 'Movimientos del mes'], ['casos', 'Casos'], ['inv', 'Mis inversiones'], ['fijos', 'Fijos de cada mes'], ['mapa', 'Propiedades y mapa'], ['mkt', 'Marketing']];
+  const TABLAS = [['mov', 'Movimientos del mes'], ['casos', 'Casos'], ['inv', 'Mis inversiones'], ['fijos', 'Fijos de cada mes'], ['mapa', 'Propiedades y mapa'], ['mkt', 'Marketing'], ['crm', 'CRM']];
   let tablas = {};
   const tablaOn = (k) => tablas[k] != null ? !!tablas[k] : !(k === 'casos' && negocio !== 'juridico');
   function pintarTablas() {
@@ -3798,6 +3890,130 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     try { col('videos').onSnapshot((snap) => { videos = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })).sort((a, b) => String(b.creado || '').localeCompare(String(a.creado || ''))); mkPintar(); }, () => {}); } catch (e) {}
     try { col('publicaciones').onSnapshot((snap) => { publicaciones = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) })); mkPintar(); }, () => {}); } catch (e) {}
   }
+  // ── CRM: each contact moves through a short pipeline, with one next step and a notes timeline. Stored in users/{uid}/crm (shared by every business). ──
+  const CRM_ET = [['nuevo', 'Nuevo'], ['contactado', 'Contactado'], ['cita', 'Cita'], ['propuesta', 'Propuesta'], ['ganado', 'Ganado']];
+  const CRM_NOM = Object.fromEntries([...CRM_ET, ['perdido', 'Perdido']]);
+  const ICO_WA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M9.2 9.3c.3 2.2 2.2 4.2 4.5 4.6"/></svg>';
+  const ICO_TEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/></svg>';
+  const ICO_MAIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M3.5 6h17v12h-17zM3.5 6.5l8.5 6.5 8.5-6.5"/></svg>';
+  let crm = [], crmAct = null, crmVerPerd = false;
+  const dlgC = $('dlg-crm');
+  const crmTel = (t) => { let d = String(t || '').replace(/\D/g, ''); if (/^0\d{8,9}$/.test(d)) d = '593' + d.slice(1); return d.length >= 8 ? d : ''; };
+  const crmMas = (n) => { const h = new Date(); h.setDate(h.getDate() + n); return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`; };
+  const crmCorta = (f) => { const d = new Date(String(f).slice(0, 10) + 'T12:00'); return isNaN(d) ? '' : d.toLocaleDateString('es-EC', { day: 'numeric', month: 'short' }); };
+  const crmCuando = (f) => { if (!f) return null; const hoy = hoyYmd(); if (f < hoy) return ['atras', crmCorta(f)]; if (f === hoy) return ['hoy', 'Hoy']; if (f === crmMas(1)) return ['', 'Mañana']; return ['', crmCorta(f)]; };
+  const crmAbierto = (c) => c.etapa !== 'ganado' && c.etapa !== 'perdido';
+  const crmOrden = (a, b) => (a.proximo ? 0 : 1) - (b.proximo ? 0 : 1) || String(a.proximo || '').localeCompare(String(b.proximo || '')) || String(b.actualizado || b.creado || '').localeCompare(String(a.actualizado || a.creado || ''));
+  function crmGuardar(c, d) {
+    if (!c) return; const actualizado = new Date().toISOString(); Object.assign(c, d, { actualizado });
+    col('crm').doc(c.id).update({ ...d, actualizado }).catch(() => setMsg('No se pudo guardar el contacto. Revisa tu internet.', true)); crmPintar();
+  }
+  function crmEtapa(c, k) {
+    if (!c || (c.etapa || 'nuevo') === k) return;
+    const notas = [{ t: new Date().toISOString(), txt: 'Pasó a ' + CRM_NOM[k], auto: true }, ...(Array.isArray(c.notas) ? c.notas : [])].slice(0, 200);
+    crmGuardar(c, { etapa: k, notas }); if (dlgC.open && crmAct === c) { crmEtapas(); crmNotas(); }
+  }
+  function crmTarjeta(c) {
+    const t = el('div', 'crm-card'); t.draggable = true; t.tabIndex = 0; t.setAttribute('role', 'button');
+    t.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', 'crm:' + c.id); e.dataTransfer.effectAllowed = 'move'; t.classList.add('arr'); });
+    t.addEventListener('dragend', () => t.classList.remove('arr'));
+    t.addEventListener('click', () => crmAbrir(c)); t.addEventListener('keydown', (e) => { if (e.key === 'Enter') crmAbrir(c); });
+    const f1 = el('div', 'crm-f1'); f1.append(el('b', '', c.nombre || 'Sin nombre'));
+    const tel = crmTel(c.telefono);
+    if (tel) { const a = el('a', 'crm-wa'); a.href = 'https://wa.me/' + tel; a.target = '_blank'; a.rel = 'noopener'; a.title = 'Escribir por WhatsApp'; a.setAttribute('aria-label', a.title); a.innerHTML = ICO_WA; a.draggable = false; a.addEventListener('click', (e) => e.stopPropagation()); f1.append(a); }
+    t.append(f1);
+    if (c.interes) t.append(el('span', 'crm-int', c.interes));
+    const pie = el('div', 'crm-f2'), w = crmAbierto(c) ? crmCuando(c.proximo) : null;
+    if (w) { const f = el('span', 'crm-fecha ' + w[0], w[1]); f.title = (w[0] === 'atras' ? 'Atrasado' : 'Próximo paso') + (c.proxNota ? ': ' + c.proxNota : ''); pie.append(f); }
+    if (Number(c.valor)) pie.append(el('span', 'crm-val', usd0.format(Number(c.valor))));
+    if (pie.childNodes.length) t.append(pie);
+    return t;
+  }
+  function crmChip(c) {
+    const b = el('button', 'crm-chip' + (c.proximo && c.proximo < hoyYmd() && crmAbierto(c) ? ' atras' : '')); b.type = 'button';
+    b.append(el('span', '', c.nombre || 'Sin nombre')); const s = crmAbierto(c) ? c.proxNota : c.interes; if (s) b.append(el('small', '', s));
+    b.addEventListener('click', () => crmAbrir(c)); return b;
+  }
+  function crmPintar() {
+    const tab = $('crm-tablero'); if (!tab) return;
+    const q = $('crm-buscar').value.trim().toLowerCase();
+    const vis = crm.filter((c) => !q || [c.nombre, c.telefono, c.correo, c.interes].some((v) => String(v || '').toLowerCase().includes(q)));
+    const hoy = hoyYmd(), pend = crm.filter((c) => c.proximo && c.proximo <= hoy && crmAbierto(c)).sort(crmOrden), ph = $('crm-hoy');
+    ph.hidden = !pend.length; ph.replaceChildren(...(pend.length ? [el('b', '', 'Para hoy'), ...pend.map(crmChip)] : []));
+    tab.replaceChildren(...CRM_ET.map(([k, t]) => {
+      const xs = vis.filter((c) => (CRM_NOM[c.etapa] ? c.etapa : 'nuevo') === k).sort(crmOrden);
+      const cEl = el('div', 'crm-col'); cEl.dataset.et = k;
+      const cab = el('div', 'crm-ccab'); cab.append(el('b', '', t), el('span', 'crm-n', String(xs.length)));
+      const tot = xs.reduce((a, c) => a + (Number(c.valor) || 0), 0); if (tot) cab.append(el('span', 'crm-tot', usd0.format(tot)));
+      const lista = el('div', 'crm-lista'); lista.append(...xs.map(crmTarjeta));
+      if (!xs.length) lista.append(el('p', 'crm-vacia', k === 'nuevo' && !crm.length ? 'Toca + Contacto para agregar tu primer cliente' : q ? 'Sin resultados' : 'Arrastra aquí'));
+      cEl.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; cEl.classList.add('sobre'); });
+      cEl.addEventListener('dragleave', (e) => { if (!cEl.contains(e.relatedTarget)) cEl.classList.remove('sobre'); });
+      cEl.addEventListener('drop', (e) => { e.preventDefault(); cEl.classList.remove('sobre'); const id = (e.dataTransfer.getData('text/plain') || '').replace(/^crm:/, ''); crmEtapa(crm.find((x) => x.id === id), k); });
+      cEl.append(cab, lista); return cEl;
+    }));
+    const perd = vis.filter((c) => c.etapa === 'perdido').sort(crmOrden), pb = $('crm-perd'), pl = $('crm-perdl');
+    pb.hidden = !perd.length; pb.textContent = (crmVerPerd ? 'Ocultar perdidos' : 'Ver perdidos') + ' (' + perd.length + ')';
+    pl.hidden = !perd.length || !crmVerPerd; pl.replaceChildren(...perd.map(crmChip));
+  }
+  function crmEtapas() {
+    const c = crmAct, box = $('crm-etapas'); if (!c) return;
+    box.replaceChildren(...[...CRM_ET, ['perdido', 'Perdido']].map(([k, t]) => { const b = el('button', k === 'perdido' ? 'perd' : '', t); b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String((c.etapa || 'nuevo') === k)); b.addEventListener('click', () => crmEtapa(c, k)); return b; }));
+  }
+  function crmLinks() {
+    const c = crmAct, box = $('crm-acc'), tel = crmTel($('crm-tel').value), mail = $('crm-mail').value.trim(), xs = [];
+    const a = (href, cls, ico, txt) => { const x = el('a', cls); x.href = href; if (/^https/.test(href)) { x.target = '_blank'; x.rel = 'noopener'; } x.innerHTML = ico; x.append(txt); xs.push(x); };
+    if (tel) { a('https://wa.me/' + tel, 'wa', ICO_WA, 'WhatsApp'); a('tel:+' + tel, '', ICO_TEL, 'Llamar'); }
+    if (mail && /@/.test(mail)) a('mailto:' + mail, '', ICO_MAIL, 'Correo');
+    box.hidden = !xs.length || !c; box.replaceChildren(...xs);
+  }
+  function crmNotas() {
+    const c = crmAct; if (!c) return; const ns = Array.isArray(c.notas) ? c.notas : [];
+    $('crm-nl').replaceChildren(...ns.map((n, i) => { const li = el('li', n.auto ? 'auto' : ''); li.append(el('small', '', crmCorta(n.t)), el('span', '', n.txt || ''));
+      if (!n.auto) li.append(botonBorrar(() => { crmGuardar(c, { notas: ns.filter((_, j) => j !== i) }); crmNotas(); }, 'nota')); return li; }));
+  }
+  const CRM_CAMPOS = [['crm-nom', 'nombre'], ['crm-tel', 'telefono'], ['crm-mail', 'correo'], ['crm-int', 'interes'], ['crm-valor', 'valor'], ['crm-fecha', 'proximo'], ['crm-que', 'proxNota']];
+  function crmFlush() {
+    const c = crmAct; if (!c) return; const d = {};
+    CRM_CAMPOS.forEach(([id, k]) => { const e = $(id), v = k === 'valor' ? (e.value === '' ? 0 : Number(e.value) || 0) : e.value.trim(); if (v !== (k === 'valor' ? Number(c[k]) || 0 : String(c[k] || ''))) d[k] = v; });
+    if (Object.keys(d).length) crmGuardar(c, d);
+  }
+  function crmAbrir(c) {
+    crmAct = c;
+    CRM_CAMPOS.forEach(([id, k]) => { $(id).value = k === 'valor' ? (Number(c.valor) ? c.valor : '') : (c[k] || ''); });
+    $('crm-origen').replaceChildren(selectOrigen(c.origen || '', (v) => crmGuardar(crmAct, { origen: v })));
+    $('crm-creado').textContent = c.creado ? 'Agregado el ' + new Date(c.creado).toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    $('crm-del').replaceChildren(botonBorrar(() => { const id = c.id; crmAct = null; dlgC.close(); crm = crm.filter((x) => x.id !== id); col('crm').doc(id).delete(); crmPintar(); avisoDeshacer('Se eliminó el contacto · ⌘Z para deshacer'); }, 'contacto'));
+    crmEtapas(); crmLinks(); crmNotas();
+    if (!dlgC.open) dlgC.showModal();
+    if (!c.nombre) setTimeout(() => $('crm-nom').focus(), 30);
+  }
+  CRM_CAMPOS.forEach(([id]) => $(id).addEventListener('change', crmFlush));
+  ['crm-tel', 'crm-mail'].forEach((id) => $(id).addEventListener('input', crmLinks));
+  $('crm-rap').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; $('crm-fecha').value = b.dataset.d === '' ? '' : crmMas(Number(b.dataset.d)); if (b.dataset.d === '') $('crm-que').value = ''; crmFlush(); });
+  $('crm-nf').addEventListener('submit', (e) => { e.preventDefault(); const c = crmAct, txt = $('crm-nt').value.trim(); if (!c || !txt) return; crmGuardar(c, { notas: [{ t: new Date().toISOString(), txt }, ...(Array.isArray(c.notas) ? c.notas : [])].slice(0, 200) }); $('crm-nt').value = ''; crmNotas(); });
+  $('crm-listo').addEventListener('click', () => dlgC.close());
+  dlgC.addEventListener('click', (e) => { if (e.target === dlgC) dlgC.close(); });
+  dlgC.addEventListener('close', () => {
+    crmFlush(); const c = crmAct; crmAct = null;
+    // A contact closed without any data is dropped, so "+ Contacto" by mistake leaves nothing behind.
+    if (c && !c.nombre && !c.telefono && !c.correo && !c.interes && !(Array.isArray(c.notas) && c.notas.some((n) => !n.auto))) { crm = crm.filter((x) => x !== c); col('crm').doc(c.id).delete(); crmPintar(); }
+  });
+  $('crm-nuevo').addEventListener('click', () => {
+    const r = col('crm').doc(), creado = new Date().toISOString(), d = { nombre: '', telefono: '', correo: '', interes: '', valor: 0, etapa: 'nuevo', origen: '', proximo: '', proxNota: '', notas: [], creado, actualizado: creado };
+    r.set(d); const c = { id: r.id, ...d }; crm.unshift(c); crmPintar(); crmAbrir(c);
+  });
+  $('crm-buscar').addEventListener('input', crmPintar);
+  $('crm-perd').addEventListener('click', () => { crmVerPerd = !crmVerPerd; crmPintar(); });
+  function suscribirCrm() {
+    try { col('crm').onSnapshot((snap) => {
+      try { raw['crm'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
+      const viejo = crmAct; crm = snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
+      if (viejo) { const n = crm.find((x) => x.id === viejo.id); if (n) { CRM_CAMPOS.forEach(([, k]) => { n[k] = viejo[k]; }); crmAct = n; crmEtapas(); crmNotas(); } }
+      crmPintar();
+    }, () => {}); } catch (e) {}
+  }
+  crmPintar();
   const catPublicidad = () => { const l = CATS['Gasto'] || []; return l.find((c) => /publici|marketing/i.test(c)) || 'Publicidad'; };
   // Who came from each campaign: interesados (real estate) and cases (law firm) that carry its origin.
   function resultadoCampana(c) {
@@ -5767,7 +5983,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     try { if (gcalToken && window.google) google.accounts.oauth2.revoke(gcalToken, () => {}); sessionStorage.removeItem('libro-gtoken'); } catch (e) {}
     gcalToken = null; setMsg('Google Calendar desconectado.'); render();
   }
-  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias', 'lugares', 'zonas', 'interesados', 'visitas'];
+  const COLS = ['movimientos', 'casos', 'inversiones', 'fijos', 'audiencias', 'lugares', 'zonas', 'interesados', 'visitas', 'crm'];
   const raw = {};
   // Automatic daily copies, kept inside the account (last 30)
   let respaldos = [], ultimaDescarga = '', autoHecho = false;
@@ -6556,7 +6772,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     yoUid = u.uid;
     invitado = acc;
     document.body.classList.add('invitado');
-    const accs = Array.isArray(acc.acceso) && acc.acceso.length ? acc.acceso : ['casos']; ['casos', 'finanzas', 'inmo', 'mkt'].forEach((t) => document.body.classList.toggle('acc-' + t, accs.includes(t)));
+    const accs = Array.isArray(acc.acceso) && acc.acceso.length ? acc.acceso : ['casos']; ['casos', 'finanzas', 'inmo', 'mkt', 'crm'].forEach((t) => document.body.classList.toggle('acc-' + t, accs.includes(t)));
     $('u-name').textContent = `${usuarioDe(u.email) || 'Tu cuenta'} · ${acc.cargo || ROLES[acc.rol] || acc.rol}`;
     { const sb = document.querySelector('.top .sub'); if (sb) sb.textContent = `Hola ${acc.nombre || ''}. Estás en el libro de ${acc.ownerEmail || 'tu equipo'} como ${acc.cargo || 'asistente'}.`; }
     if (acc.color && COLORS[acc.color]) { colorKey = acc.color; applyColor(); }
@@ -6587,6 +6803,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     if (accs.includes('finanzas')) suscribirCats();
     if (accs.includes('inmo')) suscribirLugares();
     if (accs.includes('mkt')) { suscribirMkt(); suscribirMkt2(); }
+    if (accs.includes('crm')) suscribirCrm();
     render();
   }
 
@@ -6627,7 +6844,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     setTimeout(() => { autoRespaldo(); drawAviso(); }, 8000);
     suscribirFin(lost, pickMonth);
     suscribirCasos(lost);
-    suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares(); suscribirMkt(); suscribirMkt2(); suscribirMensajes();
+    suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares(); suscribirMkt(); suscribirMkt2(); suscribirCrm(); suscribirMensajes();
     col('miembros').onSnapshot((snap) => {
       miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), cargo: String(x.cargo || ''), acceso: Array.isArray(x.acceso) && x.acceso.length ? x.acceso : ['casos'], color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
@@ -6997,7 +7214,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const fecha = document.querySelector('.hero-fecha'), fechaCasa = fecha.parentNode, fechaSig = fecha.nextSibling;
     const ubicarPie = () => { if (mq.matches) { cajaU.appendChild(pie); fechaCasa.insertBefore(fecha, fechaSig); } else { $('barra').appendChild(pie); document.querySelector('.barra-logo').appendChild(fecha); } cajaU.hidden = !mq.matches; };
     mq.addEventListener('change', ubicarPie); ubicarPie();
-    const VISTAS = ['usuario', 'finanzas', 'casos', 'inmo', 'mkt'];
+    const VISTAS = ['usuario', 'finanzas', 'casos', 'inmo', 'mkt', 'crm'];
     let v = 'finanzas'; try { const g = localStorage.getItem('libro-vista'); if (VISTAS.includes(g) || /^a-/.test(g || '')) v = g; } catch (e) {}
     let areas = []; try { areas = JSON.parse(localStorage.getItem('libro-areas') || '[]'); } catch (e) {}
     const secA = document.createElement('section'); secA.className = 'panel area-vacia'; secA.hidden = true;
@@ -7017,7 +7234,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     secA.querySelector('.area-del').addEventListener('click', () => { const k = document.body.dataset.vista, a = areas.find((x) => 'a-' + x.id === k); if (!a || !confirm(`¿Eliminar el área "${a.nombre}"?`)) return; areas = areas.filter((x) => x !== a); guardarAreas(); pintarAreas(); ir('finanzas'); });
     const vacio = document.createElement('section'); vacio.className = 'panel vista-vacia'; vacio.innerHTML = '<p class="sub" style="margin:0"></p>';
     $('sec-usuario').before(vacio);
-    const TAB = { mkt: 'mkt' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing' };
+    const TAB = { mkt: 'mkt', crm: 'crm' }, NOM = { usuario: 'Usuario', finanzas: 'Finanzas', casos: 'Casos', inmo: 'Inmobiliaria', mkt: 'Marketing', crm: 'CRM' };
     const revisar = () => {
       const bc = document.body.classList;
       document.querySelectorAll('.barra-it').forEach((b) => { const t = TAB[b.dataset.vista]; const vk = b.dataset.vista; b.hidden = bc.contains('invitado') ? (vk !== 'usuario' && !bc.contains('acc-' + vk)) : (!!t && bc.contains('sin-t-' + t)); });
@@ -7031,6 +7248,29 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     pintarAreas(); ir(v); setTimeout(revisar, 300); setTimeout(revisar, 2000);
   })();
 </script>
+<dialog class="dlg-usr dlg-crm" id="dlg-crm" aria-label="Contacto">
+  <div class="crm-d">
+    <div class="crm-dcab"><input type="text" id="crm-nom" class="crm-nom" maxlength="80" placeholder="Nombre del contacto" aria-label="Nombre"><button type="button" class="ghost" id="crm-listo">Listo</button></div>
+    <div class="crm-etapas" id="crm-etapas" role="radiogroup" aria-label="Etapa"></div>
+    <div class="crm-acc" id="crm-acc"></div>
+    <div class="crm-campos">
+      <label>Teléfono<input type="tel" id="crm-tel" maxlength="30" placeholder="0991234567"></label>
+      <label>Correo<input type="email" id="crm-mail" maxlength="100" placeholder="nombre@correo.com"></label>
+      <label class="w">Le interesa<input type="text" id="crm-int" maxlength="120" placeholder="Ej.: casa en Barrio Obrero, terreno, un divorcio…"></label>
+      <label>Valor ($)<input type="number" id="crm-valor" min="0" step="any" inputmode="decimal" placeholder="0"></label>
+      <label>¿Cómo nos conoció?<span id="crm-origen"></span></label>
+    </div>
+    <div class="crm-prox"><b>Próximo paso</b>
+      <div class="crm-pf"><input type="date" id="crm-fecha" aria-label="Fecha del próximo paso"><input type="text" id="crm-que" maxlength="120" placeholder="Qué hacer (ej.: llamar para agendar la visita)" aria-label="Qué hacer"></div>
+      <div class="crm-rap" id="crm-rap"><button type="button" data-d="0">Hoy</button><button type="button" data-d="1">Mañana</button><button type="button" data-d="3">En 3 días</button><button type="button" data-d="7">En 1 semana</button><button type="button" data-d="">Sin fecha</button></div>
+    </div>
+    <div class="crm-notas"><b>Notas</b>
+      <form class="crm-nf" id="crm-nf"><input type="text" id="crm-nt" maxlength="500" placeholder="Escribe una nota y presiona Enter" aria-label="Nueva nota"><button type="submit" class="btn">Agregar</button></form>
+      <ul class="crm-nl" id="crm-nl"></ul>
+    </div>
+    <div class="crm-pie"><small id="crm-creado"></small><span id="crm-del" style="margin-left:auto"></span></div>
+  </div>
+</dialog>
 <dialog class="dlg-usr dlg-flujo" id="dlg-flujo" aria-labelledby="fl-tit">
   <div class="fl-in">
     <div class="cats-cab"><h3 id="fl-tit">Interesados</h3><span class="fl-acc"><span id="fl-extra"></span><button type="button" class="btn" id="fl-nuevo">+ Nuevo</button><button type="button" class="ghost" id="fl-cerrar">Listo</button></span></div>
@@ -7146,7 +7386,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <label>Usuario<input type="text" id="usr-email" maxlength="30" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ej.: maria"></label>
     <label>Contraseña<input type="text" id="usr-pass" minlength="6" maxlength="60" required autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>
     <div class="usr-col-l" id="usr-col-l"><span>Color</span><div class="swatches" id="usr-colores" role="radiogroup" aria-label="Color del usuario"></div></div>
-    <input type="hidden" id="usr-rol" value="asistente"><label>Rol<input type="text" id="usr-cargo" maxlength="40" placeholder="Ej.: Abogado asociado, Secretaria, Pasante"></label><fieldset class="usr-acc" id="usr-acc"><legend>Tablas a las que tiene acceso</legend><label><input type="checkbox" value="casos" checked> Casos</label><label><input type="checkbox" value="finanzas"> Finanzas</label><label><input type="checkbox" value="inmo"> Inmobiliaria</label><label><input type="checkbox" value="mkt"> Marketing</label></fieldset>
+    <input type="hidden" id="usr-rol" value="asistente"><label>Rol<input type="text" id="usr-cargo" maxlength="40" placeholder="Ej.: Abogado asociado, Secretaria, Pasante"></label><fieldset class="usr-acc" id="usr-acc"><legend>Tablas a las que tiene acceso</legend><label><input type="checkbox" value="casos" checked> Casos</label><label><input type="checkbox" value="finanzas"> Finanzas</label><label><input type="checkbox" value="inmo"> Inmobiliaria</label><label><input type="checkbox" value="mkt"> Marketing</label><label><input type="checkbox" value="crm"> CRM</label></fieldset>
     <label class="usr-check"><input type="checkbox" id="usr-oculta"><span>Ocultar datos contables<small>No verá el total, lo pagado, lo que falta ni los pagos de cada caso, y no podrá cambiarlos.</small></span></label>
     <p class="msg" id="usr-msg" role="status"></p>
     <div class="det-acts"><button type="button" class="ghost" id="usr-cancel">Cancelar</button><button type="submit" class="btn" id="usr-ok">Crear usuario</button></div>
