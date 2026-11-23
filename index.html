@@ -390,7 +390,12 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent
 @media (prefers-reduced-motion: reduce) { .ola { animation: none !important; } }
 .panel.plegable { position: relative; }
 .plegar { display: none !important; }
-.barra-it.arrastrando { opacity: .55; transform: scale(1.03); box-shadow: 0 6px 18px -6px rgba(0,0,0,.3); }
+.barra-it.barra-hueco { background: color-mix(in srgb, var(--accent) 8%, transparent) !important; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent) !important; border-radius: 14px; }
+.barra-it.barra-hueco > * { visibility: hidden; }
+.barra-nav.moviendo .barra-it:not([aria-current]):not(.barra-hueco):hover { background: none; }
+.barra-fant { position: fixed !important; z-index: 9999; margin: 0 !important; pointer-events: none; background: var(--panel) !important; border-radius: 14px; box-shadow: 0 14px 30px -10px rgba(0,0,0,.35) !important; transform: scale(1.04); opacity: .97; }
+body.moviendo-barra, body.moviendo-barra * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+@media (max-width: 900px) { .barra-it { touch-action: none; } }
 .barra-nav.moviendo, .barra-nav.moviendo * { cursor: grabbing; user-select: none; -webkit-user-select: none; }
 .barra-it { -webkit-touch-callout: none; touch-action: pan-y; }
 .arrastrando { position: relative; z-index: 5; transform: scale(1.01); box-shadow: 0 24px 50px -20px rgba(0,0,0,.35); opacity: .96; transition: transform .15s, box-shadow .15s; border-radius: var(--r); }
@@ -7261,17 +7266,25 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       nav.addEventListener('contextmenu', (e) => { if (nav.classList.contains('moviendo')) e.preventDefault(); });
       nav.addEventListener('pointerdown', (e) => {
         const b = e.target.closest('.barra-it'); if (!b || e.button !== 0) return;
-        const x0 = e.clientX, y0 = e.clientY; let activo = false;
-        const t = setTimeout(() => { activo = true; sinClic = true; b.classList.add('arrastrando'); nav.classList.add('moviendo'); try { b.setPointerCapture(e.pointerId); } catch (er) {} if (navigator.vibrate) navigator.vibrate(15); }, 400);
+        const x0 = e.clientX, y0 = e.clientY; let activo = false, fant = null, dx = 0, dy = 0;
+        const animar = (fn) => { const its = [...nav.querySelectorAll('.barra-it')].filter((x) => x !== b), r0 = new Map(its.map((x) => [x, x.getBoundingClientRect()])); fn();
+          its.forEach((x) => { const r1 = x.getBoundingClientRect(), a = r0.get(x), mx = a.left - r1.left, my = a.top - r1.top; if (mx || my) x.animate([{ transform: `translate(${mx}px,${my}px)` }, { transform: 'none' }], { duration: 180, easing: 'ease-out' }); }); };
+        const t = setTimeout(() => {
+          activo = true; sinClic = true; const r = b.getBoundingClientRect(); dx = x0 - r.left; dy = y0 - r.top;
+          fant = b.cloneNode(true); fant.removeAttribute('aria-current'); fant.classList.add('barra-fant'); Object.assign(fant.style, { width: r.width + 'px', height: r.height + 'px', left: r.left + 'px', top: r.top + 'px' }); document.body.appendChild(fant);
+          b.classList.add('barra-hueco'); nav.classList.add('moviendo'); document.body.classList.add('moviendo-barra'); if (navigator.vibrate) navigator.vibrate(15);
+        }, 300);
         const mover = (ev) => {
-          if (!activo) { if (Math.abs(ev.clientX - x0) > 6 || Math.abs(ev.clientY - y0) > 6) fin(); return; }
-          ev.preventDefault();
-          const otros = [...nav.querySelectorAll('.barra-it')].filter((x) => x !== b && !x.hidden), horiz = getComputedStyle(nav).flexDirection === 'row';
-          let antes = null; for (const x of otros) { const r = x.getBoundingClientRect(); if (horiz ? ev.clientX < r.left + r.width / 2 : ev.clientY < r.top + r.height / 2) { antes = x; break; } }
-          if (antes) { if (b.nextElementSibling !== antes) antes.before(b); } else if (otros.length && otros[otros.length - 1].nextElementSibling !== b) otros[otros.length - 1].after(b);
+          if (!activo) { if (Math.abs(ev.clientX - x0) > 10 || Math.abs(ev.clientY - y0) > 10) fin(); return; }
+          ev.preventDefault(); fant.style.left = (ev.clientX - dx) + 'px'; fant.style.top = (ev.clientY - dy) + 'px';
+          const otros = [...nav.querySelectorAll('.barra-it')].filter((x) => x !== b && !x.hidden), horiz = otros.length > 1 && Math.abs(otros[0].offsetTop - otros[1].offsetTop) < 4;
+          const rb = b.getBoundingClientRect(), bx = rb.left - b.offsetLeft, by = rb.top - b.offsetTop; // layout positions, ignoring running animations
+          let antes = null; for (const x of otros) { if (horiz ? ev.clientX < bx + x.offsetLeft + x.offsetWidth / 2 : ev.clientY < by + x.offsetTop + x.offsetHeight / 2) { antes = x; break; } }
+          if (antes) { if (b.nextElementSibling !== antes) animar(() => antes.before(b)); } else if (otros.length && otros[otros.length - 1].nextElementSibling !== b) animar(() => otros[otros.length - 1].after(b));
         };
         const fin = () => { clearTimeout(t); window.removeEventListener('pointermove', mover); window.removeEventListener('pointerup', fin); window.removeEventListener('pointercancel', fin);
-          if (activo) { b.classList.remove('arrastrando'); nav.classList.remove('moviendo'); guardar(); setTimeout(() => { sinClic = false; }, 300); } };
+          if (activo) { const r = b.getBoundingClientRect(); fant.animate([{ left: fant.style.left, top: fant.style.top }, { left: r.left + 'px', top: r.top + 'px' }], { duration: 150, easing: 'ease-out' }).onfinish = () => { fant.remove(); b.classList.remove('barra-hueco'); };
+            nav.classList.remove('moviendo'); document.body.classList.remove('moviendo-barra'); guardar(); setTimeout(() => { sinClic = false; }, 300); } };
         window.addEventListener('pointermove', mover, { passive: false }); window.addEventListener('pointerup', fin); window.addEventListener('pointercancel', fin);
       });
     }
