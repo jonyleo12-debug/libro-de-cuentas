@@ -873,7 +873,19 @@ body.sin-t-casos #sec-casos, body.sin-t-casos .caso-f, body.sin-t-mov section[ar
 #sec-crm > * { min-width: 0; }
 .crm-bar { display: flex; gap: 8px; align-items: center; }
 .crm-bar input { flex: 1; min-width: 0; max-width: 360px; }
-.crm-bar .btn { margin-left: auto; white-space: nowrap; }
+.crm-bar .btn, .crm-bar .ghost { white-space: nowrap; } #crm-pegar { margin-left: auto; }
+.dlg-pegar { width: min(560px, calc(100vw - 32px)); }
+.pg-d { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.pg-d textarea { width: 100%; box-sizing: border-box; min-height: 180px; resize: vertical; font: 14px/1.45 var(--font-body); }
+.pg-imgs { display: flex; flex-wrap: wrap; gap: 8px; }
+.pg-imgs img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); cursor: pointer; }
+.pg-pie { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pg-pie .btn { margin-left: auto; }
+.pg-foto { display: inline-flex; align-items: center; cursor: pointer; font-size: 13px; position: relative; }
+.pg-foto input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.pg-msg { margin: 0; font-size: 13px; color: var(--muted); }
+.pg-msg.err { color: #c62828; }
+@media (max-width: 700px) { .crm-bar { flex-wrap: wrap; } .crm-bar input { flex-basis: 100%; } #crm-pegar { margin-left: 0; } }
 .crm-hoy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, #e8a33d 14%, var(--panel)); }
 .crm-hoy > b { font-size: 13px; margin-right: 4px; }
 .crm-chip { display: inline-grid; gap: 1px; text-align: left; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 10px; padding: 6px 10px; cursor: pointer; box-shadow: none; font: 600 13px var(--font-body); }
@@ -1862,7 +1874,7 @@ body.pz-vinculando .pz-it.pz-img { cursor: crosshair; outline: 2px dashed #888; 
       <h2 id="h-crm">CRM</h2>
       <span class="sub" style="display:inline">Tus clientes y su seguimiento</span>
     </div>
-    <div class="crm-bar"><input type="search" id="crm-buscar" placeholder="Buscar por nombre, teléfono o interés" aria-label="Buscar contacto"><button type="button" class="btn" id="crm-nuevo">+ Contacto</button></div>
+    <div class="crm-bar"><input type="search" id="crm-buscar" placeholder="Buscar por nombre, teléfono o interés" aria-label="Buscar contacto"><button type="button" class="ghost" id="crm-pegar">Pegar conversación</button><button type="button" class="btn" id="crm-nuevo">+ Contacto</button></div>
     <div class="crm-hoy" id="crm-hoy" hidden></div>
     <div class="crm-tablero" id="crm-tablero"></div>
     <button type="button" class="ghost crm-perd" id="crm-perd" hidden></button>
@@ -4013,6 +4025,40 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   });
   $('crm-buscar').addEventListener('input', crmPintar);
   $('crm-perd').addEventListener('click', () => { crmVerPerd = !crmVerPerd; crmPintar(); });
+  // "Pegar conversación": the connected AI reads a pasted chat (text or screenshots) and fills a contact. Same phone = same contact.
+  { const dlgP = $('dlg-pegar'), msg = (t, err) => { $('pg-msg').textContent = t; $('pg-msg').classList.toggle('err', !!err); }; let imgs = [];
+    const pintarImgs = () => $('pg-imgs').replaceChildren(...imgs.map((f, i) => { const im = el('img'); im.src = `data:${f.mime};base64,${f.b64}`; im.alt = 'Captura ' + (i + 1); im.title = 'Toca para quitar'; im.addEventListener('click', () => { imgs.splice(i, 1); pintarImgs(); }); return im; }));
+    const leerImg = (file) => new Promise((ok) => { const img = new Image(), u = URL.createObjectURL(file); img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok({ mime: 'image/jpeg', b64: c.toDataURL('image/jpeg', 0.85).split(',')[1] }); }; img.onerror = () => { URL.revokeObjectURL(u); ok(null); }; img.src = u; });
+    const agregar = async (files) => { for (const f of files) { if (!/^image\//.test(f.type) || imgs.length >= 6) continue; const x = await leerImg(f); if (x) imgs.push(x); } pintarImgs(); };
+    $('crm-pegar').addEventListener('click', () => { imgs = []; pintarImgs(); $('pg-txt').value = ''; $('pg-ok').disabled = false;
+      msg(window.__iaLista && window.__iaLista() ? '' : 'Primero conecta tu IA: botón Asistente → Conectar IA.', !(window.__iaLista && window.__iaLista())); dlgP.showModal(); setTimeout(() => $('pg-txt').focus(), 30); });
+    $('pg-cerrar').addEventListener('click', () => dlgP.close());
+    $('pg-txt').addEventListener('paste', (e) => { const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter((f) => /^image\//.test(f.type)); if (fs.length) { e.preventDefault(); agregar(fs); } });
+    $('pg-file').addEventListener('change', (e) => { agregar([...e.target.files]); e.target.value = ''; });
+    const SYS = ['Lees conversaciones de clientes (WhatsApp, Facebook, Instagram, TikTok) de un negocio en Ecuador (inmobiliaria y estudio jurídico) y sacas los datos del CLIENTE, nunca los del negocio.',
+      'Responde SOLO con un objeto JSON, sin texto antes ni después, con estas claves:',
+      '{"nombre": "", "telefono": "", "correo": "", "interes": "qué busca, en pocas palabras", "valor": 0, "origen": "WhatsApp|Facebook|Instagram|TikTok|Otro", "proximo": "AAAA-MM-DD o vacío", "proxNota": "siguiente paso concreto, corto", "resumen": "resumen de 1 a 3 frases de lo conversado"}',
+      'Reglas: no inventes datos; deja vacío lo que no aparezca. valor = presupuesto o monto en dólares si lo dice, si no 0. origen = la red donde ocurre el chat si se nota (por el formato o la captura), si no "Otro". proximo solo si se acordó una fecha; hoy es ' + hoyYmd() + '.'].join('\n');
+    $('pg-ok').addEventListener('click', async () => {
+      const txt = $('pg-txt').value.trim(); if (!txt && !imgs.length) { msg('Pega una conversación o una captura.', true); return; }
+      if (!(window.__iaLista && window.__iaLista())) { msg('Primero conecta tu IA: botón Asistente → Conectar IA.', true); return; }
+      const ok = $('pg-ok'); ok.disabled = true; msg('Leyendo la conversación…');
+      try {
+        const r = await window.__iaTexto(SYS, txt ? 'Conversación:\n' + txt : 'Lee la conversación de las capturas.', imgs);
+        const m = String(r || '').match(/\{[\s\S]*\}/); if (!m) throw new Error('La IA no devolvió datos.');
+        const j = JSON.parse(m[0]), str = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+        const d = { nombre: str(j.nombre, 80), telefono: str(j.telefono, 30), correo: str(j.correo, 100), interes: str(j.interes, 120), valor: Number(j.valor) || 0,
+          origen: CANALES.includes(j.origen) ? j.origen : '', proximo: /^\d{4}-\d{2}-\d{2}$/.test(j.proximo || '') ? j.proximo : '', proxNota: str(j.proxNota, 120) };
+        const nota = { t: new Date().toISOString(), txt: (d.origen ? 'Chat de ' + d.origen + ': ' : 'Chat: ') + (str(j.resumen, 480) || 'conversación pegada') };
+        const tel = crmTel(d.telefono), ya = tel ? crm.find((c) => crmTel(c.telefono) === tel) : null;
+        let c;
+        if (ya) { const up = {}; Object.entries(d).forEach(([k, v]) => { if (v && !ya[k]) up[k] = v; }); if (d.proximo) { up.proximo = d.proximo; up.proxNota = d.proxNota; } up.notas = [nota, ...(Array.isArray(ya.notas) ? ya.notas : [])].slice(0, 200); crmGuardar(ya, up); c = ya; }
+        else { const r2 = col('crm').doc(), creado = new Date().toISOString(); const nd = { nombre: '', telefono: '', correo: '', interes: '', valor: 0, etapa: 'nuevo', origen: '', proximo: '', proxNota: '', ...d, notas: [nota], creado, actualizado: creado }; r2.set(nd); c = { id: r2.id, ...nd }; crm.unshift(c); crmPintar(); }
+        dlgP.close(); crmAbrir(c); if (ya) avisoDeshacer('Ya existía ' + (ya.nombre || 'ese contacto') + ': se agregó la conversación');
+      } catch (e) { msg('No se pudo leer: ' + (e && e.message ? e.message : 'revisa tu conexión o tu IA'), true); }
+      ok.disabled = false;
+    });
+  }
   function suscribirCrm() {
     try { col('crm').onSnapshot((snap) => {
       try { raw['crm'] = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); } catch (e) {}
@@ -7118,6 +7164,23 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         return ms;
       } catch (e) { return []; }
     }
+    // One-shot request (no streaming) used by other sections, e.g. the CRM reading a pasted chat. imgs: [{mime, b64}]
+    window.__iaLista = () => !!(iaCfg.claves && iaCfg.claves[iaCfg.prov]);
+    window.__iaTexto = async (sys, texto, imgs) => {
+      const prov = iaCfg.prov, clave = iaCfg.claves[prov], modelo = modeloAct(); imgs = imgs || []; let res;
+      if (prov === 'claude') {
+        res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': clave, 'anthropic-version': '2026-10-21', 'anthropic-dangerous-direct-browser-access': 'true' },
+          body: JSON.stringify({ model: modelo, max_tokens: 2000, system: sys, messages: [{ role: 'user', content: [...imgs.map((f) => ({ type: 'image', source: { type: 'base64', media_type: f.mime, data: f.b64 } })), { type: 'text', text: texto }] }] }) });
+        if (!res.ok) throw await errorDe(res); const d = await res.json(); return (d.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
+      } else if (prov === 'openai') {
+        res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave },
+          body: JSON.stringify({ model: modelo, messages: [{ role: 'system', content: sys }, { role: 'user', content: [...imgs.map((f) => ({ type: 'image_url', image_url: { url: `data:${f.mime};base64,${f.b64}` } })), { type: 'text', text: texto }] }] }) });
+        if (!res.ok) throw await errorDe(res); const d = await res.json(); return (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '';
+      }
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': clave },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: 'user', parts: [...imgs.map((f) => ({ inlineData: { mimeType: f.mime, data: f.b64 } })), { text: texto }] }] }) });
+      if (!res.ok) throw await errorDe(res); const d = await res.json(); return ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || []).filter((x) => x.text && !x.thought).map((x) => x.text).join('');
+    };
     async function errorDe(res) {
       let det = ''; try { const j = await res.json(); det = (j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
       const s = res.status;
@@ -7291,6 +7354,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     pintarAreas(); window.__pintarAreasOrden(); ir(v); setTimeout(revisar, 300); setTimeout(revisar, 2000);
   })();
 </script>
+<dialog class="dlg-usr dlg-pegar" id="dlg-pegar" aria-labelledby="pg-tit">
+  <div class="pg-d">
+    <div class="cats-cab"><h3 id="pg-tit">Pegar conversación</h3><button type="button" class="ghost" id="pg-cerrar">Cancelar</button></div>
+    <p class="sub" style="margin:0">Copia el chat de WhatsApp, Facebook, Instagram o TikTok y pégalo aquí, o pega una captura de pantalla. La IA saca el nombre, el teléfono y lo que busca, y crea el contacto.</p>
+    <textarea id="pg-txt" maxlength="20000" placeholder="Pega aquí la conversación o una captura (Cmd+V)"></textarea>
+    <div class="pg-imgs" id="pg-imgs"></div>
+    <p class="pg-msg" id="pg-msg" role="status"></p>
+    <div class="pg-pie"><label class="ghost pg-foto">+ Captura<input type="file" id="pg-file" accept="image/*" multiple></label><button type="button" class="btn" id="pg-ok">Crear contacto</button></div>
+  </div>
+</dialog>
 <dialog class="dlg-usr dlg-crm" id="dlg-crm" aria-label="Contacto">
   <div class="crm-d">
     <div class="crm-dcab"><input type="text" id="crm-nom" class="crm-nom" maxlength="80" placeholder="Nombre del contacto" aria-label="Nombre"><button type="button" class="ghost" id="crm-listo">Listo</button></div>
