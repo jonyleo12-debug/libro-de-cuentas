@@ -7123,6 +7123,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     async function pedir(alTexto, signal) {
       const prov = iaCfg.prov, clave = iaCfg.claves[prov], modelo = modeloAct(), sys = sistema();
       const hist = iaHist.slice(LIGERO() ? -6 : -20).filter((m) => m.text);
+      // Groq and OpenRouter do not take PDF files: read the text here and send it as text (shortened on free plans).
+      if (LIGERO()) for (const m of hist) for (const f of (m.files || [])) if (f.b64 && f.mime === 'application/pdf') {
+        let t = ''; try { t = await pdfATexto(f.b64); } catch (e) {}
+        f.texto = t ? recortar(t, 14000) : '[No se pudo leer el texto de este PDF. Si es escaneado, pega el texto o usa otra IA.]'; delete f.b64;
+      }
       // Attached files: PDFs and photos go as files; Word and text files were already turned into text.
       const conTexto = (m) => m.text + (m.files || []).filter((f) => f.texto != null).map((f) => `\n\n--- Documento adjunto: ${f.nombre} ---\n${f.texto}\n--- Fin de ${f.nombre} ---`).join('');
       const bins = (m) => (m.files || []).filter((f) => f.b64);
@@ -7247,6 +7252,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
     function avisoAdj(t) { const er = document.createElement('div'); er.className = 'ia-msg err'; er.textContent = t; if (iaVista === 'chat') { cuerpo.appendChild(er); cuerpo.scrollTop = cuerpo.scrollHeight; } }
     const aB64 = (buf) => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+    let pdfjsP = null;
+    const cargarPdfjs = () => pdfjsP || (pdfjsP = new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(window.pdfjsLib); }; sc.onerror = () => { pdfjsP = null; mal(new Error('pdf.js')); }; document.head.appendChild(sc); }));
+    async function pdfATexto(b64) {
+      const lib = await cargarPdfjs(), bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const doc = await lib.getDocument({ data: u8 }).promise, partes = []; let largo = 0;
+      for (let i = 1; i <= doc.numPages && largo < 60000; i++) { const pg = await doc.getPage(i), c = await pg.getTextContent(); const t = c.items.map((x) => x.str + (x.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+/g, ' ').trim(); partes.push(t); largo += t.length; }
+      return partes.join('\n\n').trim();
+    }
     let mammothP = null;
     const cargarMammoth = () => mammothP || (mammothP = new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'; sc.onload = () => ok(window.mammoth); sc.onerror = () => { mammothP = null; mal(new Error('mammoth')); }; document.head.appendChild(sc); }));
     async function adjuntar(blob, nombre) {
