@@ -7044,6 +7044,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
 
     // What the assistant knows: a snapshot of the book as the signed-in person sees it.
+    // Free plans (Groq, OpenRouter) allow few tokens per minute: send a shorter book and less history.
+    const LIGERO = () => iaCfg.prov === 'groq' || iaCfg.prov === 'openrouter';
+    const recortar = (t, n) => t.length <= n ? t : t.slice(0, n) + '\n[… datos recortados para el plan gratuito; si falta algo, pídelo con más detalle]';
     function contexto() {
       const dinero = !sinDinero();
       const hoy = hoyYmd(), mes = $('mes').value || thisMonth;
@@ -7105,7 +7108,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       '- Escribe el documento con formato limpio: títulos en una línea con **negrita**, párrafos completos, numeración en los hechos. No pongas comentarios dentro del documento; si necesitas aclarar algo, agrégalo en una nota breve al final, separada por una línea con ---.',
       '- Si falta un dato esencial para saber qué redactar (por ejemplo, qué tipo de demanda o contra quién), pregúntalo antes en una sola línea.',
       sinDinero() ? 'Esta persona no tiene acceso a montos ni pagos: no hables de dinero.' : '',
-      '', '# Datos del libro', contexto()
+      '', '# Datos del libro', LIGERO() ? recortar(contexto(), 9000) : contexto()
     ].filter((x) => x !== null).join('\n');
 
     // Streaming from each provider. All three speak Server-Sent Events.
@@ -7119,7 +7122,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     }
     async function pedir(alTexto, signal) {
       const prov = iaCfg.prov, clave = iaCfg.claves[prov], modelo = modeloAct(), sys = sistema();
-      const hist = iaHist.slice(-20).filter((m) => m.text);
+      const hist = iaHist.slice(LIGERO() ? -6 : -20).filter((m) => m.text);
       // Attached files: PDFs and photos go as files; Word and text files were already turned into text.
       const conTexto = (m) => m.text + (m.files || []).filter((f) => f.texto != null).map((f) => `\n\n--- Documento adjunto: ${f.nombre} ---\n${f.texto}\n--- Fin de ${f.nombre} ---`).join('');
       const bins = (m) => (m.files || []).filter((f) => f.b64);
@@ -7159,6 +7162,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     async function oaiPost(prov, clave, signal, cuerpo) {
       const ir = (mo) => fetch(OAI_URL[prov], { method: 'POST', signal, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave }, body: cuerpo(mo) });
       const modelo = modeloAct(); let res = await ir(modelo);
+      if (res.status === 429 && prov !== 'openai') { const w = Math.min(20, Math.max(2, Number(res.headers.get('retry-after')) || 8)); await new Promise((ok) => setTimeout(ok, w * 1000)); res = await ir(modelo); }
       if (res.ok || prov === 'openai') return res;
       let det = ''; try { det = await res.clone().text(); } catch (e) {}
       if (!(res.status === 404 || (res.status === 400 && /model/i.test(det)))) return res;
@@ -7204,7 +7208,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     async function errorDe(res) {
       let det = ''; try { const j = await res.json(); det = (j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
       const s = res.status;
-      const e = new Error(s === 401 || s === 403 ? 'La clave no es válida o no tiene permiso. Revísala en Conectar IA.' : s === 402 ? (iaCfg.prov === 'gemini' ? 'Esta clave pertenece a un proyecto de Google con facturación activada y sin saldo. Crea una clave nueva en un proyecto sin facturación para usar el plan gratuito, o recarga saldo en AI Studio.' : 'Tu cuenta del proveedor no tiene saldo. Recárgalo en su página e intenta de nuevo.') : s === 503 || s === 500 ? `${IA_PROV[iaCfg.prov].corto} está saturado en este momento. Espera un minuto y vuelve a enviar tu pregunta.` : s === 429 ? 'El proveedor rechazó la consulta por límite de uso o falta de saldo en tu cuenta. Intenta en un momento o revisa tu saldo.' : s === 404 ? `El modelo "${modeloAct()}" no existe en ${IA_PROV[iaCfg.prov].corto}. Cámbialo en Conectar IA.` : `El proveedor respondió con un error (${s}).${det ? ' ' + det : ''}`);
+      const e = new Error(s === 401 || s === 403 ? 'La clave no es válida o no tiene permiso. Revísala en Conectar IA.' : s === 402 ? (iaCfg.prov === 'gemini' ? 'Esta clave pertenece a un proyecto de Google con facturación activada y sin saldo. Crea una clave nueva en un proyecto sin facturación para usar el plan gratuito, o recarga saldo en AI Studio.' : 'Tu cuenta del proveedor no tiene saldo. Recárgalo en su página e intenta de nuevo.') : s === 503 || s === 500 ? `${IA_PROV[iaCfg.prov].corto} está saturado en este momento. Espera un minuto y vuelve a enviar tu pregunta.` : s === 429 && LIGERO() ? `El plan gratis de ${IA_PROV[iaCfg.prov].corto} tiene un límite por minuto. Espera un minuto y vuelve a enviar.` : s === 429 ? 'El proveedor rechazó la consulta por límite de uso o falta de saldo en tu cuenta. Intenta en un momento o revisa tu saldo.' : s === 404 ? `El modelo "${modeloAct()}" no existe en ${IA_PROV[iaCfg.prov].corto}. Cámbialo en Conectar IA.` : `El proveedor respondió con un error (${s}).${det ? ' ' + det : ''}`);
       e.det = det; return e;
     }
     async function enviar(q) {
