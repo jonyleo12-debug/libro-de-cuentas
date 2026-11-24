@@ -6911,8 +6911,12 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const IA_PROV = {
       claude: { nombre: 'Claude (Anthropic)', corto: 'Claude', modelo: 'claude-opus-5-5', modelos: ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'], link: 'https://console.anthropic.com/settings/keys', ph: 'sk-ant-…' },
       openai: { nombre: 'ChatGPT (OpenAI)', corto: 'ChatGPT', modelo: 'gpt-5', modelos: ['gpt-5', 'gpt-5-mini'], link: 'https://platform.openai.com/api-keys', ph: 'sk-…' },
-      gemini: { nombre: 'Gemini (Google)', corto: 'Gemini', modelo: 'gemini-2.5-flash', modelos: ['gemini-2.5-flash', 'gemini-2.5-pro'], link: 'https://aistudio.google.com/app/apikey', ph: 'AIza…' }
+      gemini: { nombre: 'Gemini (Google)', corto: 'Gemini', modelo: 'gemini-2.5-flash', modelos: ['gemini-2.5-flash', 'gemini-2.5-pro'], link: 'https://aistudio.google.com/app/apikey', ph: 'AIza…' },
+      groq: { nombre: 'Groq (gratis)', corto: 'Groq', modelo: 'meta-llama/llama-4-scout-17b-16e-instruct', modelos: ['meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct', 'llama-3.3-70b-versatile', 'openai/gpt-oss-120b'], link: 'https://console.groq.com/keys', ph: 'gsk_…' },
+      openrouter: { nombre: 'OpenRouter (modelos gratis)', corto: 'OpenRouter', modelo: 'meta-llama/llama-4-maverick:free', modelos: ['meta-llama/llama-4-maverick:free', 'google/gemma-3-27b-it:free', 'deepseek/deepseek-chat-v3-0324:free', 'qwen/qwen2.5-vl-72b-instruct:free'], link: 'https://openrouter.ai/keys', ph: 'sk-or-…' }
     };
+    // Groq and OpenRouter speak the same API as OpenAI, only the address changes.
+    const OAI_URL = { openai: 'https://api.openai.com/v1/chat/completions', groq: 'https://api.groq.com/openai/v1/chat/completions', openrouter: 'https://openrouter.ai/api/v1/chat/completions' };
     const IA_KEY = 'libro-ia';
     const leerCfg = () => { try { const c = JSON.parse(localStorage.getItem(IA_KEY) || '{}'); return { prov: IA_PROV[c.prov] ? c.prov : '', claves: c.claves || {}, modelos: c.modelos || {} }; } catch (e) { return { prov: '', claves: {}, modelos: {} }; } };
     const guardarCfg = (c) => { try { localStorage.setItem(IA_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } };
@@ -7128,8 +7132,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
           body: JSON.stringify({ model: modelo, max_tokens: 16000, stream: true, system: sys, messages: hist.map((m) => ({ role: m.role, content: cClaude(m) })) }) });
         if (!res.ok) throw await errorDe(res);
         await leerSSE(res, (d) => { if (d.type === 'content_block_delta' && d.delta && d.delta.type === 'text_delta') alTexto(d.delta.text); else if (d.type === 'error') throw new Error((d.error && d.error.message) || 'Error del proveedor'); });
-      } else if (prov === 'openai') {
-        res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', signal, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave },
+      } else if (OAI_URL[prov]) {
+        res = await fetch(OAI_URL[prov], { method: 'POST', signal, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave },
           body: JSON.stringify({ model: modelo, stream: true, messages: [{ role: 'system', content: sys }, ...hist.map((m) => ({ role: m.role, content: cOpenai(m) }))] }) });
         if (!res.ok) throw await errorDe(res);
         await leerSSE(res, (d) => { const c = d.choices && d.choices[0] && d.choices[0].delta && d.choices[0].delta.content; if (c) alTexto(c); });
@@ -7172,8 +7176,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': clave, 'anthropic-version': '2026-10-21', 'anthropic-dangerous-direct-browser-access': 'true' },
           body: JSON.stringify({ model: modelo, max_tokens: 2000, system: sys, messages: [{ role: 'user', content: [...imgs.map((f) => ({ type: 'image', source: { type: 'base64', media_type: f.mime, data: f.b64 } })), { type: 'text', text: texto }] }] }) });
         if (!res.ok) throw await errorDe(res); const d = await res.json(); return (d.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
-      } else if (prov === 'openai') {
-        res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave },
+      } else if (OAI_URL[prov]) {
+        res = await fetch(OAI_URL[prov], { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + clave },
           body: JSON.stringify({ model: modelo, messages: [{ role: 'system', content: sys }, { role: 'user', content: [...imgs.map((f) => ({ type: 'image_url', image_url: { url: `data:${f.mime};base64,${f.b64}` } })), { type: 'text', text: texto }] }] }) });
         if (!res.ok) throw await errorDe(res); const d = await res.json(); return (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '';
       }
