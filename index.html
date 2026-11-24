@@ -7254,10 +7254,11 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     const aB64 = (buf) => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
     let pdfjsP = null;
     const cargarPdfjs = () => pdfjsP || (pdfjsP = new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(window.pdfjsLib); }; sc.onerror = () => { pdfjsP = null; mal(new Error('pdf.js')); }; document.head.appendChild(sc); }));
-    async function pdfATexto(b64) {
-      const lib = await cargarPdfjs(), bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    async function pdfATexto(b64, tope) {
+      tope = tope || 60000; let u8 = b64; if (typeof b64 === 'string') { const bin = atob(b64); u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); }
+      const lib = await cargarPdfjs();
       const doc = await lib.getDocument({ data: u8 }).promise, partes = []; let largo = 0;
-      for (let i = 1; i <= doc.numPages && largo < 60000; i++) { const pg = await doc.getPage(i), c = await pg.getTextContent(); const t = c.items.map((x) => x.str + (x.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+/g, ' ').trim(); partes.push(t); largo += t.length; }
+      for (let i = 1; i <= doc.numPages && largo < tope; i++) { const pg = await doc.getPage(i), c = await pg.getTextContent(); const t = c.items.map((x) => x.str + (x.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+/g, ' ').trim(); partes.push(t); largo += t.length; }
       return partes.join('\n\n').trim();
     }
     let mammothP = null;
@@ -7265,14 +7266,17 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     async function adjuntar(blob, nombre) {
       const e = extDe(nombre), mime = e === 'pdf' ? 'application/pdf' : /^jpe?g$/.test(e) ? 'image/jpeg' : e === 'png' ? 'image/png' : e === 'webp' ? 'image/webp' : e === 'docx' ? 'docx' : e === 'txt' ? 'text/plain' : '';
       if (!mime) { avisoAdj(e === 'doc' ? `${nombre}: los Word antiguos (.doc) no se pueden leer. Guárdalo como .docx o PDF y vuelve a adjuntarlo.` : `${nombre}: solo puedo leer PDF, Word (.docx), texto y fotos.`); return; }
-      if (blob.size > MAX_IA) { avisoAdj(`${nombre} pesa más de 15 MB. Adjunta una versión más liviana.`); return; }
+      // Big PDFs (and any PDF for Groq/OpenRouter) are read here and sent as text, so size is no longer a problem.
+      const pdfTxt = mime === 'application/pdf' && (blob.size > MAX_IA || LIGERO());
+      if (blob.size > MAX_IA && !pdfTxt) { avisoAdj(`${nombre} pesa más de 15 MB. Adjunta una versión más liviana.`); return; }
       adjCargando++; pintarAdjs();
       try {
         const buf = await blob.arrayBuffer();
         if (mime === 'docx') { const mm = await cargarMammoth(); const r = await mm.extractRawText({ arrayBuffer: buf }); adjPend.push({ nombre, texto: String(r.value || '').trim() }); }
         else if (mime === 'text/plain') adjPend.push({ nombre, texto: new TextDecoder().decode(buf) });
+        else if (pdfTxt) { const t = await pdfATexto(new Uint8Array(buf), LIGERO() ? 60000 : 300000); if (!t) throw new Error('sin texto'); adjPend.push({ nombre, texto: LIGERO() ? recortar(t, 14000) : t }); }
         else adjPend.push({ nombre, mime, b64: aB64(buf) });
-      } catch (er) { avisoAdj(`No pude leer ${nombre}.`); }
+      } catch (er) { avisoAdj(er && er.message === 'sin texto' ? `${nombre} parece escaneado (es solo imagen, sin texto). Usa un PDF con texto o copia y pega la parte que necesitas.` : `No pude leer ${nombre}.`); }
       adjCargando--; pintarAdjs();
     }
     $('ia-file').addEventListener('change', (e) => { [...e.target.files].forEach((f) => adjuntar(f, f.name)); e.target.value = ''; txt.focus(); });
