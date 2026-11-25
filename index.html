@@ -447,6 +447,7 @@ body.invitado #sec-casos { display: grid !important; }
 #sec-notas.vuelta.biblio .nf-in { transform: rotateY(180deg); }
 #sec-notas.vuelta .nf-cara, #sec-notas:not(.vuelta) .nf-dorso { pointer-events: none; }
 #sec-notas.vuelta.biblio { min-height: 470px; }
+#sec-notas.vuelta.biblio .nf-in { min-height: max(470px, calc(100vh - 110px)); }
 .libros-btn { position: absolute; z-index: 2; left: 26px; bottom: 10px; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; background: none; box-shadow: none; color: #a3a6ad; cursor: pointer; border-radius: 10px; transition: color .2s, transform .2s; }
 .libros-btn:hover { transform: scale(1.08); }
 .nota-msg { --nc: #7a8ca8; }
