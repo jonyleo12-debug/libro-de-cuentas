@@ -421,6 +421,21 @@ body.moviendo, body.moviendo * { cursor: grabbing !important; user-select: none 
 .usr-fila .usr-t { display: grid; line-height: 1.25; min-width: 0; }
 .usr-fila .usr-t small { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
 .usr-fila.libre .usr-t { color: var(--muted); }
+.usr-ins-mini { display: inline-flex; align-items: center; margin-left: auto; flex: none; }
+.usr-ins-mini img { width: 26px; height: 26px; object-fit: contain; margin-left: -6px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+.usr-ins-mini small { margin-left: 4px; color: var(--muted); font-size: 11px; }
+.usr-ins-cab { display: flex; align-items: baseline; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.usr-ins-cab span { font-weight: 600; color: var(--ink); font-size: 13px; }
+.usr-ins { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; max-height: 260px; overflow-y: auto; padding: 2px; }
+.ins-it { border: 0; background: none; box-shadow: none; padding: 3px; border-radius: 12px; cursor: pointer; display: grid; place-items: center; transition: transform .15s, background .15s; }
+.ins-it img { width: 100%; aspect-ratio: 1; object-fit: contain; filter: grayscale(1) opacity(.45); transition: filter .2s; }
+.ins-it:hover { transform: scale(1.06); }
+.ins-it.on img { filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
+.ins-it.on { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.mis-ins { display: grid; gap: 8px; margin-top: 12px; }
+.mis-ins-g { display: flex; flex-wrap: wrap; gap: 6px; }
+.mis-ins-g figure { margin: 0; width: 72px; }
+.mis-ins-g img { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.25)); }
 .dlg-usr { border: 0; border-radius: 22px; padding: 22px; width: min(420px, calc(100vw - 32px)); box-sizing: border-box; background: var(--panel); color: var(--fg); box-shadow: 0 30px 80px -20px rgba(0,0,0,.4); }
 .dlg-usr::backdrop { background: rgba(10,12,20,.35); backdrop-filter: blur(3px); }
 .dlg-usr form { display: grid; gap: 12px; }
@@ -6109,6 +6124,24 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
 
   // Users: each color can hold one person with a role (for now: asistente = only the Casos table)
   const ROLES = { asistente: 'Asistente' };
+  // Badges (insignias) the owner awards to each user as recognition. Saved in miembros/{id} and accesos/{id}.insignias so the user sees them too.
+  const INSIGNIAS = [['pasante', 'Pasante'], ['graduado', 'Graduado'], ['tercer-nivel', 'Tercer nivel'], ['maestria', 'Maestría'], ['especialidad', 'Especialidad'], ['capacitacion', 'Capacitación'], ['diplomado', 'Diplomado'], ['lider', 'Líder'], ['doctorado', 'Doctorado'], ['articulo-cientifico', 'Artículo científico'], ['socio-fundador', 'Socio fundador'], ['esfuerzo', 'Esfuerzo'], ['orador', 'Orador'], ['lider-proyecto', 'Líder de proyecto'], ['3-meses', '3 meses'], ['6-meses', '6 meses'], ['1-ano', '1 año'], ['3-anos', '3 años'], ['5-anos', '5 años'], ['10-anos', '10 años'], ['innovacion', 'Innovación'], ['trabajo-equipo', 'Trabajo en equipo'], ['companerismo', 'Compañerismo'], ['puntualidad', 'Puntualidad'], ['superacion', 'Superación'], ['creatividad', 'Creatividad'], ['excelencia', 'Excelencia'], ['resolucion', 'Resolución'], ['adaptabilidad', 'Adaptabilidad'], ['mentor', 'Mentor']];
+  const INSIG_NOM = Object.fromEntries(INSIGNIAS);
+  const imgInsignia = (k, cls) => { const i = document.createElement('img'); i.src = 'assets/insignias/' + k + '.webp'; i.alt = INSIG_NOM[k] || ''; i.title = INSIG_NOM[k] || ''; i.className = cls || 'ins-img'; i.loading = 'lazy'; i.draggable = false; return i; };
+  function pintarInsigniasUsr() {
+    const box = $('usr-ins'), m = usrActual; if (!box) return; box.hidden = !m; $('usr-ins-l').hidden = !m; if (!m) return;
+    const tiene = new Set(m.insignias || []);
+    $('usr-ins-n').textContent = tiene.size ? `${tiene.size} de ${INSIGNIAS.length}` : 'Toca una insignia para dársela';
+    box.replaceChildren(...INSIGNIAS.map(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ins-it' + (tiene.has(k) ? ' on' : ''); b.setAttribute('aria-pressed', String(tiene.has(k))); b.title = t; b.appendChild(imgInsignia(k));
+      b.addEventListener('click', () => { const l = tiene.has(k) ? (m.insignias || []).filter((x) => x !== k) : [...(m.insignias || []), k]; m.insignias = l;
+        libroRef.collection('miembros').doc(m.id).update({ insignias: l }); db.doc('accesos/' + m.id).update({ insignias: l }).catch(() => {}); pintarInsigniasUsr(); renderUsuarios(); }); return b; }));
+  }
+  function pintarMisInsignias(l) {
+    let box = $('mis-ins'); if (!box) { box = document.createElement('div'); box.id = 'mis-ins'; box.className = 'mis-ins'; const sec = $('sec-usuario'); if (!sec) return; sec.appendChild(box); }
+    l = l.filter((k) => INSIG_NOM[k]); box.hidden = !l.length; box.replaceChildren(); if (!l.length) return;
+    const h = document.createElement('span'); h.className = 'usr-l'; h.textContent = 'Mis insignias'; const g = document.createElement('div'); g.className = 'mis-ins-g';
+    l.forEach((k) => { const f = document.createElement('figure'); f.append(imgInsignia(k)); g.appendChild(f); }); box.append(h, g);
+  }
   function renderUsuarios() {
     const box = $('usuarios'); if (!box) return;
     $('usuarios-l').hidden = !miembros.length;
@@ -6120,6 +6153,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const n = document.createElement('b'); n.textContent = m.nombre || usuarioDe(m.email);
       const sm = document.createElement('small'); sm.textContent = (m.cargo || ROLES[m.rol] || m.rol) + ' · usuario: ' + usuarioDe(m.email);
       t.append(n, sm); b.append(d, t);
+      const ins = (m.insignias || []).filter((k) => INSIG_NOM[k]); if (ins.length) { const w = document.createElement('span'); w.className = 'usr-ins-mini'; ins.slice(0, 5).forEach((k) => w.appendChild(imgInsignia(k))); if (ins.length > 5) { const mas = document.createElement('small'); mas.textContent = '+' + (ins.length - 5); w.appendChild(mas); } b.appendChild(w); }
       b.addEventListener('click', (e) => { e.stopPropagation(); setPop(false); abrirUsuario(m.color, m); });
       return b;
     }));
@@ -6159,6 +6193,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     ['usr-nombre', 'usr-email', 'usr-pass'].forEach((id) => { const el = $(id); el.value = ''; el.closest('label').hidden = !!m; el.required = !m; });
     $('usr-cargo').value = m ? (m.cargo || '') : ''; const acc_ = m ? m.acceso : ['casos']; document.querySelectorAll('#usr-acc input').forEach((x) => { x.checked = acc_.includes(x.value); });
     $('usr-oculta').checked = !!(m && m.ocultarDinero);
+    pintarInsigniasUsr();
     $('usr-ok').textContent = m ? 'Quitar acceso' : 'Crear usuario';
     $('usr-ok').classList.toggle('peligro', !!m);
     if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
@@ -6850,6 +6885,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     // The owner can switch "Ocultar datos contables" at any time; follow it live.
     db.doc('accesos/' + u.uid).onSnapshot((snap) => {
       const x = snap.exists ? (snap.data() || {}) : {};
+      pintarMisInsignias(Array.isArray(x.insignias) ? x.insignias : []);
       const v = x.ocultarDinero === true;
       if (v !== !!invitado.ocultarDinero) { invitado.ocultarDinero = v; ponerDinero(); render(); }
     }, () => {});
@@ -6902,7 +6938,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     suscribirCasos(lost);
     suscribirNotas(lost); suscribirBiblio(); suscribirCats(); suscribirLugares(); suscribirMkt(); suscribirMkt2(); suscribirCrm(); suscribirMensajes();
     col('miembros').onSnapshot((snap) => {
-      miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), cargo: String(x.cargo || ''), acceso: Array.isArray(x.acceso) && x.acceso.length ? x.acceso : ['casos'], color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true }; });
+      miembros = snap.docs.map((d) => { const x = d.data() || {}; return { id: d.id, nombre: String(x.nombre || ''), email: String(x.email || ''), rol: String(x.rol || ''), cargo: String(x.cargo || ''), acceso: Array.isArray(x.acceso) && x.acceso.length ? x.acceso : ['casos'], color: String(x.color || ''), ocultarDinero: x.ocultarDinero === true, insignias: Array.isArray(x.insignias) ? x.insignias.filter((k) => INSIG_NOM[k]) : [] }; });
       renderUsuarios(); pintarParaNotas(); renderNotas();
     }, () => {});
   }
@@ -7546,6 +7582,8 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
     <div class="usr-col-l" id="usr-col-l"><span>Color</span><div class="swatches" id="usr-colores" role="radiogroup" aria-label="Color del usuario"></div></div>
     <input type="hidden" id="usr-rol" value="asistente"><label>Rol<input type="text" id="usr-cargo" maxlength="40" placeholder="Ej.: Abogado asociado, Secretaria, Pasante"></label><fieldset class="usr-acc" id="usr-acc"><legend>Tablas a las que tiene acceso</legend><label><input type="checkbox" value="casos" checked> Casos</label><label><input type="checkbox" value="finanzas"> Finanzas</label><label><input type="checkbox" value="inmo"> Inmobiliaria</label><label><input type="checkbox" value="mkt"> Marketing</label><label><input type="checkbox" value="crm"> CRM</label></fieldset>
     <label class="usr-check"><input type="checkbox" id="usr-oculta"><span>Ocultar datos contables<small>No verá el total, lo pagado, lo que falta ni los pagos de cada caso, y no podrá cambiarlos.</small></span></label>
+    <div class="usr-ins-cab" id="usr-ins-l" hidden><span>Insignias</span><small id="usr-ins-n"></small></div>
+    <div class="usr-ins" id="usr-ins" hidden></div>
     <p class="msg" id="usr-msg" role="status"></p>
     <div class="det-acts"><button type="button" class="ghost" id="usr-cancel">Cancelar</button><button type="submit" class="btn" id="usr-ok">Crear usuario</button></div>
   </form>
