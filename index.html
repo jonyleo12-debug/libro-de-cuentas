@@ -1484,20 +1484,21 @@ body[data-vista="usuario"] #nota-form textarea, body[data-vista="usuario"] .nota
 /* Property cards styled like the public website card: big photo on top, glass action pill, name + "type · place", data below. */
 .pc-cara { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 0 6px; border-radius: 22px; background: var(--panel); box-shadow: 0 10px 28px -16px rgba(20,28,60,.35); }
 .pc-cara > .prop-izq { display: contents; }
-.pc-cara .prop-foto { order: 0; aspect-ratio: 4 / 4.3 !important; border-radius: 22px 22px 0 0; }
+.pc-cara .prop-foto { order: 0; aspect-ratio: 4 / 3 !important; border-radius: 22px 22px 0 0; }
 .pc-cara .prop-foto img { transition: transform .5s ease; }
 .prop-card:hover .pc-cara .prop-foto img { transform: scale(1.04); }
-.pc-cara .prop-info { order: 1; padding: 16px 18px 8px; gap: 6px; }
-.pc-cara .pc-fl { order: 2; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 2px 14px 14px; gap: 6px; }
+.pc-cara .prop-info { order: 1; padding: 12px 16px 6px; gap: 4px; }
+.pc-cara .pc-fl { order: 2; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 2px 12px 10px; gap: 5px; }
 .pc-cara .pc-fl-b { justify-content: center; padding: 7px 6px; border-radius: 999px; }
-.pc-cara .prop-info > b { order: 0; font: 500 19px/1.25 var(--font-body); letter-spacing: -.01em; color: var(--fg); }
+.pc-cara .prop-info > b { order: 0; font: 500 17px/1.2 var(--font-body); letter-spacing: -.01em; color: var(--fg); }
 .pc-cara .prop-info > .prop-tipo-l { order: 1; font-size: 14px; }
 .pc-cara .prop-info > .prop-tipo-l::before { content: ''; display: inline-block; width: 15px; height: 15px; margin-right: 6px; vertical-align: -2px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.8' d='M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z'/%3E%3Ccircle cx='12' cy='10' r='2.3' fill='none' stroke='black' stroke-width='1.8'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.8' d='M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z'/%3E%3Ccircle cx='12' cy='10' r='2.3' fill='none' stroke='black' stroke-width='1.8'/%3E%3C/svg%3E") center/contain no-repeat; }
 .pc-cara .prop-info > .prop-tipo-l .prop-tipo-b svg { display: none; }
 .pc-cara .prop-info > :not(b):not(.prop-tipo-l):not(.prop-pie) { order: 2; }
-.pc-cara .prop-info > .prop-pie { order: 3; padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--line); }
-.pc-cara .prop-pie strong { font-size: 19px; font-weight: 700; }
-.pc-cara .prop-acc { top: 12px; right: 12px; bottom: auto; width: auto; padding: 4px; gap: 2px; border-radius: 999px; background: rgba(255,255,255,.82) !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 14px -6px rgba(0,0,0,.35); }
+.pc-cara .prop-info > .prop-pie { order: 3; padding-top: 4px; margin-top: 2px; border-top: 1px solid var(--line); }
+.pc-cara .prop-pie .prop-ubic-t { font-size: 12px; }
+.pc-cara .prop-pie strong { font-size: 17px; font-weight: 700; }
+.pc-cara .prop-acc { top: 10px; right: 10px; bottom: auto; width: auto; padding: 4px; gap: 2px; border-radius: 999px; background: rgba(255,255,255,.82) !important; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 14px -6px rgba(0,0,0,.35); }
 .pc-cara .prop-acc .prop-ed { color: #2b3350; }
 .pc-cara .prop-foto .prop-op { top: 14px; left: 14px; padding: 6px 12px 6px 10px; border-radius: 9px; font: 700 10.5px var(--font-body); letter-spacing: .16em; text-transform: uppercase; background: rgba(30,37,64,.86) !important; color: #fff !important; display: inline-flex; align-items: center; gap: 7px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .pc-cara .prop-foto .prop-op::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #4cc47c; flex: none; }
@@ -1507,7 +1508,9 @@ body[data-vista="usuario"] #nota-form textarea, body[data-vista="usuario"] .nota
 .pc-cara .prop-dots button.on { width: 22px; border-radius: 99px; transform: none; background: #fff; }
 .prop-card.sel .pc-cara { box-shadow: 0 0 0 2px var(--accent), 0 10px 28px -16px rgba(20,28,60,.35); }
 .pc-dorso { border-radius: 22px; }
-.pc-cara .prop-datos.edit { display: flex !important; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
+.pc-cara .prop-datos.edit { display: flex !important; flex-wrap: wrap; gap: 2px 12px; font-size: 12.5px; }
+.pc-cara .prop-acc .prop-ed { width: 26px; height: 26px; }
+.pc-cara .prop-desc { display: none; }
 .pc-cara .prop-datos.edit > * { flex: none; }
 .pc-cara .prop-servs.edit { margin-top: 2px; }
 .pc-cara .doblez { z-index: 2; }
@@ -2872,7 +2875,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       s.appendChild(tb); if (x.dir) s.append(' · ' + x.dir); info.appendChild(s);
       if (x.desc) { const ds = document.createElement('p'); ds.className = 'prop-desc'; ds.textContent = x.desc; info.appendChild(ds); }
       const pie = document.createElement('div'); pie.className = 'prop-pie';
-      const u = document.createElement('span'); u.className = 'prop-ubic-t'; u.textContent = tieneUbic(x) ? (x.fotos.length ? `${x.fotos.length} foto${x.fotos.length === 1 ? '' : 's'}` : '') : 'Sin ubicación';
+      const u = document.createElement('span'); u.className = 'prop-ubic-t'; u.textContent = tieneUbic(x) ? '' : 'Sin ubicación';
       const pr = document.createElement('strong'); pr.textContent = x.precio ? precioTxt(x) : 'A consultar';
       if (!invitado) { // click the price to change it right here
         pr.className = 'prop-precio-ed'; pr.tabIndex = 0; pr.title = 'Cambiar precio'; pr.setAttribute('role', 'button');
