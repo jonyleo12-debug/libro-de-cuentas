@@ -1181,6 +1181,9 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
 .prop-acc .prop-ed svg { width: 17px; height: 17px; }
 .prop-acc .prop-web.activo, .pc-cara .prop-acc .prop-web.activo { color: #fff; background: var(--accent); }
+.prop-acc .prop-web.activo.p-oferta, .pc-cara .prop-acc .prop-web.activo.p-oferta { background: #c9a227; }
+.prop-acc .prop-web.activo.p-descuento, .pc-cara .prop-acc .prop-web.activo.p-descuento { background: #ff6347; }
+.pub-punto { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; flex: none; }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
 .prop-ubi.activo, .prop-dib.activo { color: #fff; background: var(--accent); }
 .prop-dib.tiene { color: var(--accent); } .prop-dib.activo.tiene { color: #fff; }
@@ -2531,7 +2534,9 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const icoProp = (x) => `<svg class="ico-tipo${x.estado === 'Captacion' ? ' ico-capt' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifoDe(x)}"/></svg>`;
   const glifo = (t) => GLIFOS[t] != null ? GLIFOS[t] : GLIFOS['Otro'];
   const icoTipo = (t) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifo(t)}"/></svg>`;
-  const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.estado === 'Captacion' ? '#111' : 'var(--accent)';
+  const PROMO = { oferta: { t: 'Oferta especial', c: '#c9a227' }, descuento: { t: 'Descuento', c: '#ff6347' } };
+  const promoDe = (x) => (enWeb(x) && PROMO[x.promo]) || null;
+  const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.estado === 'Captacion' ? '#111' : promoDe(x) ? promoDe(x).c : 'var(--accent)';
   const pinSvg = (x) => x.estado === 'Captacion' && !cerrada(x) ? `<svg class="pin-svg pin-capt" viewBox="0 0 34 40" width="34" height="40" overflow="visible" aria-hidden="true"><path transform="translate(-5 1) scale(1.7)" fill="#111" fill-rule="evenodd" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke" d="${G_CAPT}"/></svg>` : `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" style="fill:${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifoDe(x)}"/></svg>`;
   const SERVICIOS = [['luz', 'Luz', 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12z'], ['agua', 'Agua', 'M12 3s-6 6.9-6 11a6 6 0 0 0 12 0c0-4.1-6-11-6-11z'], ['alcantarillado', 'Alcantarillado', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M9 3.5v17M15 3.5v17']];
   const icoServ = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
@@ -2641,13 +2646,13 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Status of a property for sale; stored values stay as before, labels as Jonathan asked.
   const ESTADOS_P = [['Captacion', 'Captación', 'capt'], ['Disponible', 'Disponible', 'disp'], ['Reservada', 'Reservado', 'res'], ['Vendida', 'Vendido', 'vend']];
   const estadoDe = (x) => ESTADOS_P.find(([v]) => v === x.estado) || ESTADOS_P[0];
-  function menuOpciones(btn, x, campo, items, actual) {
+  function menuOpciones(btn, x, campo, items, actual, alElegir) {
     const abierto = menuT && menuT._x === x.id + campo; cerrarMenuTipo(); if (abierto) return;
     const m = document.createElement('ul'); m.className = 'isel-menu menu-tipo'; m.setAttribute('role', 'listbox'); m._x = x.id + campo; m._btn = btn;
     items.forEach(([v, txt, html]) => {
       const li = document.createElement('li'); const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(v === actual));
       b.innerHTML = html; b.append(txt);
-      b.addEventListener('click', (e) => { e.stopPropagation(); cerrarMenuTipo(); if (v !== x[campo]) { guardarCampo(x, { [campo]: v }); pintarLista(); pintarPins(); } });
+      b.addEventListener('click', (e) => { e.stopPropagation(); cerrarMenuTipo(); if (alElegir) { if (v !== actual) alElegir(v); return; } if (v !== x[campo]) { guardarCampo(x, { [campo]: v }); pintarLista(); pintarPins(); } });
       li.appendChild(b); m.appendChild(li);
     });
     m.addEventListener('click', (e) => e.stopPropagation());
@@ -2687,7 +2692,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   function datosWeb(x) {
     return { owner: yoUid, nombre: x.nombre || '', tipo: x.tipo || 'Casa', op: 'Venta', estado: x.estado || 'Disponible', precio: Number(x.precio) || 0, hab: Number(x.hab) || 0, banos: Number(x.banos) || 0, parq: Number(x.parq) || 0, area: Number(x.area) || 0,
       servicios: x.servicios || [], desc: x.desc || '', dir: x.dir || '', lat: tieneUbic(x) ? Number(x.lat) : null, lng: tieneUbic(x) ? Number(x.lng) : null,
-      fotos: (x.fotos || []).map((f) => f.url).filter(Boolean), poligono: (x.poligono || []).map(([lat, lng]) => ({ lat, lng })), orden: x.orden == null ? null : x.orden, creado: x.creado || '', ambientes: (x.ambientes || []).map((a) => ({ nombre: a.nombre, m2: Number(a.m2) || 0 })) };
+      fotos: (x.fotos || []).map((f) => f.url).filter(Boolean), poligono: (x.poligono || []).map(([lat, lng]) => ({ lat, lng })), orden: x.orden == null ? null : x.orden, promo: x.promo || '', creado: x.creado || '', ambientes: (x.ambientes || []).map((a) => ({ nombre: a.nombre, m2: Number(a.m2) || 0 })) };
   }
   function sincronizarWeb() {
     if (invitado || !yoUid || !db) return;
@@ -2918,10 +2923,16 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       const dib = document.createElement('button'); dib.type = 'button'; dib.className = 'prop-ed prop-dib' + (dibujo && dibujo.id === x.id ? ' activo' : '') + (x.poligono.length > 2 ? ' tiene' : ''); dib.title = x.poligono.length > 2 ? 'Editar el dibujo del terreno' : 'Dibujar el terreno en el mapa'; dib.setAttribute('aria-label', dib.title);
       dib.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M4 7.5 9.5 4l9.5 3.5-2 11.5L6 20z"/><circle cx="4" cy="7.5" r="1.6" fill="currentColor"/><circle cx="9.5" cy="4" r="1.6" fill="currentColor"/><circle cx="19" cy="7.5" r="1.6" fill="currentColor"/><circle cx="17" cy="19" r="1.6" fill="currentColor"/><circle cx="6" cy="20" r="1.6" fill="currentColor"/></svg>';
       dib.addEventListener('click', (e) => { e.stopPropagation(); if (dibujo && dibujo.id === x.id) terminarDibujo(false); else { ubicandoId = null; setMarcando(false); empezarDibujo(x); } pintarLista(); });
-      const wb = document.createElement('button'); wb.type = 'button'; wb.className = 'prop-ed prop-web' + (enWeb(x) ? ' activo' : ''); wb.setAttribute('aria-pressed', String(!!x.web));
-      wb.title = x.estado === 'Captacion' ? 'Las propiedades en captación no se publican' : x.web ? 'Publicada en la web · toca para quitarla' : 'Publicar en la web'; wb.setAttribute('aria-label', wb.title + ': ' + nom);
+      const prW = promoDe(x);
+      const wb = document.createElement('button'); wb.type = 'button'; wb.className = 'prop-ed prop-web' + (enWeb(x) ? ' activo' : '') + (prW ? ' p-' + x.promo : ''); wb.setAttribute('aria-pressed', String(!!x.web));
+      wb.title = x.estado === 'Captacion' ? 'Las propiedades en captación no se publican' : x.web ? 'Publicada en la web' + (prW ? ' · ' + prW.t : '') + ' · toca para cambiar' : 'Publicar en la web'; wb.setAttribute('aria-label', wb.title + ': ' + nom);
       wb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6S9.6 5.8 12 3.4z"/></svg>';
-      wb.addEventListener('click', (e) => { e.stopPropagation(); if (x.estado === 'Captacion') { avisoMapa('Las propiedades en captación no se publican. Cámbiala a Disponible primero.'); setTimeout(() => avisoMapa(''), 3000); return; } guardarCampo(x, { web: !x.web }); pintarLista(); avisoMapa(x.web ? `"${nom}" se publicó en la web.` : `"${nom}" ya no está en la web.`); setTimeout(() => avisoMapa(''), 2500); });
+      const PUB_OP = [['no', 'No publicar', '#9aa0aa'], ['normal', 'Publicar normal', 'var(--accent)'], ['oferta', 'Oferta especial', PROMO.oferta.c], ['descuento', 'Descuento', PROMO.descuento.c]];
+      wb.addEventListener('click', (e) => { e.stopPropagation(); if (x.estado === 'Captacion') { avisoMapa('Las propiedades en captación no se publican. Cámbiala a Disponible primero.'); setTimeout(() => avisoMapa(''), 3000); return; }
+        menuOpciones(wb, x, 'pub', PUB_OP.map(([v, t, c]) => [v, t, `<span class="pub-punto" style="background:${c}"></span>`]), !x.web ? 'no' : (x.promo || 'normal'), (v) => {
+          const cambio = v === 'no' ? { web: false, promo: '' } : { web: true, promo: v === 'normal' ? '' : v };
+          guardarCampo(x, cambio); pintarLista(); pintarPins();
+          avisoMapa(v === 'no' ? `"${nom}" ya no está en la web.` : `"${nom}" está en la web${v === 'normal' ? '' : ' como ' + PROMO[v].t}.`); setTimeout(() => avisoMapa(''), 2500); }); });
       acc.append(ed, ub, dib, wb, del);
       cara.append(info, acc);
       const curl = (izq, txt) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'doblez izq'; b.setAttribute('aria-label', txt); b.innerHTML = '<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M5.5 6 A16.5 16.5 0 0 0 24 24.5"/></svg>'; b.addEventListener('click', (e) => { e.stopPropagation(); const v = li.classList.toggle('vuelta'); if (v) volteadas.add(x.id); else { volteadas.delete(x.id); delete ppCard[x.id]; } }); return b; };
@@ -3285,7 +3296,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       box.appendChild(g);
     });
   }
-  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), corretaje: v.corretaje && typeof v.corretaje === 'object' ? { fecha: String(v.corretaje.fecha || ''), meses: Number(v.corretaje.meses) || 0 } : { fecha: '', meses: 0 }, archivada: !!v.archivada, web: !!v.web, creado: String(v.creado || ''),
+  const leerProp = (d) => { const v = d.data() || {}; return { id: d.id, lat: v.lat == null ? null : Number(v.lat), lng: v.lng == null ? null : Number(v.lng), nombre: String(v.nombre || ''), nota: String(v.nota || ''), dueno: String(v.dueno || v.nota || ''), contacto: String(v.contacto || ''), comision: String(v.comision || ''), duenos: personasDe(v.duenos, v.dueno || v.nota || v.contacto || v.comision ? [{ nombre: v.dueno || v.nota, contacto: v.contacto, comision: v.comision }] : []), compradores: personasDe(v.compradores, []), poligono: Array.isArray(v.poligono) ? v.poligono.map((q) => q && [Number(q.lat), Number(q.lng)]).filter((q) => q && isFinite(q[0]) && isFinite(q[1])).slice(0, 200) : [], orden: v.orden == null || !isFinite(Number(v.orden)) ? null : Number(v.orden), corretaje: v.corretaje && typeof v.corretaje === 'object' ? { fecha: String(v.corretaje.fecha || ''), meses: Number(v.corretaje.meses) || 0 } : { fecha: '', meses: 0 }, archivada: !!v.archivada, web: !!v.web, promo: ['oferta', 'descuento'].includes(v.promo) ? v.promo : '', creado: String(v.creado || ''),
     op: 'Venta', tipo: String(v.tipo || ''), precio: Number(v.precio) || 0, hab: Number(v.hab) || 0, banos: Number(v.banos) || 0, area: Number(v.area) || 0, parq: Number(v.parq) || 0,
     dir: String(v.dir || ''), servicios: Array.isArray(v.servicios) ? v.servicios.map(String) : [], desc: String(v.desc || ''), estado: String(v.estado || 'Disponible'), venta: v.venta && typeof v.venta === 'object' ? v.venta : {}, docs: Array.isArray(v.docs) ? v.docs.filter((f) => f && f.url) : [], requisitos: v.requisitos && typeof v.requisitos === 'object' ? v.requisitos : {}, fotos: Array.isArray(v.fotos) ? v.fotos.filter((f) => f && f.url) : [] }; };
   // ── Marketing: free-form board (pizarra) like Freeform: paste images, sticky notes for scripts and dialogues, text, arrows linking steps ──
