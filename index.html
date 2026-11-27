@@ -3022,7 +3022,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   // Land outlines: the app color, half transparent (gray when sold).
   let polysG = [];
   const colorAcc = () => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2a52a8';
-  const colorPoli = (x) => cerrada(x) ? '#8a8a8a' : colorAcc();
+  const colorPoli = (x) => cerrada(x) ? '#8a8a8a' : promoDe(x) ? promoDe(x).c : colorAcc();
   function pintarPoligonos() {
     const vs = visibles().filter((x) => x.poligono.length > 2 && !(dibujo && dibujo.id === x.id));
     if (motor === 'g' && mapaG) {
