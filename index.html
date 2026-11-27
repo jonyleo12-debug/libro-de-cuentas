@@ -4674,7 +4674,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
         try {
           await cargarGmaps(gmapsKey);
           motor = 'g';
-          mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'cooperative', clickableIcons: false });
+          mapaG = new google.maps.Map($('mapa'), { center: { lat: PUYO[0], lng: PUYO[1] }, zoom: 14, mapTypeControl: false, streetViewControl: true, fullscreenControl: true, gestureHandling: 'greedy', clickableIcons: false });
           infoG = new google.maps.InfoWindow({ pixelOffset: new google.maps.Size(0, -40), maxWidth: 600, headerDisabled: true });
           mapaG.addListener('mousedown', (e) => { if (dibujo && e.latLng) dibIni(e.latLng.lat(), e.latLng.lng(), e.domEvent); });
           mapaG.addListener('mousemove', (e) => { if (arrastre && e.latLng) dibMov(e.latLng.lat(), e.latLng.lng(), e.domEvent); });
@@ -4686,14 +4686,14 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
       }
       let L; try { L = await cargarLeaflet(); } catch (e) { avisoMapa('No se pudo cargar el mapa. Revisa tu internet y recarga la página.'); return; }
       motor = 'l';
-      mapaL = L.map('mapa', { zoomControl: true, scrollWheelZoom: false }).setView(PUYO, 14);
+      mapaL = L.map('mapa', { zoomControl: true, scrollWheelZoom: true }).setView(PUYO, 14);
       mapaCapas = {
         calles: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }),
         sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imágenes © Esri' })
       };
       mapaCapas.calles.addTo(mapaL);
       casasCapa = L.layerGroup().addTo(mapaL);
-      mapaL.on('focus', () => mapaL.scrollWheelZoom.enable()); mapaL.on('blur', () => mapaL.scrollWheelZoom.disable());
+      // zoom con la rueda siempre activo
       mapaL.on('mousedown', (e) => { if (dibujo) dibIni(e.latlng.lat, e.latlng.lng, e.originalEvent); });
       mapaL.on('mousemove', (e) => { if (arrastre) dibMov(e.latlng.lat, e.latlng.lng, e.originalEvent); });
       mapaL.on('mouseup', () => dibFin());
