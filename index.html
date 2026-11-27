@@ -1181,7 +1181,7 @@ button.prop-op:hover { filter: brightness(1.08); }
 .prop-acc .prop-ed { position: static; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; box-shadow: none; }
 .prop-acc .prop-ed svg { width: 17px; height: 17px; }
 .prop-acc .prop-web.activo, .pc-cara .prop-acc .prop-web.activo { color: #fff; background: var(--accent); }
-.prop-acc .prop-web.activo.p-oferta, .pc-cara .prop-acc .prop-web.activo.p-oferta { background: #c9a227; }
+.prop-acc .prop-web.activo.p-oferta, .pc-cara .prop-acc .prop-web.activo.p-oferta { background: #f5c518; color: #1c2340; }
 .prop-acc .prop-web.activo.p-descuento, .pc-cara .prop-acc .prop-web.activo.p-descuento { background: #ff6347; }
 .pub-punto { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; flex: none; }
 .prop-del:hover, .prop-del.armado { color: #c62828; background: color-mix(in srgb, #c62828 12%, transparent); }
@@ -2534,7 +2534,7 @@ const fireDb = { doc: (path) => wrapDoc(doc(fs, path)) };
   const icoProp = (x) => `<svg class="ico-tipo${x.estado === 'Captacion' ? ' ico-capt' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifoDe(x)}"/></svg>`;
   const glifo = (t) => GLIFOS[t] != null ? GLIFOS[t] : GLIFOS['Otro'];
   const icoTipo = (t) => `<svg class="ico-tipo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${glifo(t)}"/></svg>`;
-  const PROMO = { oferta: { t: 'Oferta especial', c: '#c9a227' }, descuento: { t: 'Descuento', c: '#ff6347' } };
+  const PROMO = { oferta: { t: 'Oferta especial', c: '#f5c518' }, descuento: { t: 'Descuento', c: '#ff6347' } };
   const promoDe = (x) => (enWeb(x) && PROMO[x.promo]) || null;
   const colorPin = (x) => cerrada(x) ? '#8a8a8a' : x.estado === 'Captacion' ? '#111' : promoDe(x) ? promoDe(x).c : 'var(--accent)';
   const pinSvg = (x) => x.estado === 'Captacion' && !cerrada(x) ? `<svg class="pin-svg pin-capt" viewBox="0 0 34 40" width="34" height="40" overflow="visible" aria-hidden="true"><path transform="translate(-5 1) scale(1.7)" fill="#111" fill-rule="evenodd" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke" d="${G_CAPT}"/></svg>` : `<svg class="pin-svg" viewBox="0 0 34 40" width="34" height="40" aria-hidden="true"><path d="M17 39s-13-12.6-13-22.2A13 13 0 0 1 30 16.8C30 26.4 17 39 17 39z" style="fill:${colorPin(x)}" stroke="#fff" stroke-width="2"/><path transform="translate(8.6 8.2) scale(.7)" fill="#fff" fill-rule="evenodd" d="${glifoDe(x)}"/></svg>`;
